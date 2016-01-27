@@ -1,0 +1,18 @@
+language: python
+python:
+  - "2.7"
+  - "3.3"
+  - "3.4"
+# command to install dependencies
+install: source continuous_integration/install.sh
+env:
+  matrix:
+    - SCHEDULER="SLURM"
+    - SCHEDULER="SGE"
+    - SCHEDULER="NONE"
+# command to run tests
+script: 
+  - make 
+#  - source continuous_integration/get_debug.sh
+after_success: coveralls  
+cache: apt
