@@ -10,16 +10,16 @@ from module_loader import module
 
 
 module_args = ['java']
-suffix = "fastq"
-job_prefix = "BBDuk_"
+suffix = ".bwamem.sort.filter.bam"
+job_prefix = "Dedupe_"
 partition = "bigmemm"
 maxmem = "200"
 maxcpu = "24"
-input_dir = "/group/nealedata4/Psme_reseq/fastq"
-output_dir = "/group/nealedata4/Psme_reseq/clean"
-adapters = "/group/nealedata4/Psme_reseq/qc/truseq.fa"
+input_dir = "/group/nealedata4/pinus_armandii_wgs/\
+    Clean_Alignments/BAM_Sorted_Filtered"
+output_dir = "/group/nealedata/pinus_armandii_wgs/Clean_Alignments/BAM_Dedupe"
 email = "cacampbell@ucdavis.edu"
-dry_run = False
+dry_run = True
 verbose = False
 
 
@@ -66,11 +66,12 @@ def make_commands(filenames):
     filenames = remove_ends(filenames)
 
     for filename in filenames:
-        job_name = job_prefix + "_{}".format(os.path.basename(filename))
-        output_f = os.path.join(output_dir, os.path.basename(filename))
-        command = "bbduk.sh in={filename} out={output} \
-            minlen=25 qtrim=rl trimq=10 ktrim=r k=25 mink=11 ref={adpts}\
-            hdist=1".format(filename=filename, output=output_f, adpts=adapters)
+        job_name = job_prefix + "{}".format(os.path.basename(filename))
+        output_f = os.path.join(output_dir,
+                                os.path.basename(filename).replace(
+                                    suffix, ".bwamem.sort.filter.dedup.bam"))
+        command = "Dedupe.sh in={i} out={o} usejni=t sq".format(i=filename,
+                                                                o=output_f)
         commands[job_name] = command
 
         if verbose:
