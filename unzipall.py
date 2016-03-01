@@ -4,7 +4,7 @@ import subprocess
 import re
 
 
-input_dir = '/group/nealedata5/Psme_reseq'
+input_dir = '/group/nealedata5/Psme_reseq/clean_decontam/human'
 commands = {}
 
 
@@ -19,5 +19,6 @@ for root, directories, filenames in os.walk(input_dir):
 
 
 for job, command in commands.iteritems():
+    # print command
     subprocess.call('echo "#!/usr/bin/env bash\n{cmd}" | sbatch --partition=bigmemm --ntasks=1 --cpus-per-task=2 --job-name={jobname}'.format(cmd=command, jobname=job),
                     shell=True)

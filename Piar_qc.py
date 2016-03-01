@@ -12,15 +12,16 @@ from module_loader import module
 module_args = ['java']
 suffix = ".fq.gz"
 job_prefix = "BBDuk_"
-partition = "bigmemm"
+partition = "bigmemh"
 maxmem = "100"
 maxcpu = "12"
-input_root = ""
-output_root = ""
-adapters = ""
+javaxmx = str(int(maxmem) - 2)
+javathreads = str(int(maxcpu) - 2)
 email = "cacampbell@ucdavis.edu"
-dry_run = True
-verbose = True
+input_root = "/group/nealedata4/Piar_wgs/Clean/"
+output_root = "/group/nealedata4/Piar_wgs/Cleaner/"
+dry_run = False
+verbose = False
 
 
 def dispatch_to_slurm(commands):
@@ -51,43 +52,51 @@ def dispatch_to_slurm(commands):
                   file=sys.stderr)
 
 
-def remove_ends(filelist):
-    new_filelist = []
+def existing_files_check(list_of_files):
+    for filename in list_of_files:
+        if os.path.isfile(filename):
+            return True
 
-    for filename in filelist:
-        new_name = re.sub("R[0-9]", "R#", filename)
-        new_filelist += [new_name]
+    return False
 
-    return set(new_filelist)
+
+def output_file(filename):
+    return os.path.join(output_root, os.path.relpath(filename,
+                                                     start=input_root))
 
 
 def make_commands(filenames):
     commands = {}
-    filenames = remove_ends(filenames)
+    filenames = [filename for filename in filenames if "_1" in filename]
 
     for filename in filenames:
+        input1 = filename
+        input2 = re.sub("_1", "_2", input1)
+        output1 = output_file(input1)
+        output2 = output_file(input2)
+        adpts = re.sub("_1", "_adapters", filename)
+        adpts = re.sub(suffix, ".fa", adpts)
+        adpts = os.path.join("/group/nealedata4/Piar_wgs/Suspect_Adapters/",
+                             os.path.relpath(adpts, start=input_root))
+        adapter_root = "/group/nealedata4/Piar_wgs/Suspect_Adapters"
+        adpts = os.path.join(adapter_root, adpts)
         job_name = job_prefix + "{}".format(os.path.basename(filename))
-        output_f = os.path.join(output_root, os.path.basename(filename))
-        command = ("bbduk.sh in={filename} out={output} minlen=25 qtrim=rl "
-                   "trimq=10 ktrim=r k=25 mink=11 ref={adpts} hdist=1 tpe "
-                   "tbo maq=10 mlf=50").format(filename=filename,
-                                               output=output_f,
-                                               adpts=adapters)
-        commands[job_name] = command
+        command = ("bbduk2.sh -Xmx{maxheap}G in1={i1} in2={i2} out1={o1} "
+                   "out2={o2} ref={adpt} qtrim=rl "
+                   "trimq=10 ktrim=r k=21 mink=11 hdist=2 maq=10 mlf=50 tpe "
+                   "tbo threads={t}").format(maxheap=javaxmx, i1=input1,
+                                             i2=input2, o1=output1, o2=output2,
+                                             adpt=adpts, t=javathreads)
 
-        if verbose:
-            print(command, file=sys.stdout)
+        if not existing_files_check([output1, output2]):
+            commands[job_name] = command
+
+            if verbose:
+                print(command, file=sys.stdout)
+        else:
+            print("{} already ran, skipping.".format(job_name), file=sys.stderr)
 
     return commands
-
-
-def make_directories():
-    input_base = os.path.dirname(input_root)
-    command = ("find {} -type d | sed -n 's|{}||p' | "
-               "parallel --gnu -j 4 mkdir -p {}/{{}}").format(input_root,
-                                                              input_base,
-                                                              output_root)
-    subprocess.call(command, shell=True)
 
 
 def get_files(directory):
@@ -104,6 +113,15 @@ def get_files(directory):
                 filelist += [abs_path]
 
     return filelist
+
+
+def make_directories():
+    input_base = os.path.dirname(input_root)
+    command = ("find {} -type d | sed -n 's|{}||p' | "
+               "parallel --gnu -j 4 mkdir -p {}/{{}}").format(input_root,
+                                                              input_base,
+                                                              output_root)
+    subprocess.call(command, shell=True)
 
 
 def load_modules(module_args):

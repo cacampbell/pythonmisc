@@ -8,34 +8,20 @@ from clusterlib.scheduler import submit
 from clusterlib.scheduler import queued_or_running_jobs
 from module_loader import module
 
-
+input_root = "/group/nealedata4/Psme_reseq/clean_decontam/decontam/"
+output_root = "/group/nealedata5/Psme_reseq/mapped"
 module_args = ['java']
 suffix = ".fq.gz"
 job_prefix = "BBMap_"
 partition = "bigmemm"
-maxmem = "64"
-maxcpu = "12"
-javaxmx = str(int(0.85 * int(maxmem)))
-javaxms = str(int(javaxmx) - 4)
+maxmem = "200"
+maxcpu = "14"
+reference = "/group/nealedata4/Psme_reseq/genome/Psme.scf.uniq.fa"
+javaxmx = str(int(maxmem) - 2)
 javathreads = str(int(maxcpu) - 2)
-root = "/group/nealedata4/Psme_reseq"
-human_ref = "qc/Hosa_masked/hg19_main_mask_ribo_animal_allplant_allfungus.fa.gz"
-input_dir = os.path.join(root, "clean")
-output_dir = "/group/nealedata5/Psme_reseq/clean_decontam"
-masked_human_ref = os.path.join(root, human_ref)
 email = "cacampbell@ucdavis.edu"
-rerun_files = [
-                'DDP9_S9_H2W3C_L004_R2_001.fq.gz',
-                'DDP6_S6_H2VC3_L004_R2_001.fq.gz',
-                'DDP2_S2_H2VF3_L004_R2_001.fq.gz',
-                'DDP6_S6_H2VC3_L004_R1_001.fq.gz',
-                'DDP7_S7_H2VF3_L002_R1_001.fq.gz',
-                'DDP7_S7_H2VF3_L002_R2_001.fq.gz',
-                'DDP2_S2_H2VF3_L004_R1_001.fq.gz',
-                'DDP9_S9_H2W3C_L004_R1_001.fq.gz'
-]
 dry_run = False
-verbose = True
+verbose = False
 
 
 def dispatch_to_slurm(commands):
@@ -74,6 +60,11 @@ def existing_files_check(list_of_files):
     return False
 
 
+def output_file(filename):
+    return os.path.join(output_root, os.path.relpath(filename,
+                                                     start=input_root))
+
+
 def make_commands(filenames):
     commands = {}
     filenames = [x for x in filenames if "R1" in x]
@@ -82,48 +73,51 @@ def make_commands(filenames):
         job_name = job_prefix + "{}".format(os.path.basename(filename))
         input_f1 = filename
         input_f2 = re.sub("R1", "R2", filename)
-        output_f1 = os.path.join(output_dir, os.path.basename(input_f1))
-        output_f2 = os.path.join(output_dir, os.path.basename(input_f2))
-        human_f1 = re.sub(suffix, ".human.fq.gz", output_f1)
-        human_f2 = re.sub(suffix, ".human.fq.gz", output_f2)
-        stats_f = re.sub(suffix, ".stats.txt", output_f1)
-        stats_f = re.sub("R1", "pe", stats_f)
-        command = ("bbmap.sh -Xms{inith}G -Xmx{maxh}G minid=0.95 maxindel=3 "
-                   "bwr=0.16 bw=12 quickmatch fast minhits=2 ref={r} nodisk "
-                   "in1={i1} in2={i2} outu1={o1} outu2={o2} outm1={h1} "
-                   "outm2={h2} statsfile={s} "
-                   "usejni=t threads={t}").format(inith=javaxms,
-                                                  maxh=javaxmx,
-                                                  r=masked_human_ref,
-                                                  i1=input_f1,
-                                                  i2=input_f2,
-                                                  o1=output_f1,
-                                                  o2=output_f2,
-                                                  h1=human_f1,
-                                                  h2=human_f2,
-                                                  s=stats_f,
-                                                  t=javathreads)
+        map_sam = re.sub("R1", "pe", filename)
+        map_sam = re.sub(suffix, ".sam", map_sam)
+        map_sam = output_file(map_sam)
+        unmap_sam = re.sub(".sam", ".unmapped.sam", map_sam)
+        covstat = re.sub("R1", "covstats", filename)
+        covstat = re.sub(suffix, ".txt", covstat)
+        covstat = output_file(covstat)
+        covhist = re.sub("R1", "covhist", filename)
+        covhist = re.sub(suffix, ".txt", covhist)
+        covhist = output_file(covhist)
+        basecov = re.sub("R1", "basecov", filename)
+        basecov = re.sub(suffix, ".txt", basecov)
+        basecov = output_file(basecov)
+        bincov = re.sub("R1", "bincov", filename)
+        bincov = re.sub(suffix, ".txt", filename)
+        bincov = output_file(bincov)
+        bashscript = re.sub("R1", "sort_index", filename)
+        bashscript = re.sub(suffix, '.sh', bashscript)
+        bashscript = output_file(bashscript)
+        command = ("bbmap.sh in1={i1} in2={i2} outm={om} outu={ou} ref={r} "
+                   "nodisk covstats={covstat} covhist={covhist} threads={t} "
+                   "slow k=12 -Xmx{xmx}G basecov={basecov} bincov={bincov} "
+                   "bamscript={bs}; source {bs}").format(i1=input_f1,
+                                                         i2=input_f2,
+                                                         om=map_sam,
+                                                         ou=unmap_sam,
+                                                         r=reference,
+                                                         covstat=covstat,
+                                                         covhist=covhist,
+                                                         basecov=basecov,
+                                                         bincov=bincov,
+                                                         xmx=javaxmx,
+                                                         t=javathreads,
+                                                         bs=bashscript)
 
-        if not existing_files_check([output_f1,
-                                    output_f2,
-                                    human_f1,
-                                    human_f2,
-                                    stats_f]):
-            if rerun_files != []:
-                for rerun in rerun_files:
-                    if re.search(rerun, command):
-                        commands[job_name] = command
-                        if verbose:
-                            print(command)
-                    else:
-                        print("Not rerunning {}".format(job_name))
-            else:
-                commands[job_name] = command
-                if verbose:
-                    print(command)
+        if not existing_files_check([map_sam, unmap_sam, covstat, covhist,
+                                     covhist, basecov, bincov]):
+            commands[job_name] = command
         else:
             print("{} already ran, skipping".format(job_name),
                   file=sys.stderr)
+
+        if verbose:
+            print(command, file=sys.stdout)
+
     return commands
 
 
@@ -152,7 +146,7 @@ def load_modules(module_args):
         print("Could not load module: {}".format(e), file=sys.stderr)
 
 
-def main(root):
+def main():
     if verbose:
         print("Loading Modules...", file=sys.stdout)
 
@@ -161,7 +155,7 @@ def main(root):
     if verbose:
         print("Gathering Files...", file=sys.stdout)
 
-    filenames = get_files(root)
+    filenames = get_files(input_root)
 
     if verbose:
         print("Making Commands...", file=sys.stdout)
@@ -175,4 +169,4 @@ def main(root):
 
 
 if __name__ == "__main__":
-    main(input_dir)
+    main()

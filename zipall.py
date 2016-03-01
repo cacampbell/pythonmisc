@@ -3,11 +3,9 @@ import sys
 import os
 import subprocess
 
-
-input_dir = '/group/nealedata4/Psme_reseq/fastq'
-output_dir = '/group/nealedata4/Psme_reseq/fastq_gz'
+input_dir = sys.argv[1] or os.getcwd()
+output_dir = sys.argv[2] or os.getcwd()
 commands = {}
-
 
 for root, directories, filenames in os.walk(input_dir):
     for filename in filenames:
