@@ -27,8 +27,7 @@ from functools import partial
 max_processes = 6
 remote_root = "/group/nealedata4/pinus_armandii_wgs"
 local_root = "/raid10/data/pinus_armandii_wgs"
-ssh_options = {'hostname': 'farm',
-               'password': "6529Campbell'ssoup89"}
+ssh_options = {'hostname': 'farm'}
 
 
 def dispatch_commands(cmds):
