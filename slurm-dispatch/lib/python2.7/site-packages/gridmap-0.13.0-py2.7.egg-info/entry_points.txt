@@ -1,0 +1,3 @@
+[console_scripts]
+gridmap_web = gridmap.web:main
+

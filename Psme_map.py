@@ -14,8 +14,8 @@ module_args = ['java']
 suffix = ".fq.gz"
 job_prefix = "BBMap_"
 partition = "bigmemm"
-maxmem = "200"
-maxcpu = "14"
+maxmem = "300"
+maxcpu = "30"
 reference = "/group/nealedata4/Psme_reseq/genome/Psme.scf.uniq.fa"
 javaxmx = str(int(maxmem) - 2)
 javathreads = str(int(maxcpu) - 2)
@@ -121,6 +121,15 @@ def make_commands(filenames):
     return commands
 
 
+def make_directories():
+    input_base = os.path.dirname(input_root)
+    command = ("find {} -type d | sed -n 's|{}||p' | "
+               "parallel --gnu -j 4 mkdir -p {}/{{}}").format(input_root,
+                                                              input_base,
+                                                              output_root)
+    subprocess.call(command, shell=True)
+
+
 def get_files(directory):
     filelist = []
 
@@ -156,6 +165,11 @@ def main():
         print("Gathering Files...", file=sys.stdout)
 
     filenames = get_files(input_root)
+
+    if verbose:
+        print("Making output directories...")
+
+    make_directories()
 
     if verbose:
         print("Making Commands...", file=sys.stdout)

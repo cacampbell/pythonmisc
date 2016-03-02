@@ -1,0 +1,85 @@
+Metadata-Version: 1.1
+Name: gridmap
+Version: 0.13.0
+Summary: Easily map Python functions onto a cluster using a DRMAA-compatible grid engine like Sun Grid Engine (SGE).
+Home-page: http://github.com/EducationalTestingService/gridmap
+Author: Daniel Blanchard
+Author-email: dblanchard@ets.org
+License: GPL
+Description: GridMap
+        -----------
+        
+        .. image:: https://travis-ci.org/EducationalTestingService/gridmap.png
+           :target: https://travis-ci.org/EducationalTestingService/gridmap
+           :alt: Travis build status
+        
+        
+        .. image:: https://coveralls.io/repos/EducationalTestingService/gridmap/badge.png
+          :target: https://coveralls.io/r/EducationalTestingService/gridmap
+          :alt: Test coverage
+        
+        .. image:: https://pypip.in/d/gridmap/badge.png
+           :target: https://crate.io/packages/gridmap
+           :alt: PyPI downloads
+        
+        .. image:: https://pypip.in/v/gridmap/badge.png
+           :target: https://crate.io/packages/gridmap
+           :alt: Latest version on PyPI
+        
+        .. image:: https://d2weczhvl823v0.cloudfront.net/EducationalTestingService/gridmap/trend.png
+           :target: https://bitdeli.com/free
+           :alt: Bitdeli badge
+        
+        
+        A package to allow you to easily create jobs on the cluster directly from
+        Python. You can directly map Python functions onto the cluster without needing
+        to write any wrapper code yourself.
+        
+        This is the ETS fork of an older project called `Python Grid <https://github.com/cwidmer/pythongrid>`__. Unlike the older
+        version, it is Python 2/3 compatible. Another major difference is that you can
+        change the configuration via environment variables instead of having to modify
+        a Python file in your ``site-packages`` directory. We've also removed some
+        cruft and improved the reliability of some of the features.
+        
+        For some examples of how to use it, check out ``map_reduce.py`` (for a simple
+        example of how you can map a function onto the cluster) and ``manual.py`` (for
+        an example of how you can create list of jobs yourself) in the examples folder.
+        
+        For complete documentation `read the docs <http://gridmap.readthedocs.org>`__.
+        
+        *NOTE*: You cannot use GridMap on a machine that is not allowed to submit jobs
+        (e.g., slave nodes).
+        
+        Requirements
+        ~~~~~~~~~~~~
+        
+        -  `drmaa <https://github.com/drmaa-python/drmaa-python>`__
+        -  `psutil <https://github.com/giampaolo/psutil>`__
+        -  `pyzmq <https://github.com/zeromq/pyzmq>`__
+        -  Python 2.7+
+        
+        License
+        ~~~~~~~
+        
+        -  GPLv3
+        
+        Changelog
+        ~~~~~~~~~
+        
+        See `GitHub releases <https://github.com/EducationalTestingService/gridmap/releases>`__.
+        
+Keywords: drmaa sge cluster distributed parallel
+Platform: UNKNOWN
+Classifier: Intended Audience :: Science/Research
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: Programming Language :: Python
+Classifier: Topic :: Software Development
+Classifier: Topic :: Scientific/Engineering
+Classifier: Operating System :: POSIX
+Classifier: Operating System :: Unix
+Classifier: Operating System :: MacOS
+Classifier: Programming Language :: Python :: 2
+Classifier: Programming Language :: Python :: 2.7
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.3

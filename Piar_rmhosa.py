@@ -85,8 +85,8 @@ def make_commands(filenames):
         job_name = job_prefix + "{}".format(os.path.basename(filename))
         input_f1 = filename
         input_f2 = re.sub("_1", "_2", filename)
-        output_f1 = os.path.join(output_root, os.path.basename(input_f1))
-        output_f2 = os.path.join(output_root, os.path.basename(input_f2))
+        output_f1 = output_file(input_f1)
+        output_f2 = output_file(input_f2)
         human_f1 = re.sub(suffix, ".human.fq.gz", output_f1)
         human_f2 = re.sub(suffix, ".human.fq.gz", output_f2)
         stats_f = re.sub(suffix, ".stats.txt", output_f1)

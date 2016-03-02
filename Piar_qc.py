@@ -57,7 +57,7 @@ def existing_files_check(list_of_files):
         if os.path.isfile(filename):
             return True
 
-    return False
+    return True
 
 
 def output_file(filename):
