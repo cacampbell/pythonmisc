@@ -4,10 +4,10 @@ import os
 import sys
 import subprocess
 import re
+import errno
 from clusterlib.scheduler import submit
 from clusterlib.scheduler import queued_or_running_jobs
 from module_loader import module
-
 
 input_root = "/group/nealedata4/Piar_wgs/Cleaner"
 output_root = "/group/nealedata4/Piar_wgs/Cleaner_decontam"
@@ -64,17 +64,26 @@ def existing_files_check(list_of_files):
     return False
 
 
-def output_file(filename):
-    return os.path.join(output_root, os.path.relpath(filename,
-                                                     start=input_root))
+def rebase(filename, start, root):
+    return os.path.join(root, os.path.relpath(filename, start=start))
 
 
-def make_directories():
-    command = ("find {} -type d | sed -n 's|{}||p' | "
-               "parallel --gnu -j 4 mkdir -p {}/{{}}").format(input_root,
-                                                              input_root,
-                                                              output_root)
-    subprocess.call(command, shell=True)
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            print("{} already exists".format(path))
+        else:
+            raise
+
+
+def make_directories(directory):
+    directories = [x[0] for x in os.walk(directory)]
+    output_directories = [rebase(x, output_root, input_root)
+                          for x in directories]
+    for directory in output_directories:
+        mkdir_p(directory)
 
 
 def make_commands(filenames):
@@ -85,8 +94,8 @@ def make_commands(filenames):
         job_name = job_prefix + "{}".format(os.path.basename(filename))
         input_f1 = filename
         input_f2 = re.sub("_1", "_2", filename)
-        output_f1 = output_file(input_f1)
-        output_f2 = output_file(input_f2)
+        output_f1 = rebase(input_f1, output_root, input_root)
+        output_f2 = rebase(input_f2, output_root, input_root)
         human_f1 = re.sub(suffix, ".human.fq.gz", output_f1)
         human_f2 = re.sub(suffix, ".human.fq.gz", output_f2)
         stats_f = re.sub(suffix, ".stats.txt", output_f1)
@@ -108,11 +117,11 @@ def make_commands(filenames):
                                                   t=javathreads)
 
         if not existing_files_check([output_f1,
-                                    output_f2,
-                                    human_f1,
-                                    human_f2,
-                                    stats_f]):
-            if rerun_files != []:
+                                     output_f2,
+                                     human_f1,
+                                     human_f2,
+                                     stats_f]):
+            if rerun_files:
                 for rerun in rerun_files:
                     if re.search(rerun, command):
                         commands[job_name] = command

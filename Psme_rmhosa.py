@@ -4,10 +4,14 @@ import os
 import sys
 import subprocess
 import re
+import errno
 from clusterlib.scheduler import submit
 from clusterlib.scheduler import queued_or_running_jobs
 from module_loader import module
 
+
+input_root = ""
+output_root = ""
 
 module_args = ['java']
 suffix = ".fq.gz"
@@ -18,23 +22,11 @@ maxcpu = "12"
 javaxmx = str(int(0.85 * int(maxmem)))
 javaxms = str(int(javaxmx) - 4)
 javathreads = str(int(maxcpu) - 2)
-root = "/group/nealedata4/Psme_reseq"
-human_ref = "qc/Hosa_masked/hg19_main_mask_ribo_animal_allplant_allfungus.fa.gz"
-input_dir = os.path.join(root, "clean")
-output_dir = "/group/nealedata5/Psme_reseq/clean_decontam"
-masked_human_ref = os.path.join(root, human_ref)
+masked_human_ref = ("/group/nealedata5/Psme_reseq/clean_decontam/qc/Hosa_masked/"
+             "hg19_main_mask_ribo_animal_allplant_allfungus.fa.gz")
 email = "cacampbell@ucdavis.edu"
-rerun_files = [
-                'DDP9_S9_H2W3C_L004_R2_001.fq.gz',
-                'DDP6_S6_H2VC3_L004_R2_001.fq.gz',
-                'DDP2_S2_H2VF3_L004_R2_001.fq.gz',
-                'DDP6_S6_H2VC3_L004_R1_001.fq.gz',
-                'DDP7_S7_H2VF3_L002_R1_001.fq.gz',
-                'DDP7_S7_H2VF3_L002_R2_001.fq.gz',
-                'DDP2_S2_H2VF3_L004_R1_001.fq.gz',
-                'DDP9_S9_H2W3C_L004_R1_001.fq.gz'
-]
-dry_run = False
+rerun_files = []
+dry_run = True
 verbose = True
 
 
@@ -82,8 +74,8 @@ def make_commands(filenames):
         job_name = job_prefix + "{}".format(os.path.basename(filename))
         input_f1 = filename
         input_f2 = re.sub("R1", "R2", filename)
-        output_f1 = os.path.join(output_dir, os.path.basename(input_f1))
-        output_f2 = os.path.join(output_dir, os.path.basename(input_f2))
+        output_f1 = os.path.join(output_root, os.path.basename(input_f1))
+        output_f2 = os.path.join(output_root, os.path.basename(input_f2))
         human_f1 = re.sub(suffix, ".human.fq.gz", output_f1)
         human_f2 = re.sub(suffix, ".human.fq.gz", output_f2)
         stats_f = re.sub(suffix, ".stats.txt", output_f1)
@@ -109,7 +101,7 @@ def make_commands(filenames):
                                     human_f1,
                                     human_f2,
                                     stats_f]):
-            if rerun_files != []:
+            if rerun_files:
                 for rerun in rerun_files:
                     if re.search(rerun, command):
                         commands[job_name] = command
@@ -143,6 +135,27 @@ def get_files(directory):
     return filelist
 
 
+def rebase(filename, start, root):
+    return os.path.join(root, os.path.relpath(filename, start=start))
+
+
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and os.path.isdir(path):
+            print("{} already exists".format(path))
+        else:
+            raise
+
+
+def make_directories(directory):
+    directories = [x[0] for x in os.walk(directory)]
+    output_directories = [rebase(x, output_root, input_root)
+                          for x in directories]
+    for directory in output_directories:
+        mkdir_p(directory)
+
 def load_modules(module_args):
     try:
         args = ['load']
@@ -175,4 +188,4 @@ def main(root):
 
 
 if __name__ == "__main__":
-    main(input_dir)
+    main(input_root)
