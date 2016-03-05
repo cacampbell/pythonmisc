@@ -53,6 +53,7 @@ class ParallelCommand(metaclass=ABCMeta):
         self.verbose = True
         self.read_marker = "R1"
         self.mate_marker = "R2"
+        self.reference = ""
         self._files = []
         self._commands = {}
         self._scripts = {}
@@ -104,6 +105,7 @@ class ParallelCommand(metaclass=ABCMeta):
         for read in self._files():
             job_name = "{}{}".format(self.job_prefix, os.path.basename(read))
             command = self.make_command(read)
+            assert(type(command) is str)
 
         self._commands[job_name] = command
 

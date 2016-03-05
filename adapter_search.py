@@ -7,7 +7,6 @@ def main(input_root, output_root):
     af = AdapterFinder(input_root, output_root)
     af.job_prefix = 'FindAdapters_'
     af.input_suffix = '.fq.gz'
-    af.dry_run = False
     af.modules = ['java']
     af.slurm_options['partition'] = 'bigmemh'
     af.slurm_options['mail-user'] = 'cacampbell@ucdavis.edu'

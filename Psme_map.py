@@ -87,7 +87,7 @@ def make_commands(filenames):
         basecov = re.sub(suffix, ".txt", basecov)
         basecov = output_file(basecov)
         bincov = re.sub("R1", "bincov", filename)
-        bincov = re.sub(suffix, ".txt", filename)
+        bincov = re.sub(suffix, ".txt", bincov)
         bincov = output_file(bincov)
         bashscript = re.sub("R1", "sort_index", filename)
         bashscript = re.sub(suffix, '.sh', bashscript)

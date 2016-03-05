@@ -1,0 +1,44 @@
+#!/usr/bin/env python
+from ParallelCommand import ParallelCommand
+import re
+
+
+class BBMapper(ParallelCommand):
+    def make_command(self, read):
+        mate = re.sub(self.read_marker, self.mate_marker, read)
+        map_sam = re.sub(self.read_marker, "pe", read)
+        map_sam = re.sub(self.input_suffix, ".sam", map_sam)
+        map_sam = self.output_file(map_sam)
+        unmap_sam = re.sub(".sam", ".unmapped.sam", map_sam)
+        covstat = re.sub(self.read_marker, "_covstats", mate)
+        covstat = re.sub(self.input_suffix, ".txt", covstat)
+        covstat = self.output_file(covstat)
+        covhist = re.sub(self.read_marker, "_covhist", read)
+        covhist = re.sub(self.input_suffix, ".txt", covhist)
+        covhist = self.output_file(covhist)
+        basecov = re.sub(self.read_marker, "_basecov", read)
+        basecov = re.sub(self.input_suffix, ".txt", basecov)
+        basecov = self.output_file(basecov)
+        bincov = re.sub(self.read_marker, "_bincov", read)
+        bincov = re.sub(self.input_suffix, ".txt", bincov)
+        bincov = self.output_file(bincov)
+        bashscript = re.sub(self.read_marker, "_sort_index", read)
+        bashscript = re.sub(self.input_suffix, '.sh', bashscript)
+        bashscript = self.output_file(bashscript)
+        command = ("bbmap.sh in1={i1} in2={i2} outm={om} outu={ou} ref={r} "
+                   "nodisk covstats={covstat} covhist={covhist} threads={t} "
+                   "slow k=12 -Xmx{xmx}G basecov={basecov} bincov={bincov} "
+                   "bamscript={bs}; source {bs}").format(i1=read,
+                                                         i2=mate,
+                                                         om=map_sam,
+                                                         ou=unmap_sam,
+                                                         r=self.reference,
+                                                         covstat=covstat,
+                                                         covhist=covhist,
+                                                         basecov=basecov,
+                                                         bincov=bincov,
+                                                         xmx=self.get_mem(),
+                                                         t=self.get_threads(),
+                                                         bs=bashscript)
+
+        return command
