@@ -108,10 +108,9 @@ class ParallelCommand:
             job_name = "{}{}".format(self.job_prefix, os.path.basename(read))
             command = self.make_command(read)
             assert(type(command) is str)
+            self._commands[job_name] = command
             if self.verbose:
                 print(command)
-
-        self._commands[job_name] = command
 
     def get_files(self):
         for root, _, files in os.walk(self.input_root):
