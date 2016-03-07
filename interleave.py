@@ -6,9 +6,9 @@ import sys
 def main(input_root, output_root):
     i = InterleavePaired(input_root, output_root)
     i.job_prefix = "Map_"
-    i.input_suffix = ".fq.gz"
-    i.read_marker = "_1"
-    i.mate_marker = "_2"
+    i.input_suffix = ".adap_trimmed.fastq.gz"
+    i.read_marker = "R1"
+    i.mate_marker = "R2"
     i.modules = ['java']
     i.slurm_options['partition'] = 'bigmemm'
     i.slurm_options['mail-user'] = 'cacampbell@ucdavis.edu'
@@ -20,3 +20,5 @@ def main(input_root, output_root):
 
 if __name__ == "__main__":
     main(sys.argv[1], sys.argv[2])
+    # input: /home/smontana/trimmed_cutadapt
+    # output: /group/nealedata4/pear_diversity/interleaved_reads
