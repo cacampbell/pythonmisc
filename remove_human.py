@@ -17,7 +17,7 @@ def main(input_root, output_root, reference):
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 3:
+    if len(sys.argv) == 4:
         main(sys.argv[1], sys.argv[2], sys.argv[3])
     else:
         main(sys.argv[1], sys.argv[2], ("/group/nealedata4/Psme_reseq/qc/Hosa_"

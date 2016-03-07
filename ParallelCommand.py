@@ -12,7 +12,7 @@ from abc import abstractmethod
 from abc import ABCMeta
 
 
-class ParallelCommand(metaclass=ABCMeta):
+class ParallelCommand(ABCMeta):
     @staticmethod
     def rebase(filename, src_root, dest_root):
         return os.path.join(dest_root, os.path.relpath(filename,
