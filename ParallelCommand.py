@@ -33,7 +33,7 @@ class ParallelCommand(ABCMeta):
             else:
                 raise exc
 
-    def __init__(self, input_, output_):
+    def __init__(self, input_=os.getcwd(), output_=os.getcwd()):
         self.input_root = input_
         self.output_root = output_
         self.slurm_options = {
