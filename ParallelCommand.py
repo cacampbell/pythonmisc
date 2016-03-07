@@ -68,6 +68,7 @@ class ParallelCommand:
         mem_int = float(self.slurm_options['mem'][:-1])
         mem_unit = self.slurm_options['mem'][-1]
         memory = float(mem_int) * float(fraction)
+        memory = int(memory)  # Must be int for slurm version on farm
         return "{}{}".format(memory, mem_unit)
 
     def dispatch(self):
@@ -116,11 +117,12 @@ class ParallelCommand:
         for root, _, files in os.walk(self.input_root):
             for filename in files:
                 if filename.endswith(self.input_suffix):
-                    abs_path = os.path.join(root, filename)
-                    self._files += [abs_path]
+                    if self.read_marker in filename:
+                        abs_path = os.path.join(root, filename)
+                        self._files += [abs_path]
 
-                    if self.verbose:
-                        print(abs_path, file=sys.stderr)
+                        if self.verbose:
+                            print(abs_path, file=sys.stderr)
 
     def load_modules(self):
         try:
@@ -164,7 +166,7 @@ class ParallelCommand:
 
         if self.verbose:
             print('Dispatching scripts to slurm...', file=sys.stderr)
-        self.scripts()
+        self.dispatch()
 
 
 class TestParallelCommand(unittest.TestCase):
