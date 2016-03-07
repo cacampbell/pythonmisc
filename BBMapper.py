@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 from ParallelCommand import ParallelCommand
 import re
 
@@ -24,7 +25,7 @@ class BBMapper(ParallelCommand):
         bincov = self.output_file(bincov)
         command = ("bbmap.sh in1={i1} in2={i2} outm={om} outu={ou} ref={r} "
                    "nodisk covstats={covstat} covhist={covhist} threads={t} "
-                   "slow k=12 -Xmx{xmx}G basecov={basecov}"
+                   "slow k=12 -Xmx{xmx} basecov={basecov}"
                    " bincov={bincov}").format(i1=read,
                                               i2=mate,
                                               om=map_bam,
@@ -36,5 +37,4 @@ class BBMapper(ParallelCommand):
                                               bincov=bincov,
                                               xmx=self.get_mem(),
                                               t=self.get_threads())
-
         return command

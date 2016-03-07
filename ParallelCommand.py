@@ -12,7 +12,9 @@ from abc import abstractmethod
 from abc import ABCMeta
 
 
-class ParallelCommand(ABCMeta):
+class ParallelCommand:
+    __metaclass__ = ABCMeta
+
     @staticmethod
     def rebase(filename, src_root, dest_root):
         return os.path.join(dest_root, os.path.relpath(filename,
@@ -102,10 +104,12 @@ class ParallelCommand(ABCMeta):
         pass
 
     def commands(self):
-        for read in self._files():
+        for read in self._files:
             job_name = "{}{}".format(self.job_prefix, os.path.basename(read))
             command = self.make_command(read)
             assert(type(command) is str)
+            if self.verbose:
+                print(command)
 
         self._commands[job_name] = command
 
@@ -129,13 +133,14 @@ class ParallelCommand(ABCMeta):
 
     def make_directories(self):
         directories = [x[0] for x in os.walk(self.input_root)]
-        output_directories = [self.rebase(x, self.output_root, self.input_root)
+        output_directories = [self.rebase(x, self.input_root, self.output_root)
                               for x in directories]
+
         for directory in output_directories:
-            if not self.dry_run:
-                self.mkdir_p(directory)
             if self.verbose:
                 print("Attempting to make: {}".format(directory))
+            if not self.dry_run:
+                self.mkdir_p(directory)
 
     def run(self):
         if self.verbose:
