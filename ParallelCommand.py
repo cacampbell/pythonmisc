@@ -13,20 +13,36 @@ from abc import ABCMeta
 
 
 class ParallelCommand:
-    __metaclass__ = ABCMeta
+    """
+    ParallelCommand
+    A class to gather files, write commands, and dispatch those commands to the
+    slurm manager. Finds all files at the input root, creates directories, and
+    dispatches commands. The actual commands are provided by derived classes
+    for various jobs.
+    """
+    __metaclass__ = ABCMeta  # Make this class virtual
 
     @staticmethod
     def rebase(filename, src_root, dest_root):
+        #  create relative output directory (rebase from src_root
+        #  to dest_root)
         return os.path.join(dest_root, os.path.relpath(filename,
                                                        start=src_root))
 
     def output_file(self, filename):
+        #  create the output file for the given filename
         return ParallelCommand.rebase(filename,
                                       self.input_root,
                                       self.output_root)
 
     @staticmethod
     def mkdir_p(path):
+        """
+        Emulate mkdir -p behavior from unix systems -- attempts to make
+        a directory, prints a message if that directory already exists
+        :param path: the path to make
+        :return:
+        """
         try:
             os.makedirs(path)
         except OSError as exc:
@@ -56,34 +72,54 @@ class ParallelCommand:
         self.read_marker = "R1"
         self.mate_marker = "R2"
         self.reference = ""
-        self._files = []
-        self._commands = {}
-        self._scripts = {}
+        self.__files = []
+        self.__commands = {}
+        self.__scripts = {}
 
     def get_threads(self):
+        """
+        Calculates the number of available threads, assuming 4 per cpu
+        Allows 2 free cores to be used by non-worker processes
+        :return: str: number of available worker threads
+        """
         return str(int(self.slurm_options['cpus']) * 4 - 2)
 
     def get_mem(self, fraction=1):
+        """
+        Get fraction of available memory
+        :param fraction: fraction of memory to get
+        :return: str: available memory + unit of measure
+        """
         assert(float(fraction) <= 1.0)
-        mem_int = float(self.slurm_options['mem'][:-1])
-        mem_unit = self.slurm_options['mem'][-1]
-        memory = float(mem_int) * float(fraction)
+        mem_int = float(self.slurm_options['mem'][:-1])  # All but last char
+        mem_unit = self.slurm_options['mem'][-1]  # last char
+        memory = float(mem_int) * float(fraction)  # fraction of avail mem
         memory = int(memory)  # Must be int for slurm version on farm
-        return "{}{}".format(memory, mem_unit)
+        return "{}{}".format(memory, mem_unit)  # [\d][U]
 
     def dispatch(self):
-        scheduled_jobs = set(queued_or_running_jobs())
-        for job_name, script in self._scripts.iteritems():
-            if job_name not in scheduled_jobs:
+        """
+        Dispatch scripts to the slurm manager
+        :return:
+        """
+        scheduled_jobs = set(queued_or_running_jobs())  # current jobs
+        for job_name, script in self.__scripts.iteritems():  # each script
+            if job_name not in scheduled_jobs:  # not already running
                 if self.verbose:
                     print("Dispatching {}...".format(job_name), file=sys.stderr)
-                if not self.dry_run:
+                if not self.dry_run:  # Call the script
                     call(script, shell=True)
             else:
                 print("{} already running, skipping...", file=sys.stderr)
 
     def scripts(self):
-        for job_name, command in self._commands.iteritems():
+        """
+        Write scripts to be dispatched to the slurm manager
+        Wraps each earlier crafted command into a job for slurm, using the
+        slurm API
+        :return:
+        """
+        for job_name, command in self.__commands.iteritems():  # for each cmd
             script = submit(command,
                             job_name=job_name or self.slurm_options['job_name'],
                             time=self.slurm_options['time'],
@@ -95,53 +131,83 @@ class ParallelCommand:
             script += " --cpus-per-task={}".format(self.slurm_options['cpus'])
             script += " --mail-user={}".format(self.slurm_options['mail-user'])
             script += " --mail-type={}".format(self.slurm_options['mail-type'])
-            self._scripts[job_name] = script
+            self.__scripts[job_name] = script  # Script wraps cmd for slurm
 
             if self.verbose:
                 print(script)
 
     @abstractmethod
     def make_command(self, read):
+        """
+        Abstract method, must be overridden
+        The command for each read (each file matching suffix), can be generated
+        in this method.
+        :param read:
+        :return:
+        """
         pass
 
     def commands(self):
-        for read in self._files:
+        """
+        Generate commands for each file gathered
+        :return:
+        """
+        for read in self.__files:  # for each file
             job_name = "{}{}".format(self.job_prefix, os.path.basename(read))
-            command = self.make_command(read)
-            assert(type(command) is str)
-            self._commands[job_name] = command
+            command = self.make_command(read)  # derived class makes command
+            assert(type(command) is str)  # at least, it has to be a str
+            self.__commands[job_name] = command
+
             if self.verbose:
                 print(command)
 
     def get_files(self):
+        """
+        Gather files below the input_root such that those files end with
+        input_suffix and contain read_marker within their name. For example,
+        input_suffix might be ".fq.gz" and read_marker might be "R1". This
+        method would thus gather all reads that match ^.*R1.*\.fq\.gz$
+        :return:
+        """
         for root, _, files in os.walk(self.input_root):
             for filename in files:
-                if filename.endswith(self.input_suffix):
-                    if self.read_marker in filename:
+                if filename.endswith(self.input_suffix):  # input suffix
+                    if self.read_marker in filename:  # read marker
                         abs_path = os.path.join(root, filename)
-                        self._files += [abs_path]
+                        self.__files += [abs_path]
 
                         if self.verbose:
                             print(abs_path, file=sys.stderr)
 
     def load_modules(self):
+        """
+        Load environment modules using environment module system
+        :return:
+        """
         try:
-            args = ['load']
-            args.extend(self.modules)
-            module(args)
-        except Exception as e:
-            print("Could not load module(s):{}, {}".format(self.modules, e))
+            args = ['load']  # first argument is always 'load'
+            args.extend(self.modules)  # add specified modules to arguments
+            module(args)  # call module system, using arguments ['load', '...']
+        except (OSError, ValueError) as err:
+            print("Could not load module(s):{0:s}, {0:s}".format(self.modules,
+                                                                 err))
 
     def make_directories(self):
-        directories = [x[0] for x in os.walk(self.input_root)]
+        """
+        Make the relative output directories that are necessary to preserve
+        output directory structure at the specified output root. All directories
+        below input_root will be created below output root
+        :return:
+        """
+        directories = [x[0] for x in os.walk(self.input_root)]  # all dirs
         output_directories = [self.rebase(x, self.input_root, self.output_root)
-                              for x in directories]
+                              for x in directories]  # rebase each dir
 
         for directory in output_directories:
             if self.verbose:
                 print("Attempting to make: {}".format(directory))
             if not self.dry_run:
-                self.mkdir_p(directory)
+                self.mkdir_p(directory)  # Attempt safe creation of each dir
 
     def run(self):
         if self.verbose:
