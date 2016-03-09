@@ -110,7 +110,8 @@ class ParallelCommand:
                 if not self.dry_run:  # Call the script
                     call(script, shell=True)
             else:
-                print("{} already running, skipping...", file=sys.stderr)
+                print("{} already running, skipping...".format(job_name),
+                      file=sys.stderr)
 
     def scripts(self):
         """
@@ -232,7 +233,7 @@ class ParallelCommand:
 
         if self.verbose:
             print('Dispatching scripts to slurm...', file=sys.stderr)
-        self.dispatch()
+	self.dispatch()
 
 
 class TestParallelCommand(unittest.TestCase):

@@ -25,7 +25,7 @@ class BBMapper(ParallelCommand):
         bincov = self.output_file(bincov)
         command = ("bbmap.sh in1={i1} in2={i2} outm={om} outu={ou} ref={r} "
                    "nodisk covstats={covstat} covhist={covhist} threads={t} "
-                   "slow k=12 -Xmx{xmx} basecov={basecov}"
+                   "slow k=12 -Xmx{xmx} basecov={basecov} usejni=t"
                    " bincov={bincov}").format(i1=read,
                                               i2=mate,
                                               om=map_bam,
