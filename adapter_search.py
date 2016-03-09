@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from AdapterFinder import AdapterFinder
+from AdapterSearch import AdapterFinder
 import sys
 
 

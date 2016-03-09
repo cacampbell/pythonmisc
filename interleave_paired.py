@@ -21,5 +21,3 @@ def main(input_root, output_root):
 
 if __name__ == "__main__":
     main(sys.argv[1], sys.argv[2])
-    # input: /home/smontana/trimmed_cutadapt
-    # output: /group/nealedata4/pear_diversity/interleaved_reads

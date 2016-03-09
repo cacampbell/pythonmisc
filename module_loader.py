@@ -50,11 +50,10 @@ def module(*args):
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
         (out, err) = process.communicate()
-        exec(out)
+        exec out
 
     except (OSError, ValueError) as e:
-        sys.stdout.write("Exception in module load execution: %s\n" % str(e))
-        sys.stdout.write("Child Stack Trace:%s\n" % str(e.child_traceback))
+        sys.stdout.write("Module load execution: {0:s}\n".format(e))
 
 
 class test_module_loader(unittest.TestCase):
@@ -63,13 +62,19 @@ class test_module_loader(unittest.TestCase):
     variables and the usage of the module function to interface with the module
     loader present on the system.
     """
-    def test_init():
+    def setUp(self):
+        pass
+
+    def test_init(self):
         # Check that the environment variables exist, have possible values
         pass
 
-    def test_module():
+    def test_module(self):
         # test module commands as they might be called in a bash shell, using
         # the module function from this python module
+        pass
+
+    def tearDown(self):
         pass
 
 

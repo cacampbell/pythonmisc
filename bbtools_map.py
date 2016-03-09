@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from BBMapper import BBMapper
+from BBToolsMap import BBMapper
 import sys
 
 
