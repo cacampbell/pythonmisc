@@ -11,7 +11,7 @@ def main(input_, output_, choice):
     gz.slurm_options['partition'] = 'bigmemm'
     gz.job_prefix = "GZ_"
 
-    if choice.upper().trim() == "ZIP":
+    if choice.upper().strip() == "ZIP":
         gz.input_suffix = ".fq"
     else:
         gz.input_suffix = ".gz"
@@ -24,4 +24,4 @@ def main(input_, output_, choice):
 
 
 if __name__ == "__main__":
-    main(sys.argv[1:])
+    main(sys.argv[1], sys.argv[2], sys.argv[3])

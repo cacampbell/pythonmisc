@@ -2,19 +2,21 @@
 from __future__ import print_function
 from ParallelCommand import ParallelCommand
 import re
+import os
 
 
-class GzipAll(ParallelCommand):
+class ZipAll(ParallelCommand):
     def __init__(self, input_, output_, choice):
         self.choice = choice
-        super(GzipAll, self).__init__()
+        super(ZipAll, self).__init__()
 
     def make_command(self, filename):
         assert(self.choice.upper().strip() in ["ZIP", "UNZIP"])
         if self.choice.upper().strip() == "ZIP":
             output = re.sub(self.input_suffix,
-                            "{}.gz".format(self.input_suffix), filename)
-            return "gzip -c {i} > {o}".format(i=filename, o=output)
+                            "{}.zip".format(self.input_suffix), filename)
+            return "zip -r {o} {i}".format(i=filename, o=output)
         else:
-            output = re.sub(".gz", "", filename)
-            return "gunzip -c {i} > {o}".format(i=filename, o=output)
+            output = re.sub(".zip", "", filename)
+            output = os.path.dirname(output)
+            return "unzip {i} -d {o}".format(i=filename, o=output)

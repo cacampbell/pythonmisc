@@ -8,11 +8,11 @@ class RemoveHuman(ParallelCommand):
         mate = re.sub(self.read_marker, self.mate_marker, read)
         output1 = self.output_file(read)
         output2 = self.output_file(mate)
-        human1 = re.sub(self.read_marker, "_Human1", output1)
-        human2 = re.sub(self.mate_marker, "_Human2", output2)
-        stats_f = re.sub(self.read_marker, "_Stats", output1)
+        human1 = re.sub(self.input_suffix, ".human.fq.gz", output1)
+        human2 = re.sub(self.input_suffix, ".human.fq.gz", output2)
+        stats_f = re.sub(self.read_marker, "_pe", output1)
         stats_f = re.sub(self.input_suffix, ".stats.txt", stats_f)
-        command = ("bbmap.sh -Xmx{maxh}G "
+        command = ("bbmap.sh -Xmx{maxh} "
                    "minid=0.95 maxindel=3 "
                    "bwr=0.16 bw=12 quickmatch "
                    "fast minhits=2 ref={r} nodisk "

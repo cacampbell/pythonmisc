@@ -47,7 +47,8 @@ class ParallelCommand:
             os.makedirs(path)
         except OSError as exc:
             if exc.errno == errno.EEXIST and os.path.isdir(path):
-                print("{} already exists".format(path))
+                print("{} already exists".format(path),
+                      file=sys.stderr)
             else:
                 raise exc
 

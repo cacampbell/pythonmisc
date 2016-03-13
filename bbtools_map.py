@@ -5,14 +5,15 @@ import sys
 
 def main(input_root, output_root, reference):
     m = BBMapper(input_root, output_root)
+    m. exclusions = "/home/cacampbe/exlusions.txt"  # exclude listed basenames
     m.job_prefix = "Map_"
     m.input_suffix = ".fq.gz"
-    m.read_marker = "_R1"
-    m.mate_marker = "_R2"
+    m.read_marker = "_1"
+    m.mate_marker = "_2"
     m.modules = ['java']
-    m.slurm_options['partition'] = 'bigmemm'
+    m.slurm_options['partition'] = 'bigmemh'
     m.slurm_options['mail-user'] = 'cacampbell@ucdavis.edu'
-    m.slurm_options['mem'] = '200G'
+    m.slurm_options['mem'] = '300G'
     m.slurm_options['cpus'] = '26'
     m.reference = reference
     m.verbose = False
