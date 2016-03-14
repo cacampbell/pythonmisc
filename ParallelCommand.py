@@ -165,7 +165,7 @@ class ParallelCommand:
             if self.verbose:
                 print(command)
 
-    def remove_exclusions(self, exclusions):
+    def exclude_regex_matches(self, exclusions):
         """
         Remove all files from the list of files that match "exclusions".
         "exclutions" should be either a single string regex / substring, a list
@@ -179,40 +179,66 @@ class ParallelCommand:
         """
         if type(exclusions) is list:
             for regex in exclusions:
-                for filename in list(self._files):  # *copy* of the file list
+                for filename in list(self.__files):  # *copy* of the file list
                     if re.search(regex, filename):
                         self.__files.remove(filename)
 
                         if self.verbose:
                             print("Removed {}, matching {}".format(filename,
                                                                    regex))
-        elif type(exclusions) is str:
-            if os.path.isfile(exclusions):
+
+        elif type(exclusions) is str:  # inclusions is either file or regex
+            if os.path.isfile(exclusions):  # it's a file
                 try:
-                    with open(exclusions, "rb") as fh:
-                        for regex in fh.readlines():
+                    with open(exclusions, "rb") as fh:  # try to open it
+                        for regex in fh.readlines():  # for each line in it
                             for filename in list(self.__files):
+                                #  If it matches a filename in __files, remove
                                 if re.search(regex, filename):
                                     self.__files.remove(filename)
 
                                 if self.verbose:
                                     print("Removed {}, matching {}".format(
                                         filename, regex))
-                except (OSError, IOError) as error:
+
+                except (OSError, IOError) as error:  # ... but couldn't open it
                     print("{} occurred while trying to read {}".format(
                         error, exclusions), file=sys.stderr)
                     print("No exclusions removed...", file=sys.stderr)
-            else:
+            else:  # Not a file on the system
                 for filename in list(self.__files):
+                    # So, it's a regex, search __files and remove if match
                     if re.search(exclusions, filename):
                         self.__files.remove(exclusions)
 
                         if self.verbose:
                             print("Removed {}, matching {}".format(filename,
                                                                    exclusions))
-        else:
+
+        else:  # Didn't get expected types, print message and continue
             print("Exclusions not str or list, no exclusions removed...",
                   file=sys.stderr)
+
+    def exclude_files_from(self, previous_output_root):
+        """
+        Find files that are below previous_output_path, strip them down to
+        the basename of those files (the name of each without extensions), then
+        use this list to remove exclusions from the gathered file list. This
+        method is given a directory that contains previous output and prevents
+        those files from being run again in the current run. Written in case of
+        needing to requeue large sets of jobs due to no space left on the
+        previously used device.
+        :param previous_output_root: str: a directory path (previous output)
+        :return:
+        """
+        exclusions = []
+
+        for root, dirs, files in os.walk(previous_output_root):
+            for filename in files:
+                exclusions += [os.path.splitext(filename)[0]]
+
+        self.exclude_regex_matches(exclusions)
+
 
     def get_files(self):
         """
