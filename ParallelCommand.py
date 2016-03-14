@@ -74,6 +74,8 @@ class ParallelCommand:
         self.read_marker = "R1"
         self.mate_marker = "R2"
         self.reference = ""
+        self.exclusions_directory = None
+        self.exclusions = None
         self.__files = []
         self.__commands = {}
         self.__scripts = {}
@@ -165,6 +167,45 @@ class ParallelCommand:
             if self.verbose:
                 print(command)
 
+    def __exclude_regex_matches_list(self, exclusions):
+        for regex in exclusions:
+                for filename in list(self.__files):  # *copy* of the file list
+                    if re.search(regex, filename) or regex in filename:
+                        print("Match: {} {}".format(regex, filename))
+                        self.__files.remove(filename)
+
+                        # if self.verbose:
+                        print("Removed {}, matching {}".format(filename,
+                                                                regex))
+
+    def __exclude_regex_matches_file(self, exclusions):
+        try:
+            with open(exclusions, "rb") as fh:  # try to open it
+                for regex in fh.readlines():  # for each line in it
+                    for filename in list(self.__files):
+                        #  If it matches a filename in __files, remove
+                        if re.search(regex, filename) or regex in filename:
+                            self.__files.remove(filename)
+
+                        # if self.verbose:
+                        print("Removed {}, matching {}".format(
+                              filename, regex))
+
+        except (OSError, IOError) as error:  # ... but couldn't open it
+            print("{} occurred while trying to read {}".format(
+                error, exclusions), file=sys.stderr)
+            print("No exclusions removed...", file=sys.stderr)
+
+    def __exclude_regex_matches_single(self, exclusions):
+        for filename in list(self.__files):
+            # So, it's a regex, search __files and remove if match
+            if re.search(exclusions, filename) or exclusions in filename:
+                self.__files.remove(exclusions)
+
+                # if self.verbose:
+                print("Removed {}, matching {}".format(filename,
+                                                        exclusions))
+
     def exclude_regex_matches(self, exclusions):
         """
         Remove all files from the list of files that match "exclusions".
@@ -178,42 +219,13 @@ class ParallelCommand:
         :exclusions: str|list: regex/substring, list of regexes/substrings, file
         """
         if type(exclusions) is list:
-            for regex in exclusions:
-                for filename in list(self.__files):  # *copy* of the file list
-                    if re.search(regex, filename):
-                        self.__files.remove(filename)
-
-                        if self.verbose:
-                            print("Removed {}, matching {}".format(filename,
-                                                                   regex))
+            self.__exclude_regex_matches_list(exclusions)
 
         elif type(exclusions) is str:  # inclusions is either file or regex
             if os.path.isfile(exclusions):  # it's a file
-                try:
-                    with open(exclusions, "rb") as fh:  # try to open it
-                        for regex in fh.readlines():  # for each line in it
-                            for filename in list(self.__files):
-                                #  If it matches a filename in __files, remove
-                                if re.search(regex, filename):
-                                    self.__files.remove(filename)
-
-                                if self.verbose:
-                                    print("Removed {}, matching {}".format(
-                                        filename, regex))
-
-                except (OSError, IOError) as error:  # ... but couldn't open it
-                    print("{} occurred while trying to read {}".format(
-                        error, exclusions), file=sys.stderr)
-                    print("No exclusions removed...", file=sys.stderr)
+                self.__exclude_regex_matches_file(exclusions)
             else:  # Not a file on the system
-                for filename in list(self.__files):
-                    # So, it's a regex, search __files and remove if match
-                    if re.search(exclusions, filename):
-                        self.__files.remove(exclusions)
-
-                        if self.verbose:
-                            print("Removed {}, matching {}".format(filename,
-                                                                   exclusions))
+                self.__exclude_regex_matches_single(exclusions)
 
         else:  # Didn't get expected types, print message and continue
             print("Exclusions not str or list, no exclusions removed...",
@@ -237,8 +249,7 @@ class ParallelCommand:
             for filename in files:
                 exclusions += [os.path.splitext(filename)[0]]
 
-        self.exclude_regex_matches(exclusions)
-
+        self.exclude_regex_matches(list(set(exclusions)))
 
     def get_files(self):
         """
@@ -296,6 +307,13 @@ class ParallelCommand:
         if self.verbose:
             print('Gathering input files...', file=sys.stderr)
         self.get_files()
+
+        if self.verbose:
+            print('Removing exclusions...')
+        if self.exclusions_directory:
+            self.exclude_files_from(self.exclusions_directory)
+        if self.exclusions:
+            self.exclude_regex_matches(self.exclusions)
 
         if self.verbose:
             print("Making output directories...", file=sys.stderr)
