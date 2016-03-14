@@ -171,12 +171,14 @@ class ParallelCommand:
         for regex in exclusions:
                 for filename in list(self.__files):  # *copy* of the file list
                     if re.search(regex, filename) or regex in filename:
-                        print("Match: {} {}".format(regex, filename))
+                        if self.verbose:
+                            print("Match: {} {}".format(regex, filename))
+
                         self.__files.remove(filename)
 
-                        # if self.verbose:
-                        print("Removed {}, matching {}".format(filename,
-                                                                regex))
+                        if self.verbose:
+                            print("Removed {}, matching {}".format(filename,
+                                                                    regex))
 
     def __exclude_regex_matches_file(self, exclusions):
         try:
@@ -187,9 +189,9 @@ class ParallelCommand:
                         if re.search(regex, filename) or regex in filename:
                             self.__files.remove(filename)
 
-                        # if self.verbose:
-                        print("Removed {}, matching {}".format(
-                              filename, regex))
+                        if self.verbose:
+                            print("Removed {}, matching {}".format(
+                                  filename, regex))
 
         except (OSError, IOError) as error:  # ... but couldn't open it
             print("{} occurred while trying to read {}".format(
@@ -202,9 +204,9 @@ class ParallelCommand:
             if re.search(exclusions, filename) or exclusions in filename:
                 self.__files.remove(exclusions)
 
-                # if self.verbose:
-                print("Removed {}, matching {}".format(filename,
-                                                        exclusions))
+                if self.verbose:
+                    print("Removed {}, matching {}".format(filename,
+                                                            exclusions))
 
     def exclude_regex_matches(self, exclusions):
         """
@@ -247,9 +249,16 @@ class ParallelCommand:
 
         for root, dirs, files in os.walk(previous_output_root):
             for filename in files:
-                exclusions += [os.path.splitext(filename)[0]]
+                f = os.path.splitext(filename)[0]
 
-        self.exclude_regex_matches(list(set(exclusions)))
+                if "_pe" in f:
+                    exclusions += [f.replace("_pe", self.read_marker)]
+                    exclusions += [f.replace("_pe", self.mate_marker)]
+                else:
+                    exclusions += [f]
+
+        self.__exclude_regex_matches_list(list(set(exclusions)))
+
 
     def get_files(self):
         """

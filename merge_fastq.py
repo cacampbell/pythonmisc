@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from __future__ import print_function
 from Bio import SeqIO
 from FileHydra import FileHydra
 import threading
@@ -8,11 +9,22 @@ import os
 
 def merge_files(files, output_file, threads=4):
     lock = threading.Lock()
-    with FileHydra(" ".join(files), "r+ " * len(files)) as queue:
+    with FileHydra(" ".join(files), "rb " * len(files)) as queue:
 
         def read_sequences(file_handle):
-            with lock, open(output_file, "w+") as output:
-                SeqIO.write(SeqIO.read(file_handle, "fasta"), output, "fasta")
+            print("Reading Sequences")
+            sequences = SeqIO.parse(file_handle, "fastq")
+            sequences = (s for s in sequences if len(s.seq) > 1)
+
+            try:
+                for record in sequences:
+                    print("Record")
+                    print("{}: {}".format(record.id, record.seq))
+                # with lock, open(output_file, "w+") as output:
+                #     SeqIO.write(sequences, output, "fasta")
+            except (OSError, IOError) as error:
+                print("Error writing to output occurred: {}".format(error),
+                      file=sys.stderr)
 
         def worker():
             file_handle = queue.get()
