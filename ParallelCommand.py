@@ -2,6 +2,7 @@
 from __future__ import print_function
 import os
 import sys
+import re
 from subprocess import call
 import errno
 from module_loader import module
@@ -76,6 +77,7 @@ class ParallelCommand:
         self.__files = []
         self.__commands = {}
         self.__scripts = {}
+        self.__exclusions = []
 
     def get_threads(self):
         """
@@ -91,7 +93,7 @@ class ParallelCommand:
         :param fraction: fraction of memory to get
         :return: str: available memory + unit of measure
         """
-        assert(float(fraction) <= 1.0)
+        assert (float(fraction) <= 1.0)
         mem_int = float(self.slurm_options['mem'][:-1])  # All but last char
         mem_unit = self.slurm_options['mem'][-1]  # last char
         memory = float(mem_int) * float(fraction)  # fraction of avail mem
@@ -157,11 +159,60 @@ class ParallelCommand:
         for read in self.__files:  # for each file
             job_name = "{}{}".format(self.job_prefix, os.path.basename(read))
             command = self.make_command(read)  # derived class makes command
-            assert(type(command) is str)  # at least, it has to be a str
+            assert (type(command) is str)  # at least, it has to be a str
             self.__commands[job_name] = command
 
             if self.verbose:
                 print(command)
+
+    def remove_exclusions(self, exclusions):
+        """
+        Remove all files from the list of files that match "exclusions".
+        "exclutions" should be either a single string regex / substring, a list
+        of regexes / substrings, or a file containing a list of regexes /
+        substrings (one per line). This method attempts to differentiate
+        between these options by checking the type, then checking if the
+        string is a file on the system. If it is a file, then this method will
+        attempt to open it and read the lines into a list for usage as regexes /
+        substrings.
+        :exclusions: str|list: regex/substring, list of regexes/substrings, file
+        """
+        if type(exclusions) is list:
+            for regex in exclusions:
+                for filename in list(self._files):  # *copy* of the file list
+                    if re.search(regex, filename):
+                        self.__files.remove(filename)
+
+                        if self.verbose:
+                            print("Removed {}, matching {}".format(filename,
+                                                                   regex))
+        elif type(exclusions) is str:
+            if os.path.isfile(exclusions):
+                try:
+                    with open(exclusions, "rb") as fh:
+                        for regex in fh.readlines():
+                            for filename in list(self.__files):
+                                if re.search(regex, filename):
+                                    self.__files.remove(filename)
+
+                                if self.verbose:
+                                    print("Removed {}, matching {}".format(
+                                        filename, regex))
+                except (OSError, IOError) as error:
+                    print("{} occurred while trying to read {}".format(
+                        error, exclusions), file=sys.stderr)
+                    print("No exclusions removed...", file=sys.stderr)
+            else:
+                for filename in list(self.__files):
+                    if re.search(exclusions, filename):
+                        self.__files.remove(exclusions)
+
+                        if self.verbose:
+                            print("Removed {}, matching {}".format(filename,
+                                                                   exclusions))
+        else:
+            print("Exclusions not str or list, no exclusions removed...",
+                  file=sys.stderr)
 
     def get_files(self):
         """
@@ -234,7 +285,7 @@ class ParallelCommand:
 
         if self.verbose:
             print('Dispatching scripts to slurm...', file=sys.stderr)
-	self.dispatch()
+        self.dispatch()
 
 
 class TestParallelCommand(unittest.TestCase):
