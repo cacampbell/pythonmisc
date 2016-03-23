@@ -37,7 +37,6 @@ def module(*args):
         args = list(args)
 
     try:
-        # /usr/bin/modulecmd acts the same as "module" from a bash shell.
         # /usr/bin/modulecmd allows specification of the shell as the first
         # argument, then executes the module command from that shell. Here,
         # the shell is python.
@@ -47,6 +46,7 @@ def module(*args):
         # load modulename. This loads the module
         # Note that loading modules results in output printed to stderr
         process = subprocess.Popen(['/usr/bin/modulecmd', 'python'] + args,
+                                   stdin=subprocess.PIPE,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
         (out, err) = process.communicate()
