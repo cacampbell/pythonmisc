@@ -105,7 +105,7 @@ class ParallelCommand:
         :return:
         """
         scheduled_jobs = set(queued_or_running_jobs())  # current jobs
-        for job_name, script in self.__scripts.iteritems():  # each script
+        for job_name, script in self.__scripts.items():  # each script
             if job_name not in scheduled_jobs:  # not already running
                 if self.verbose:
                     print("Dispatching {}...".format(job_name), file=sys.stderr)
@@ -122,7 +122,8 @@ class ParallelCommand:
         slurm API
         :return:
         """
-        for job_name, command in self.__commands.iteritems():  # for each cmd
+        #TODO: Refactor
+        for job_name, command in self.__commands.items():  # for each cmd
             script = submit(command,
                             job_name=job_name or self.slurm_options['job_name'],
                             time=self.slurm_options['time'],
@@ -256,7 +257,6 @@ class ParallelCommand:
 
         self.__exclude_regex_matches_list(list(set(exclusions)))
 
-
     def get_files(self):
         """
         Gather files below the input_root such that those files end with
@@ -267,13 +267,12 @@ class ParallelCommand:
         """
         for root, _, files in os.walk(self.input_root):
             for filename in files:
-                if filename.endswith(self.input_suffix):  # input suffix
-                    if self.read_marker in filename:  # read marker
-                        abs_path = os.path.join(root, filename)
-                        self.__files += [abs_path]
+                if re.search(self.input_suffix, filename):  #TODO: refactor
+                    abs_path = os.path.join(root, filename)
+                    self.__files += [abs_path]
 
-                        if self.verbose:
-                            print(abs_path, file=sys.stderr)
+                    if self.verbose:
+                        print(abs_path, file=sys.stderr)
 
     def load_modules(self):
         """
