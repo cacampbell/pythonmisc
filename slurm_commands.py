@@ -1,63 +1,66 @@
 #!/usr/bin/env python
 from __future__ import print_function
+from module_loader import module
 import subprocess
+import shlex
 import unittest
+import errno
+module('slurm')  # Import slurm from environment module system
 
 
 def __bash_command(command, *args):
-    command = [command]
+    cmd_args = [command]
+    out = ""
+    err = ""
 
-    if args:
-        for argument in args:
-            command.extend(argument)
-
+    if len(args) == 1:
+        cmd_args.extend(shlex.split(args[0]))
+    else:
+        for arg in args:
+            cmd_args.extend(shlex.split(arg))
     try:
-        process = subprocess.Popen(command,
+        process = subprocess.Popen(cmd_args,
+                                   stdin=subprocess.PIPE,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
         (out, err) = process.communicate()
-        output = out.decode('utf-8').splitlines()
-        error = err.decode('utf-8').splitlines()
-        return (output, error)
-
-    except (OSError, subprocess.CalledProcessError) as err:
-        print("Encountered error while calling command: {}\n{}".format(command,
-                                                                       err))
-        raise err
-
-
-def squeue(*args):
-    command = 'squeue'
-    __bash_command(command, args)
+    except OSError as err:
+        if err.errno == errno.ENOENT:  # No such file or directory
+            process = subprocess.Popen(cmd_args,
+                                       stdin=subprocess.PIPE,
+                                       stdout=subprocess.PIPE,
+                                       stderr=subprocess.PIPE,
+                                       shell=True)  # Retry with subshell
+            (out, err) = process.communicate()
+        else:
+            raise(err)
+    except subprocess.CalledProcessError as err:
+        print("Error while calling command: {}\n{}".format(command, err))
+        raise(err)
+    finally:
+        return(out.decode('utf-8').splitlines(),
+               err.decode('utf-8').splitlines())
 
 
 def sbatch(command, *args):
-    sb = "sbatch {} ".format(command)
+    script = "echo '#!/usr/bin/env bash\n {}' | sbatch ".format(command)
 
-    if args:
-        for arg in args:
-            sb += arg
+    for argument in args:
+        script += " {}".format(argument)
 
-    script = "echo '#!/usr/bin/env bash\n{}'".format(sb)
-    __bash_command(script)
+    return __bash_command(script)
 
 
-def scontrol(*args):
-    command = "scontrol"
-    __bash_command(command, args)
+def squeue(*args):
+    return __bash_command("squeue", *args)
+
+
+def scancel(*args):
+    return __bash_command("scancel", *args)
 
 
 class TestSlurmCommands(unittest.TestCase):
     def test___bash_command():
-        pass
-
-    def test_squeue():
-        pass
-
-    def test_sbatch():
-        pass
-
-    def test_scontrol():
         pass
 
 

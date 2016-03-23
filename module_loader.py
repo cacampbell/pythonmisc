@@ -50,7 +50,7 @@ def module(*args):
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
         (out, err) = process.communicate()
-        exec out
+        exec(out)
 
     except (OSError, ValueError) as e:
         sys.stdout.write("Module load execution: {0:s}\n".format(e))
