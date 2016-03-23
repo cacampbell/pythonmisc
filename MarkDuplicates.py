@@ -4,6 +4,12 @@ import re
 
 
 class MarkDuplicates(ParallelCommand):
+    def __init__(self, input_, output_):
+        self.read_marker = "_R1"
+        self.mate_marker = "_R2"
+        self.reference = "reference.fa"
+        super(MarkDuplicates, self).__init__(input_, output_)
+
     def make_command(self, read):
         metrics = re.sub(self.read_marker, "_metrics", read)
         deduped = re.sub(self.input_suffix,

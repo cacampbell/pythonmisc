@@ -71,9 +71,6 @@ class ParallelCommand:
         self.input_suffix = ''
         self.dry_run = True
         self.verbose = True
-        self.read_marker = "R1"
-        self.mate_marker = "R2"
-        self.reference = ""
         self.exclusions_directory = None
         self.exclusions = None
         self.__files = []

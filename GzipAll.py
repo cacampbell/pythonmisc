@@ -7,7 +7,7 @@ import re
 class GzipAll(ParallelCommand):
     def __init__(self, input_, output_, choice):
         self.choice = choice
-        super(GzipAll, self).__init__()
+        super(GzipAll, self).__init__(input_, output_)
 
     def make_command(self, filename):
         assert(self.choice.upper().strip() in ["ZIP", "UNZIP"])

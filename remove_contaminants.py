@@ -1,10 +1,10 @@
 #!/usr/bin/env python
-from RemoveHuman import RemoveHuman
+from RemoveContaminants import RemoveContaminants
 import sys
 
 
 def main(input_root, output_root, reference):
-    rh = RemoveHuman(input_root, output_root)
+    rh = RemoveContaminants(input_root, output_root)
     rh.job_prefix = "RH_"
     rh.input_suffix = ".fq.gz"
     rh.modules = ['java']

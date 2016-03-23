@@ -2,11 +2,14 @@
 from __future__ import print_function
 from ParallelCommand import ParallelCommand
 import re
-import os
-import sys
 
 
 class BBMapper(ParallelCommand):
+    def __init__(self, input_, ouptut_):
+        self.read_marker = "_R1"
+        self.mate_marker = "_R2"
+        self.reference = "reference.fa"
+        super(BBMapper, self).__init__(input_, output_)
 
     def make_command(self, read):
         mate = re.sub(self.read_marker, self.mate_marker, read)

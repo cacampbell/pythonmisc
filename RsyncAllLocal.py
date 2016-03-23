@@ -6,9 +6,6 @@ import re
 
 class RsyncAllLocal(ParallelCommand):
     def make_command(self, filename):
-        """
-        Make command to move a single local file to a single output file,
-        using Rsync.
-        """
         output = self.output_file(filename)
-
+        command = ("rsync -avzh {} {}".format(filename, output))
+        return command
