@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
-import os
-import sys
 from collections import namedtuple
 from fabric.api import env
 from fabric.api import run
-from fabric.api import settings
-from fabric.api import hide
+from os import path
 from re import search
-from subprocess import call
+from sys import argv
+from sys import stderr
 from multiprocessing import cpu_count
 from multiprocessing import Pool
 
-CPUs = cpu_count()
-env.abort_on_prompts = True
-env.colorize_errors = True
-env.use_ssh_config = True
+
+class FabricAbortException(Exception):
+    def __init__(self, message):
+        super(Exception, self).__init__(message)
+
 
 __USAGE_STATEMENT = """
     transfer.py
@@ -41,105 +40,162 @@ __USAGE_STATEMENT = """
     [destination] is the absolute path to the destination directory
     [threads] is the number of parallel rsync threads to run
 """
-
-
-def remote_to_remote(src_data, dest_data, threads):
-    # First, attempt to connect directly from src to dest, using the user
-    # ssh configuration on the src machine to connect. If that fails, then
-    # Second, attempt to connect from the dest to the src, using the user
-    # ssh configuration on the dest machine to connect. If that fails, then
-    # Third, use the current machine as an intermediary bridge to connect
-    # If this fails, then exit with error
-    raise(RuntimeError("TODO: Not yet implemented"))
-
-
-def get_files(src_data):
-    env.host_string = src_data.Host
-    command = ("find {} -type f | sed -n 's|^{}/||p'".format(src_data.Path,
-                                                             src_data.Path))
-
-    with settings(hide('running', 'commands')):
-        background = run("").stdout.splitlines()
-        background += ['\s+']
-        output = run(command).stdout.splitlines()
-        desired_output = []
-
-        for line in output:
-            for unwanted_line in background:
-                if not search(unwanted_line.strip(), line):
-                    if line != '':
-                        desired_output += [line]
-
-        return desired_output
-
-
-def make_directories(dest_data, directories):
-    env.host_string = dest_data.Host
-
-    with settings(hide('running', 'commands')):
-        for directory in directories:
-            run("mkdir -p {}".format(os.path.join(dest_data.Path, directory)))
-
-
-def commands(src_data, dest_data, files):
-    c = ("rsync -avz {src_b}{{src_f}} {dest_b}{{dest_f}}").format(
-        src_b=src_data.rsync_base, dest_b=dest_data.rsync_base)
-    return [c.format(src_f=f, dest_f=f) for f in files]
+serverinfo = namedtuple('serverinfo', ['Host', 'Path', 'rsync_base'])
 
 
 def safe_call(command):
     try:
-        call(command, shell=True)
+        run(command)
     except Exception as e:
-        print("Error occurred while executing:\n{}\n{}".format(command, e))
+        print("Command failed: {}".format(command), stderr)
+        print("Error occurred: {}".format(e), stderr)
 
 
-def dispatch(commands, threads):
-    pool = Pool(processes=threads)
-    pool.map(safe_call, commands)
+def fabric_parallel_transfer(cmds):
+    pool = Pool(processes=env.CPUs)
+    pool.map(safe_call, cmds)
 
 
-def transfer(src_data, dest_data, threads):
-    files = get_files(src_data)  # get files on host
-    directories = set([os.path.dirname(x) for x in files])
-    make_directories(dest_data, directories)
-    cmds = commands(src_data, dest_data, files)
-    dispatch(cmds, threads)
+def gnu_parallel_transfer(cmds):
+    cmds_str = '\n'.join(cmds)
+    run("echo -e '{}' | parallel --gnu -j {} {{}}".format(cmds_str, env.CPUs))
+
+
+def intermediate_transfer(src, dest, threads, files):
+    raise(RuntimeError("Not yet implemented"))
+
+
+def direct_transfer(cmds, host):
+    env.host_string = host
+
+    try:
+        gnu_parallel_transfer(cmds)
+    except FabricAbortException as err:
+        print("GNU parallel direct transfer failed: {}".format(err), stderr)
+        try:
+            fabric_parallel_transfer(cmds)
+        except FabricAbortException:
+            print("Fabric parallel direct transfer failed: {}".format(err),
+                  stderr)
+            raise(err)
+
+
+def format_commands(src, dest, files):
+    c = ("rsync -avz {src_b}{{src_f}} {dest_b}{{dest_f}}").format(
+        src_b=src.rsync_base, dest_b=dest.rsync_base)
+    return [c.format(src_f=f, dest_f=f) for f in files]
+
+
+def one_remote(src, dest, files):
+    cmds = format_commands(src, dest, files)
+    direct_transfer(cmds, "localhost")
+
+
+def convert_to_localhost(data):
+    local_data = serverinfo(Host="localhost",
+                            Path=data.Path,
+                            rsync_base=data.Path)
+    return local_data
+
+
+def two_remote(src, dest, files):
+    try:
+        print("Attempting forward transfer...")
+        modified_src = convert_to_localhost(src)
+        commands = format_commands(modified_src, dest, files)
+        direct_transfer(commands, src.Host)
+    except (OSError, FabricAbortException) as err:
+        print("Could not transfer from src to dest: {}".format(err), stderr)
+        try:
+            print("Attempting reverse transfer...")
+            modified_dest = convert_to_localhost(dest)
+            commands = format_commands(src, modified_dest, files)
+            direct_transfer(commands, dest.Host)
+        except (OSError, FabricAbortException) as err:
+            print("Could not transfer from dest to src: {}".format(err), stderr)
+            try:
+                print("Attempting intermediate transfer...")
+                intermediate_transfer(src, dest, files)
+            except (OSError, FabricAbortException) as err:
+                print("Could not make an intermediate transfer".format(err),
+                      stderr)
+                raise(err)
+
+
+def make_directories(dest, directories):
+    env.host_string = dest.Host
+
+    for directory in directories:
+        run("mkdir -p {}".format(path.join(dest.Path, directory)))
+
+
+def get_files(src):
+    env.host_string = src.Host
+    command = ("find {} -type f | sed -n 's|^{}/||p'".format(src.Path,
+                                                             src.Path))
+    background = run("").stdout.splitlines()
+    background += ['\s+']
+    output = run(command).stdout.splitlines()
+    desired_output = []
+
+    for line in output:
+        for unwanted_line in background:
+            if not search(unwanted_line.strip(), line):
+                if line != '':
+                    desired_output += [line]
+
+        return desired_output
 
 
 def parse_hostname_path(hostname_path):
-    Data = namedtuple('Data', ['Host', 'Path', 'rsync_base'])
-
     if ":" in hostname_path:
-        return Data(Host=hostname_path.split(":")[0],
-                    Path=hostname_path.split(":")[1].rstrip(os.path.sep),
-                    rsync_base=hostname_path.rstrip(os.path.sep) + os.path.sep)
+        return serverinfo(Host=hostname_path.split(":")[0],
+                          Path=hostname_path.split(":")[1].rstrip(path.sep),
+                          rsync_base=hostname_path.rstrip(path.sep) + path.sep)
     else:
-        return Data(Host="localhost",
-                    Path=os.path.abspath(hostname_path).rstrip(os.path.sep),
-                    rsync_base=hostname_path.rstrip(os.path.sep) + os.path.sep)
+        return serverinfo(Host="localhost",
+                          Path=path.abspath(hostname_path).rstrip(path.sep),
+                          rsync_base=hostname_path.rstrip(path.sep) + path.sep)
 
 
-def main(source, destination, threads):
-    src_data = parse_hostname_path(source)
-    dest_data = parse_hostname_path(destination)
+def main(source, destination, threads=cpu_count()):
+    env.max_args = 200000
+    env.colorize_errors = True
+    env.use_ssh_config = True
+    env.abort_on_prompts = True
+    env.abort_exception = FabricAbortException
+    env.hide('commands', 'stdout', 'stderr')
+    src = parse_hostname_path(source)
+    dest = parse_hostname_path(destination)
+    files = get_files(src)  # get files on host
+    directories = set([path.dirname(x) for x in files])
+    make_directories(dest, directories)  # make directories on destination
 
-    if src_data.Host != "localhost" and dest_data.Host != "localhost":
-        if src_data.Host != dest_data.Host:
+    if src.Host != "localhost" and dest.Host != "localhost":
+        if src.Host != dest.Host:
             # Neither is localhost, but have different names
-            return remote_to_remote(src_data, dest_data, threads)
+            for filelist in chunks(files, env.max_args):
+                return two_remote(src, dest, threads, filelist)
 
     # One is localhost, or transfering from remote server to itself
-    return transfer(src_data, dest_data, threads)
+    for filelist in chunks(files, env.max_args):
+        return one_remote(src, dest, filelist)
+
+
+def chunks(l, n):
+    # http://stackoverflow.com/questions/312443/
+    # how-do-you-split-a-list-into-evenly-sized-chunks-in-python
+    for i in range(0, len(l)):
+        yield l[i:i+n]
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 4:
+    if len(argv) == 4:
         # Use threadcount
-        main(sys.argv[1], sys.argv[2], sys.argv[3])
-    elif len(sys.argv) == 3:
+        main(argv[1], argv[2], argv[3])
+    elif len(argv) == 3:
         # No threadcount specified, use autodetected threads
-        main(sys.argv[1], sys.argv[2], CPUs)
+        main(argv[1], argv[2])
     else:
         # Usage
         print(__USAGE_STATEMENT)
