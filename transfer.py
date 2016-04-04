@@ -40,6 +40,33 @@ __USAGE_STATEMENT = """
     [destination] is the absolute path to the destination directory
     [threads] is the number of parallel rsync threads to run
 """
+
+__retry_help__ = """
+    All methods of transfer have failed. In order, this script connects:
+
+        (1) Directly from the first remote to the second remote
+        (2) Directly from the second remote to the first remote
+        (3) By tunneling from remote 1 --> localhost --> remote2
+        (4) By tunneling from remote 2 --> localhost --> remote1
+
+    If these methods all failed, but you believe that you should be able to
+    connect in one of these ways, it may help to attempt to connect manually
+    with ssh first. This will allow addition of hosts, unlocking of keys, and
+    additional information requisite for debugging connections between hosts.
+    Once a connection has been successfully established with one of the above
+    methods, retry this script again.
+
+    Manual Commands:
+        (1) localhost$ ssh -v -v -v [remote1]
+            [remote1]$ ssh -v -v -v [remote2]
+        (2) localhost$ ssh -v -v -v [remote2]
+            [remote2]$ ssh -v -v -v [remote1]
+        (3) localhost$ ssh -v -v -v -R localhost:[port]:[remote1]:22 [remote2]
+            [remote2]$ ssh -v -v -v -p [port] localhost
+        (4) localhost$ ssh -v -v -v -R localhost:[port]:[remote2]:22 [remote1]
+            [remote1}$ ssh -v -v -v -p [port] localhost
+"""
+
 serverinfo = namedtuple('serverinfo', ['Host', 'Path', 'rsync_base'])
 
 
@@ -61,8 +88,25 @@ def gnu_parallel_transfer(cmds):
     run("echo -e '{}' | parallel --gnu -j {} {{}}".format(cmds_str, env.CPUs))
 
 
-def intermediate_transfer(src, dest, threads, files):
-    raise(RuntimeError("Not yet implemented"))
+def intermediate_commands(src, dest, files):
+    c = ("ssh -R localhost:52314:{src_host}:22 {dest_host} "
+         "'rsync -e \"ssh -p 52314\" -avz {src_path} localhost:{dest_path}'")
+    return [c.format(src_host=src.Host,
+                     dest_host=dest.Host,
+                     src_path=f,
+                     dest_path=f) for f in files]
+
+
+def intermediate_transfer(src, dest, files):
+    try:
+        commands = intermediate_commands(src, dest, files)
+        direct_transfer(commands, 'localhost')
+    except FabricAbortException:
+        try:
+            commands = intermediate_commands(dest, src, files)
+            direct_transfer(commands, 'localhost')
+        except FabricAbortException:
+            raise
 
 
 def direct_transfer(cmds, host):
@@ -119,6 +163,7 @@ def two_remote(src, dest, files):
             except (OSError, FabricAbortException) as err:
                 print("Could not make an intermediate transfer".format(err),
                       stderr)
+                print(__retry_help__)
                 raise(err)
 
 
@@ -175,7 +220,7 @@ def main(source, destination, threads=cpu_count()):
         if src.Host != dest.Host:
             # Neither is localhost, but have different names
             for filelist in chunks(files, env.max_args):
-                return two_remote(src, dest, threads, filelist)
+                return two_remote(src, dest, filelist)
 
     # One is localhost, or transfering from remote server to itself
     for filelist in chunks(files, env.max_args):
