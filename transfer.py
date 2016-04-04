@@ -2,6 +2,8 @@
 from collections import namedtuple
 from fabric.api import env
 from fabric.api import run
+# from fabric.api import settings
+# from fabric.api import hide
 from os import path
 from re import search
 from sys import argv
@@ -100,13 +102,15 @@ def intermediate_commands(src, dest, files):
 def intermediate_transfer(src, dest, files):
     try:
         commands = intermediate_commands(src, dest, files)
+        print(commands)
         direct_transfer(commands, 'localhost')
     except FabricAbortException:
         try:
             commands = intermediate_commands(dest, src, files)
+            print(commands)
             direct_transfer(commands, 'localhost')
-        except FabricAbortException:
-            raise
+        except FabricAbortException as err:
+            raise(err)
 
 
 def direct_transfer(cmds, host):
@@ -209,7 +213,6 @@ def main(source, destination, threads=cpu_count()):
     env.use_ssh_config = True
     env.abort_on_prompts = True
     env.abort_exception = FabricAbortException
-    env.hide('commands', 'stdout', 'stderr')
     src = parse_hostname_path(source)
     dest = parse_hostname_path(destination)
     files = get_files(src)  # get files on host
