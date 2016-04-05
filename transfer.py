@@ -2,12 +2,12 @@
 from collections import namedtuple
 from fabric.api import env
 from fabric.api import run
-# from fabric.api import settings
-# from fabric.api import hide
+from fabric.api import settings
+from fabric.api import hide
+from fabric.exceptions import NetworkError
 from os import path
 from re import search
 from sys import argv
-from sys import stderr
 from multiprocessing import cpu_count
 from multiprocessing import Pool
 
@@ -75,41 +75,66 @@ serverinfo = namedtuple('serverinfo', ['Host', 'Path', 'rsync_base'])
 def safe_call(command):
     try:
         run(command)
-    except Exception as e:
-        print("Command failed: {}".format(command), stderr)
-        print("Error occurred: {}".format(e), stderr)
+    except FabricAbortException as err:
+        print("Failed: {}".format(err))
+    except (NetworkError, EOFError) as err:
+        print("Failed: {}".format(err))
+        print("Remote server issued hard disconnect...")
+        raise(err)
 
 
-def fabric_parallel_transfer(cmds):
+def fab_parallel_2h(src, dest, cmds):
+    extended_commands = ("ssh -N -R localhost:{p}:{s_h}:22 {d_h} "
+                         "\"{{cmd}}\"").format(s_h=src.Host, d_h=dest.Host)
+    commands = [extended_commands.format(cmd=c) for c in cmds]
+    pool = Pool(processes=env.CPUs)
+    pool.map(safe_call, commands)
+
+
+def gnu_parallel_2h(src, dest, cmds):
+    cmds_str = '\n'.join(cmds)
+    safe_call(("ssh -N -R localhost:{p}:{s_h}:22 {d_h} "
+               "\"echo -e '{cmds_str}' "
+               "| parallel --gnu -j {jobs} {{}}\"").format(p=env.bridge_port,
+                                                           s_h=src.Host,
+                                                           d_h=dest.Host,
+                                                           cmds_str=cmds_str,
+                                                           jobs=env.CPUs))
+
+
+def fab_parallel_1h(cmds):
     pool = Pool(processes=env.CPUs)
     pool.map(safe_call, cmds)
 
 
-def gnu_parallel_transfer(cmds):
+def gnu_parallel_1h(cmds):
     cmds_str = '\n'.join(cmds)
-    run("echo -e '{}' | parallel --gnu -j {} {{}}".format(cmds_str, env.CPUs))
+    safe_call("echo -e '{}' | parallel --gnu -j {} {{}}".format(cmds_str,
+                                                                env.CPUs))
 
 
 def intermediate_commands(src, dest, files):
-    c = ("ssh -R localhost:52314:{src_host}:22 {dest_host} "
-         "'rsync -e \"ssh -p 52314\" -avz {src_path} localhost:{dest_path}'")
-    return [c.format(src_host=src.Host,
-                     dest_host=dest.Host,
-                     src_path=f,
-                     dest_path=f) for f in files]
+    c = ("rsync -e 'ssh -p {p}' -avz {s} localhost:{d}")
+    return [c.format(s=path.join(src.Path, f), d=path.join(dest.Path, f),
+                     p=env.bridge_port) for f in files]
 
 
 def intermediate_transfer(src, dest, files):
+    env.host = 'localhost'
+
     try:
+        print("Trying {} --> localhost --> {}...".format(src.Host, dest.Host))
         commands = intermediate_commands(src, dest, files)
-        print(commands)
-        direct_transfer(commands, 'localhost')
-    except FabricAbortException:
+        gnu_parallel_2h(commands)
+    except (NetworkError, FabricAbortException, EOFError) as err:
+        print("Failed: {}".format(err))
         try:
+            print("Trying {} --> localhost --> {}...".format(dest.Host,
+                                                             src.Host))
             commands = intermediate_commands(dest, src, files)
-            print(commands)
-            direct_transfer(commands, 'localhost')
-        except FabricAbortException as err:
+            direct_transfer(commands, dest.Host)
+        except (NetworkError, FabricAbortException, EOFError) as err:
+            print("Failed: {}".format(err))
             raise(err)
 
 
@@ -117,14 +142,15 @@ def direct_transfer(cmds, host):
     env.host_string = host
 
     try:
-        gnu_parallel_transfer(cmds)
-    except FabricAbortException as err:
-        print("GNU parallel direct transfer failed: {}".format(err), stderr)
+        print("Trying gnu parallel...")
+        gnu_parallel_1h(cmds)
+    except (NetworkError, FabricAbortException, EOFError) as err:
+        print("Failed: {}".format(err))
         try:
-            fabric_parallel_transfer(cmds)
-        except FabricAbortException:
-            print("Fabric parallel direct transfer failed: {}".format(err),
-                  stderr)
+            print("Trying parallel fabric connections...")
+            fab_parallel_1h(cmds)
+        except (NetworkError, FabricAbortException, EOFError) as err:
+            print("Failed: {}".format(err))
             raise(err)
 
 
@@ -142,31 +168,30 @@ def one_remote(src, dest, files):
 def convert_to_localhost(data):
     local_data = serverinfo(Host="localhost",
                             Path=data.Path,
-                            rsync_base=data.Path)
+                            rsync_base=data.Path + path.sep)
     return local_data
 
 
 def two_remote(src, dest, files):
     try:
-        print("Attempting forward transfer...")
+        print("Trying forward transfer...")
         modified_src = convert_to_localhost(src)
         commands = format_commands(modified_src, dest, files)
         direct_transfer(commands, src.Host)
-    except (OSError, FabricAbortException) as err:
-        print("Could not transfer from src to dest: {}".format(err), stderr)
+    except (NetworkError, FabricAbortException, EOFError) as err:
+        print("Failed: {}".format(err))
         try:
-            print("Attempting reverse transfer...")
+            print("Trying reverse transfer...")
             modified_dest = convert_to_localhost(dest)
             commands = format_commands(src, modified_dest, files)
             direct_transfer(commands, dest.Host)
-        except (OSError, FabricAbortException) as err:
-            print("Could not transfer from dest to src: {}".format(err), stderr)
+        except (NetworkError, FabricAbortException, EOFError) as err:
+            print("Failed: {}".format(err))
             try:
-                print("Attempting intermediate transfer...")
+                print("Trying intermediate transfer...")
                 intermediate_transfer(src, dest, files)
-            except (OSError, FabricAbortException) as err:
-                print("Could not make an intermediate transfer".format(err),
-                      stderr)
+            except (NetworkError, FabricAbortException, EOFError) as err:
+                print("Failed: {}".format(err))
                 print(__retry_help__)
                 raise(err)
 
@@ -180,8 +205,8 @@ def make_directories(dest, directories):
 
 def get_files(src):
     env.host_string = src.Host
-    command = ("find {} -type f | sed -n 's|^{}/||p'".format(src.Path,
-                                                             src.Path))
+    command = ("find {}/ -type f | sed -n 's|^{}/||p'".format(src.Path,
+                                                              src.Path))
     background = run("").stdout.splitlines()
     background += ['\s+']
     output = run(command).stdout.splitlines()
@@ -193,7 +218,7 @@ def get_files(src):
                 if line != '':
                     desired_output += [line]
 
-        return desired_output
+    return desired_output
 
 
 def parse_hostname_path(hostname_path):
@@ -208,33 +233,26 @@ def parse_hostname_path(hostname_path):
 
 
 def main(source, destination, threads=cpu_count()):
-    env.max_args = 200000
+    env.CPUs = threads
     env.colorize_errors = True
     env.use_ssh_config = True
     env.abort_on_prompts = True
     env.abort_exception = FabricAbortException
-    src = parse_hostname_path(source)
-    dest = parse_hostname_path(destination)
-    files = get_files(src)  # get files on host
-    directories = set([path.dirname(x) for x in files])
-    make_directories(dest, directories)  # make directories on destination
+    env.bridge_port = '5555'
 
-    if src.Host != "localhost" and dest.Host != "localhost":
-        if src.Host != dest.Host:
-            # Neither is localhost, but have different names
-            for filelist in chunks(files, env.max_args):
-                return two_remote(src, dest, filelist)
+    with settings(hide('commands')):
+        src = parse_hostname_path(source)
+        dest = parse_hostname_path(destination)
+        files = get_files(src)  # get files on host
+        directories = set([path.dirname(x) for x in files])
+        make_directories(dest, directories)  # make directories on destination
+        if src.Host != "localhost" and dest.Host != "localhost":
+            if src.Host != dest.Host:
+                # Neither is localhost, but have different names
+                return two_remote(src, dest, files)
 
-    # One is localhost, or transfering from remote server to itself
-    for filelist in chunks(files, env.max_args):
-        return one_remote(src, dest, filelist)
-
-
-def chunks(l, n):
-    # http://stackoverflow.com/questions/312443/
-    # how-do-you-split-a-list-into-evenly-sized-chunks-in-python
-    for i in range(0, len(l)):
-        yield l[i:i+n]
+        # One is localhost, or transfering from remote server to itself
+        return one_remote(src, dest, files)
 
 
 if __name__ == "__main__":
