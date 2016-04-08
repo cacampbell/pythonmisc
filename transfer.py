@@ -162,7 +162,7 @@ def make_directories(dest, directories):
 
 def get_files(src):
     env.host_string = src.host
-    command = ("find {} -type f | sed -n 's|^{}||p'".format(src.path,
+    command = ("find {}/ -type f | sed -n 's|^{}/||p'".format(src.path,
                                                             src.path))
     background = run("").stdout.splitlines()
     background += ['\s+']
