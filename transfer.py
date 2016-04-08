@@ -97,12 +97,37 @@ __intermediate_help__ = """
             {dest}$ ssh -v -v -v -p {port} {whoami}@localhost
 """
 
-serverinfo = namedtuple('serverinfo', ['host', 'path', 'rsync_base'])
+serverinfo = namedtuple('serverinfo', ['host', 'path'])
 
 
 class FabricAbortException(Exception):
     def __init__(self, message):
         super(FabricAbortException, self).__init__(message)
+
+
+def safe_call(command):
+    try:
+        run(command)
+    except (FabricAbortException, NetworkError, OSError):
+        pass
+
+
+def multiprocess_run(commands):
+    pool = Pool(env.CPUs)
+    pool.map(safe_call, commands)
+
+
+def parallel_run(command_str):
+    parallel_command = ("echo -e \"{c}\" | parallel --gnu -j {t}")
+    run(parallel_command.format(c=command_str, t=env.CPUs))
+
+
+def run_commands(commands):
+    try:
+        command_str = '\n'.join(commands)
+        parallel_run(command_str)
+    except (FabricAbortException, NetworkError, OSError):
+        multiprocess_run(commands)
 
 
 def double_remote_transfer():
@@ -113,8 +138,19 @@ def single_remote_transfer():
     pass
 
 
-def local_transfer():
-    pass
+def local_commands(src, dest, files):
+    c_str = ("rsync -avz {} {}")
+    return [c_str.format(src.path, dest.path) for f in files]
+
+
+def local_transfer(src, dest, files):
+    try:
+        env.host_string = src.host
+        commands = local_commands(src, dest, files)
+        run_commands(commands)
+    except (FabricAbortException, NetworkError, OSError) as err:
+        print(__local_help__.format(src.path, dest.path, src.host))
+        raise(err)
 
 
 def make_directories(dest, directories):
@@ -148,12 +184,10 @@ def parse_hostname_path(hostname_path):
     if ":" in hostname:
         host_parts = hostname.split(":")
         return serverinfo(host=host_parts[0],
-                          path=host_parts[1] + path.sep,
-                          rsync_base=hostname + path.sep)
+                          path=host_parts[1] + path.sep)
     else:
         return serverinfo(host="localhost",
-                          path=path.abspath(hostname) + path.sep,
-                          rsync_base=hostname + path.sep)
+                          path=path.abspath(path.abspath(hostname) + path.sep))
 
 
 def set_up(src, dest, threads):
@@ -176,17 +210,21 @@ def set_up(src, dest, threads):
 
 
 def main(source, destination, threads=cpu_count()):
-    src = parse_hostname_path(source)
-    dest = parse_hostname_path(destination)
-    files = set_up(src, dest, threads)
-
-    if src.host != dest.host:
-        if src.host == "localhost" or dest.host == "localhost":
-            single_remote_transfer(src, dest, files)
-        else:
-            double_remote_transfer(src, dest, files)
-    else:
-        local_transfer(src, dest, files)
+    with settings(hide('commands', 'stdout', 'stderr')):
+        src = parse_hostname_path(source)
+        dest = parse_hostname_path(destination)
+        files = set_up(src, dest, threads)
+        try:
+            if src.host != dest.host:
+                if src.host == "localhost" or dest.host == "localhost":
+                    single_remote_transfer(src, dest, files)
+                else:
+                    double_remote_transfer(src, dest, files)
+            else:
+                local_transfer(src, dest, files)
+        except (FabricAbortException, NetworkError, OSError) as err:
+            print('All methods of transfer failed...')
+            raise(err)
 
 
 if __name__ == "__main__":
