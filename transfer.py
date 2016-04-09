@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-from collections import namedtuple
 from fabric.api import env
 from fabric.api import run
 from fabric.api import settings
@@ -10,10 +9,12 @@ from os import path
 import paramiko
 from re import search
 from sys import argv
+from sys import stderr as syserr
 from multiprocessing import cpu_count
 from multiprocessing import Pool
 
 
+# {{{ Usage Statements
 __USAGE_STATEMENT = """
     transfer.py
 
@@ -47,8 +48,6 @@ __local_help__ = """
     the rsync commands manually for some subset of the files to see if you are
     able.
 """
-
-
 __direct_help__ = """
     All methods of direct transfer have failed. In order, this script
     connects:
@@ -72,16 +71,14 @@ __direct_help__ = """
             {dest}$ ssh -v -v -v -p {port} {whoami}@localhost
 
 """
-
-
 __intermediate_help__ = """
     All methods of intermediate transfer have failed. In order,
     this script connects:
 
         (1) Directly [see direct help]
-        (2) By tunneling from {src} --> localhost --> {dest},
+        (2) By tunneling from {src} --> {proxy} --> {dest},
             running rsync on {src}
-        (3) By tunneling from {dest} --> localhost --> {src},
+        (3) By tunneling from {dest} --> {proxy} --> {src},
             running rsync on {dest}
 
     If these methods all failed, but you believe that you should be able to
@@ -91,24 +88,32 @@ __intermediate_help__ = """
     successfully connect with ssh, try this script again.
 
     Manual Commands:
-        (2) localhost$ ssh -v -v -v -R localhost:{port}:{dest}:22 {src}
-            {src}$ ssh -v -v -v -p {port} {whoami}@localhost
+        (2) localhost$ ssh -v -v -v -R {proxy}:{port}:{dest}:22 {src}
+            {src}$ ssh -v -v -v -p {port} {proxy}
         (3) localhost$ ssh -v -v -v -R localhost:{port}:{src}:22 {dest}
-            {dest}$ ssh -v -v -v -p {port} {whoami}@localhost
+            {dest}$ ssh -v -v -v -p {port} {proxy}
 """
+# }}} Usage Statements
 
-serverinfo = namedtuple('serverinfo', ['host', 'path'])
+
+class serverinfo:
+    def __init__(self, host, path):
+        self.host = host
+        self.path = path
+
+    def to_local(self):
+        self.host = "localhost"
 
 
-class FabricAbortException(Exception):
+class FabricAbort(Exception):
     def __init__(self, message):
-        super(FabricAbortException, self).__init__(message)
+        super(FabricAbort, self).__init__(message)
 
 
 def safe_call(command):
     try:
         run(command)
-    except (FabricAbortException, NetworkError, OSError):
+    except (FabricAbort, NetworkError, OSError, EOFError):
         pass
 
 
@@ -126,16 +131,102 @@ def run_commands(commands):
     try:
         command_str = '\n'.join(commands)
         parallel_run(command_str)
-    except (FabricAbortException, NetworkError, OSError):
+    except (FabricAbort, NetworkError, OSError, EOFError):
         multiprocess_run(commands)
 
 
-def double_remote_transfer():
+def remote_forward_transfer(src, dest, files):
+    try:
+        env.host_string = src.host
+        src.to_local()
+        single_remote_transfer(src, dest, files)
+    except (FabricAbort, NetworkError, OSError, EOFError) as err:
+        print("Direct from {} to {} on {} failed: {}".format(src.host,
+                                                             dest.host,
+                                                             src.host,
+                                                             err),
+              file=syserr)
+        try:
+            env.host_string = src.dest
+            dest.to_local()
+            single_remote_transfer(src, dest, files)
+        except (FabricAbort, NetworkError, OSError, EOFError) as err:
+            print("Direct from {} to {} on {} failed: {}".format(src.host,
+                                                                 dest.host,
+                                                                 dest.host,
+                                                                 err),
+                  file=syserr)
+            raise(err)
+
+
+def forward_proxy_transfer(src, dest, files):
     pass
 
 
-def single_remote_transfer():
+def reverse_proxy_transfer(src, dest, files):
     pass
+
+
+def remote_proxy_transfer(src, dest, files):
+    env.host_string = "localhost"
+    try:
+        forward_proxy_transfer(src, dest, files)
+    except (FabricAbort, NetworkError, OSError, EOFError) as err:
+        print(("Transfer from {} --> localhost --> {}"
+               " with rsync from {} failed: {}").format(src.host,
+                                                        dest.host,
+                                                        src.host,
+                                                        err), file=syserr)
+        try:
+            reverse_proxy_transfer(src, dest, files)
+        except (FabricAbort, NetworkError, OSError, EOFError) as err:
+            print(("Transfer from {} --> localhost --> {}"
+                   " with rsync from {} failed: {}").format(src.host,
+                                                            dest.host,
+                                                            src.host,
+                                                            err), file=syserr)
+            raise(err)
+
+
+def double_remote_transfer(src, dest, files):
+    try:
+        remote_forward_transfer(src, dest, files)
+    except (FabricAbort, NetworkError, OSError, EOFError) as err:
+        print("Direct from {} to {} failed: {}".format(src.host,
+                                                       dest.host,
+                                                       err), file=syserr)
+        try:
+            remote_proxy_transfer(src, env.proxy_h, dest, files)
+        except (FabricAbort, NetworkError, OSError, EOFError) as err:
+            print(__intermediate_help__.format(src=src.host,
+                                               dest=dest.host,
+                                               port=env.port,
+                                               proxy=env.proxy_h), file=syserr)
+            raise(err)
+
+
+def single_forward_transfer(src, dest, files):
+    pass
+
+
+def single_reverse_transfer(src, dest, files):
+    pass
+
+
+def single_remote_transfer(src, dest, files):
+    try:
+        single_forward_transfer(src, dest, files)
+    except (FabricAbort, NetworkError, OSError, EOFError) as err:
+        print("Direct transfer from {} to {} failed".format(src.host,
+                                                            dest.host))
+        try:
+            single_reverse_transfer(src, dest, files)
+        except (FabricAbort, NetworkError, OSError, EOFError) as err:
+            print(__direct_help__.format(src=src.host,
+                                         dest=dest.host,
+                                         port=env.bridge_port,
+                                         whoami=env.whoami))
+            raise(err)
 
 
 def local_commands(src, dest, files):
@@ -148,7 +239,7 @@ def local_transfer(src, dest, files):
         env.host_string = src.host
         commands = local_commands(src, dest, files)
         run_commands(commands)
-    except (FabricAbortException, NetworkError, OSError) as err:
+    except (FabricAbort, NetworkError, OSError, EOFError) as err:
         print(__local_help__.format(src.path, dest.path, src.host))
         raise(err)
 
@@ -162,8 +253,8 @@ def make_directories(dest, directories):
 
 def get_files(src):
     env.host_string = src.host
-    command = ("find {}/ -type f | sed -n 's|^{}/||p'".format(src.path,
-                                                            src.path))
+    command = ("find {}/ -type f ! \( -name \".*\" \) |"
+               " sed -n 's|^{}/||p'").format(src.path, src.path)
     background = run("").stdout.splitlines()
     background += ['\s+']
     out = run(command).stdout.splitlines()
@@ -194,17 +285,19 @@ def set_up(src, dest, threads):
     try:
         env.CPUs = threads
         env.whoami = getuser()
+        env.proxy_h = "localhost"
         env.colorize_errors = True
         env.use_ssh_config = True
         env.abort_on_prompts = True
-        env.abort_exception = FabricAbortException
+        env.abort_exception = FabricAbort
         env.bridge_port = '4245'  # Some large port that isn't used by anything
         paramiko.util.log_to_file("/dev/null")  # squelch warnings about log
         files = get_files(src)  # get files on host
         directories = set([path.dirname(x) for x in files])
         make_directories(dest, directories)  # make directories on destination
+        env.host_string = "localhost"  # localhost runs most commands
         return(files)  # hand off file list
-    except (NetworkError, FabricAbortException, OSError) as err:
+    except (FabricAbort, NetworkError, OSError, EOFError) as err:
         print("Error during setup: {}".format(err))
         raise(err)
 
@@ -214,6 +307,7 @@ def main(source, destination, threads=cpu_count()):
         src = parse_hostname_path(source)
         dest = parse_hostname_path(destination)
         files = set_up(src, dest, threads)
+
         try:
             if src.host != dest.host:
                 if src.host == "localhost" or dest.host == "localhost":
@@ -222,7 +316,7 @@ def main(source, destination, threads=cpu_count()):
                     double_remote_transfer(src, dest, files)
             else:
                 local_transfer(src, dest, files)
-        except (FabricAbortException, NetworkError, OSError) as err:
+        except (FabricAbort, NetworkError, OSError, EOFError) as err:
             print('All methods of transfer failed...')
             raise(err)
 
