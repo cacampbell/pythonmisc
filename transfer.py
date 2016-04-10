@@ -10,12 +10,9 @@ from os import linesep
 import paramiko
 from re import search
 from sys import argv
-<<<<<<< Updated upstream
 from sys import stderr as syserr
-=======
 from subprocess import Popen
 from subprocess import PIPE
->>>>>>> Stashed changes
 from multiprocessing import cpu_count
 from multiprocessing import Pool
 
@@ -129,7 +126,7 @@ def safe_call(command):
     try:
         print(command)
         fab(command)
-    except (FabricAbortException, NetworkError, OSError):
+    except (FabricAbort, NetworkError, OSError, EOFError):
         pass
 
 
@@ -139,7 +136,7 @@ def multiprocess_run(commands):
 
 
 def parallel_run(command_str):
-    parallel_command = ("echo -e \"{c}\" "
+    parallel_command = ("echo \"{c}\" "
                         "| parallel --gnu -j {t}")
     safe_call(parallel_command.format(c=command_str, t=env.CPUs))
 
@@ -270,8 +267,7 @@ def make_directories(dest, directories):
 
 def get_files(src):
     env.host_string = src.host
-    command = ("find {}/ -type f | sed -n 's|^{}/||p'".format(src.path,
-                                                             src.path))
+    command = ("find {} -type f | sed -n 's|^{}/||p'").format(src.path, src.path)
     background = fab("")
     background += ['\s+']
     out = fab(command)
