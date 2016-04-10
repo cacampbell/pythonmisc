@@ -6,10 +6,16 @@ from fabric.exceptions import NetworkError
 from fabric.api import hide
 from getpass import getuser
 from os import path
+from os import linesep
 import paramiko
 from re import search
 from sys import argv
+<<<<<<< Updated upstream
 from sys import stderr as syserr
+=======
+from subprocess import Popen
+from subprocess import PIPE
+>>>>>>> Stashed changes
 from multiprocessing import cpu_count
 from multiprocessing import Pool
 
@@ -110,10 +116,20 @@ class FabricAbort(Exception):
         super(FabricAbort, self).__init__(message)
 
 
+def fab(command):
+    if env.host_string != "localhost":
+        return run(command).stdout.splitlines()
+    else:
+        process = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
+        (out, err) = process.communicate()
+        return(out.decode('utf-8').split(linesep))
+
+
 def safe_call(command):
     try:
-        run(command)
-    except (FabricAbort, NetworkError, OSError, EOFError):
+        print(command)
+        fab(command)
+    except (FabricAbortException, NetworkError, OSError):
         pass
 
 
@@ -123,8 +139,9 @@ def multiprocess_run(commands):
 
 
 def parallel_run(command_str):
-    parallel_command = ("echo -e \"{c}\" | parallel --gnu -j {t}")
-    run(parallel_command.format(c=command_str, t=env.CPUs))
+    parallel_command = ("echo -e \"{c}\" "
+                        "| parallel --gnu -j {t}")
+    safe_call(parallel_command.format(c=command_str, t=env.CPUs))
 
 
 def run_commands(commands):
@@ -248,16 +265,16 @@ def make_directories(dest, directories):
     env.host_string = dest.host
 
     for directory in directories:
-        run("mkdir -p {}".format(path.join(dest.path, directory)))
+        fab("mkdir -p {}".format(path.join(dest.path, directory)))
 
 
 def get_files(src):
     env.host_string = src.host
-    command = ("find {}/ -type f ! \( -name \".*\" \) |"
-               " sed -n 's|^{}/||p'").format(src.path, src.path)
-    background = run("").stdout.splitlines()
+    command = ("find {}/ -type f | sed -n 's|^{}/||p'".format(src.path,
+                                                             src.path))
+    background = fab("")
     background += ['\s+']
-    out = run(command).stdout.splitlines()
+    out = fab(command)
     desired_output = []
 
     for line in out:

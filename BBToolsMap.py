@@ -5,7 +5,7 @@ import re
 
 
 class BBMapper(ParallelCommand):
-    def __init__(self, input_, ouptut_):
+    def __init__(self, input_, output_):
         self.read_marker = "_R1"
         self.mate_marker = "_R2"
         self.reference = "reference.fa"
@@ -29,14 +29,13 @@ class BBMapper(ParallelCommand):
         bincov = re.sub(self.read_marker, "_bincov", read)
         bincov = re.sub(self.input_suffix, ".txt", bincov)
         bincov = self.output_file(bincov)
-        command = ("bbmap.sh in1={i1} in2={i2} outm={om} outu={ou} ref={r} "
-                   "nodisk covstats={covstat} covhist={covhist} threads={t} "
+        command = ("bbmap.sh in1={i1} in2={i2} outm={om} outu={ou}"
+                   "covstats={covstat} covhist={covhist} threads={t} "
                    "slow k=12 -Xmx{xmx} basecov={basecov} usejni=t"
                    " bincov={bincov}").format(i1=read,
                                               i2=mate,
                                               om=map_sam,
                                               ou=unmap_sam,
-                                              r=self.reference,
                                               covstat=covstat,
                                               covhist=covhist,
                                               basecov=basecov,
