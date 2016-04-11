@@ -155,11 +155,8 @@ def remote_forward_transfer(src, dest, files):
         src.to_local()
         single_remote_transfer(src, dest, files)
     except (FabricAbort, NetworkError, OSError, EOFError) as err:
-        print("Direct from {} to {} on {} failed: {}".format(src.host,
-                                                             dest.host,
-                                                             src.host,
-                                                             err),
-              file=syserr)
+        print("Direct from {} to {} on {} failed: {}".format(
+            src.host, dest.host, src.host, err), file=syserr)
         try:
             env.host_string = src.dest
             dest.to_local()
@@ -219,12 +216,28 @@ def double_remote_transfer(src, dest, files):
             raise(err)
 
 
+def single_forward_commands(src, dest, files):
+    cmd = ("rsync -avz {}:{} {}:{}")
+    return [cmd.format(src.host, path.join(src.path, f),
+                       dest.host, path.join(dest.path, f)) for f in files]
+
+
 def single_forward_transfer(src, dest, files):
-    pass
+    commands = single_forward_commands(src, dest, files)
+    run_commands(commands)
+
+
+def single_reverse_commands(src, dest, files):
+    cmd = ("ssh -R localhost:{p}:{dest}:22 {src} \"rsync -avz -e 'ssh -p {p}' "
+           "{whoami}@localhost:{src_p} {dest_p}\"")
+    return [cmd.format(p=env.bridge_port, dest=dest.host, src=src.path,
+                       whoami=env.whoami, src_p=path.join(src.path, f),
+                       dest_p=path.join(dest.path, f)) for f in files]
 
 
 def single_reverse_transfer(src, dest, files):
-    pass
+    commands = single_reverse_commands(src, dest, files)
+    run_commands(commands)
 
 
 def single_remote_transfer(src, dest, files):
@@ -265,7 +278,8 @@ def make_directories(dest, directories):
 
 def get_files(src):
     env.host_string = src.host
-    command = ("find {} -type f | sed -n 's|^{}/||p'").format(src.path, src.path)
+    command = ("find {} -type f | sed -n 's|^{}/||p'").format(src.path,
+                                                              src.path)
     background = fab("")
     background += ['\s+']
     out = fab(command)
