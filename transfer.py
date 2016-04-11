@@ -245,12 +245,12 @@ def single_remote_transfer(src, dest, files):
 
 def local_commands(src, dest, files):
     c_str = ("rsync -avz {} {}")
-    return [c_str.format(src.path, dest.path) for f in files]
+    return [c_str.format(path.join(src.path, f),
+                         path.join(dest.path, f)) for f in files]
 
 
 def local_transfer(src, dest, files):
     try:
-        env.host_string = src.host
         commands = local_commands(src, dest, files)
         run_commands(commands)
     except (FabricAbort, NetworkError, OSError, EOFError) as err:
@@ -260,9 +260,7 @@ def local_transfer(src, dest, files):
 
 def make_directories(dest, directories):
     env.host_string = dest.host
-
-    for directory in directories:
-        fab("mkdir -p {}".format(path.join(dest.path, directory)))
+    [fab("mkdir -p {}".format(path.join(dest.path, d))) for d in directories]
 
 
 def get_files(src):
@@ -303,7 +301,7 @@ def set_up(src, dest, threads):
         env.use_ssh_config = True
         env.abort_on_prompts = True
         env.abort_exception = FabricAbort
-        env.bridge_port = '4245'  # Some large port that isn't used by anything
+        env.bridge_port = '4235'  # Some large port that isn't used by anything
         paramiko.util.log_to_file("/dev/null")  # squelch warnings about log
         files = get_files(src)  # get files on host
         directories = set([path.dirname(x) for x in files])
@@ -322,13 +320,13 @@ def main(source, destination, threads=cpu_count()):
         files = set_up(src, dest, threads)
 
         try:
-            if src.host != dest.host:
-                if src.host == "localhost" or dest.host == "localhost":
-                    single_remote_transfer(src, dest, files)
+            if src.host == "localhost" or dest.host == "localhost":
+                if src.host == "localhost" and dest.host == "localhost":
+                    local_transfer(src, dest, files)
                 else:
-                    double_remote_transfer(src, dest, files)
+                    single_remote_transfer(src, dest, files)
             else:
-                local_transfer(src, dest, files)
+                double_remote_transfer(src, dest, files)
         except (FabricAbort, NetworkError, OSError, EOFError) as err:
             print('All methods of transfer failed...')
             raise(err)
