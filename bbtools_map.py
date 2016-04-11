@@ -18,9 +18,10 @@ def main(input_root, output_root, exclusions=""):
     m.modules = ['java']
     m.slurm_options['partition'] = 'bigmemm'
     m.slurm_options['mail-user'] = 'cacampbell@ucdavis.edu'
-    m.slurm_options['mem'] = '250G'
+    m.slurm_options['mem'] = '200G'
     m.slurm_options['cpus'] = '20'
     m.exclusions_directory = exclusions
+    m.exclusions = m.mate_marker
     m.verbose = False
     m.dry_run = False
     m.run()

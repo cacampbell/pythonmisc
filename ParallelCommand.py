@@ -201,7 +201,7 @@ class ParallelCommand:
         for filename in list(self.__files):
             # So, it's a regex, search __files and remove if match
             if re.search(exclusions, filename) or exclusions in filename:
-                self.__files.remove(exclusions)
+                self.__files.remove(filename)
 
                 if self.verbose:
                     print("Removed {}, matching {}".format(filename,
