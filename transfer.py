@@ -124,14 +124,14 @@ def fab(command):
 
 def safe_call(command):
     try:
-        print(command)
         fab(command)
-    except (FabricAbort, NetworkError, OSError, EOFError):
-        pass
+    except (FabricAbort, NetworkError, OSError, EOFError) as err:
+        print("Command failed: {}".format(err))
+        raise(err)
 
 
 def multiprocess_run(commands):
-    pool = Pool(env.CPUs)
+    pool = Pool(int(env.CPUs))
     pool.map(safe_call, commands)
 
 
@@ -162,11 +162,8 @@ def remote_forward_transfer(src, dest, files):
             dest.to_local()
             single_remote_transfer(src, dest, files)
         except (FabricAbort, NetworkError, OSError, EOFError) as err:
-            print("Direct from {} to {} on {} failed: {}".format(src.host,
-                                                                 dest.host,
-                                                                 dest.host,
-                                                                 err),
-                  file=syserr)
+            print("Direct from {} to {} on {} failed: {}".format(
+                src.host, dest.host, dest.host, err), file=syserr)
             raise(err)
 
 
@@ -184,18 +181,14 @@ def remote_proxy_transfer(src, dest, files):
         forward_proxy_transfer(src, dest, files)
     except (FabricAbort, NetworkError, OSError, EOFError) as err:
         print(("Transfer from {} --> localhost --> {}"
-               " with rsync from {} failed: {}").format(src.host,
-                                                        dest.host,
-                                                        src.host,
-                                                        err), file=syserr)
+               " with rsync from {} failed: {}").format(
+                   src.host, dest.host, src.host, err), file=syserr)
         try:
             reverse_proxy_transfer(src, dest, files)
         except (FabricAbort, NetworkError, OSError, EOFError) as err:
             print(("Transfer from {} --> localhost --> {}"
-                   " with rsync from {} failed: {}").format(src.host,
-                                                            dest.host,
-                                                            src.host,
-                                                            err), file=syserr)
+                   " with rsync from {} failed: {}").format(
+                       src.host, dest.host, src.host, err), file=syserr)
             raise(err)
 
 
@@ -203,16 +196,14 @@ def double_remote_transfer(src, dest, files):
     try:
         remote_forward_transfer(src, dest, files)
     except (FabricAbort, NetworkError, OSError, EOFError) as err:
-        print("Direct from {} to {} failed: {}".format(src.host,
-                                                       dest.host,
-                                                       err), file=syserr)
+        print("Direct from {} to {} failed: {}".format(
+            src.host, dest.host, err), file=syserr)
         try:
             remote_proxy_transfer(src, env.proxy_h, dest, files)
         except (FabricAbort, NetworkError, OSError, EOFError) as err:
-            print(__intermediate_help__.format(src=src.host,
-                                               dest=dest.host,
-                                               port=env.port,
-                                               proxy=env.proxy_h), file=syserr)
+            print(__intermediate_help__.format(
+                src=src.host, dest=dest.host, port=env.port, proxy=env.proxy_h),
+                file=syserr)
             raise(err)
 
 
@@ -249,10 +240,9 @@ def single_remote_transfer(src, dest, files):
         try:
             single_reverse_transfer(src, dest, files)
         except (FabricAbort, NetworkError, OSError, EOFError) as err:
-            print(__direct_help__.format(src=src.host,
-                                         dest=dest.host,
-                                         port=env.bridge_port,
-                                         whoami=env.whoami))
+            print(__direct_help__.format(
+                src=src.host, dest=dest.host, port=env.bridge_port,
+                whoami=env.whoami))
             raise(err)
 
 
@@ -328,7 +318,7 @@ def set_up(src, dest, threads):
 
 
 def main(source, destination, threads=cpu_count()):
-    with settings(hide('commands', 'stdout', 'stderr')):
+    with settings(hide('commands')):
         src = parse_hostname_path(source)
         dest = parse_hostname_path(destination)
         files = set_up(src, dest, threads)
