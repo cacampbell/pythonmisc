@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 from fabric.api import env
 from fabric.api import run
-from fabric.api import settings
 from fabric.exceptions import NetworkError
-from fabric.api import hide
 from getpass import getuser
 from os import path
 from os import linesep
@@ -136,8 +134,7 @@ def multiprocess_run(commands):
 
 
 def parallel_run(command_str):
-    parallel_command = ("echo \"{c}\" "
-                        "| parallel --gnu -j {t}")
+    parallel_command = ("echo \"{c}\" | parallel --gnu -j {t}")
     safe_call(parallel_command.format(c=command_str, t=env.CPUs))
 
 
@@ -167,16 +164,32 @@ def remote_forward_transfer(src, dest, files):
             raise(err)
 
 
+def forward_proxy_commands(src, dest, files):
+    cmd = ("rsync -avz -e 'ssh -p {p}' {w}@localhost:{src} {dest}")
+    return [cmd.format(p=env.bridge_port, w=env.whoami,
+                       src=path.join(src.path, f),
+                       dest=path.join(dest.path, f)) for f in files]
+
+
 def forward_proxy_transfer(src, dest, files):
-    pass
+    cmds = forward_proxy_commands(src, dest, files)
+    wrap_command = [("ssh -R localhost:{p}:{src}:22 {dest} \"{cmd}\"").format(
+        p=env.bridge_port, dest=dest.host, src=src.host, cmd=c) for c in cmds]
+    run_commands(wrap_command)
 
 
 def reverse_proxy_transfer(src, dest, files):
-    pass
+    cmds = reverse_proxy_transfer(src, dest, files)
+    wrap_command = [("ssh -R localhost:{p}:{dest}:22 {src} \"{cmd}\"").format(
+        p=env.bridge_port, dest=dest.host, host=src.host, cmd=c) for c in cmds]
+    run_commands(wrap_command)
 
 
 def remote_proxy_transfer(src, dest, files):
     env.host_string = "localhost"
+    # TODO: Fabric Merge Request 1218 implements local port forwarding
+    # for local port forwarding. Once this implementation has been relesed in
+    # fabric, this section should be reimplemented
     try:
         forward_proxy_transfer(src, dest, files)
     except (FabricAbort, NetworkError, OSError, EOFError) as err:
@@ -213,11 +226,6 @@ def single_forward_commands(src, dest, files):
                        dest.host, path.join(dest.path, f)) for f in files]
 
 
-def single_forward_transfer(src, dest, files):
-    commands = single_forward_commands(src, dest, files)
-    run_commands(commands)
-
-
 def single_reverse_commands(src, dest, files):
     cmd = ("ssh -R localhost:{p}:{dest}:22 {src} \"rsync -avz -e 'ssh -p {p}' "
            "{whoami}@localhost:{src_p} {dest_p}\"")
@@ -226,19 +234,16 @@ def single_reverse_commands(src, dest, files):
                        dest_p=path.join(dest.path, f)) for f in files]
 
 
-def single_reverse_transfer(src, dest, files):
-    commands = single_reverse_commands(src, dest, files)
-    run_commands(commands)
-
-
 def single_remote_transfer(src, dest, files):
     try:
-        single_forward_transfer(src, dest, files)
+        commands = single_forward_commands(src, dest, files)
+        run_commands(commands)
     except (FabricAbort, NetworkError, OSError, EOFError) as err:
         print("Direct transfer from {} to {} failed".format(src.host,
                                                             dest.host))
         try:
-            single_reverse_transfer(src, dest, files)
+            commands = single_reverse_commands(src, dest, files)
+            run_commands(commands)
         except (FabricAbort, NetworkError, OSError, EOFError) as err:
             print(__direct_help__.format(
                 src=src.host, dest=dest.host, port=env.bridge_port,
@@ -318,22 +323,21 @@ def set_up(src, dest, threads):
 
 
 def main(source, destination, threads=cpu_count()):
-    with settings(hide('commands')):
-        src = parse_hostname_path(source)
-        dest = parse_hostname_path(destination)
-        files = set_up(src, dest, threads)
+    src = parse_hostname_path(source)
+    dest = parse_hostname_path(destination)
+    files = set_up(src, dest, threads)
 
-        try:
-            if src.host == "localhost" or dest.host == "localhost":
-                if src.host == "localhost" and dest.host == "localhost":
-                    local_transfer(src, dest, files)
-                else:
-                    single_remote_transfer(src, dest, files)
+    try:
+        if src.host == "localhost" or dest.host == "localhost":
+            if src.host == "localhost" and dest.host == "localhost":
+                local_transfer(src, dest, files)
             else:
-                double_remote_transfer(src, dest, files)
-        except (FabricAbort, NetworkError, OSError, EOFError) as err:
-            print('All methods of transfer failed...')
-            raise(err)
+                single_remote_transfer(src, dest, files)
+        else:
+            double_remote_transfer(src, dest, files)
+    except (FabricAbort, NetworkError, OSError, EOFError) as err:
+        print('All methods of transfer failed...')
+        raise(err)
 
 
 if __name__ == "__main__":
