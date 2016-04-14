@@ -102,7 +102,7 @@ def remote_proxy_transfer(src, dest):
     env.host_string = "localhost"
     try:
         cmd = ("ssh -L localhost:{p}:{dest}:22 {src} \"rsync -avrz -e "
-               "\'ssh -p {p}\' {src_p} {whoami}@locahost:{dest_p}\"")
+               "\'ssh -p {p}\' {src_p} {whoami}@localhost:{dest_p}\"")
         return(safe_call(cmd.format(p=env.bridge_port,
                          dest=dest.host,
                          src=src.host,
