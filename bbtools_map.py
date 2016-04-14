@@ -3,7 +3,7 @@ from BBToolsMap import BBMapper
 import sys
 
 
-def main(input_root, output_root, exclusions=""):
+def main(input_root, output_root, reference, exclusions=""):
     m = BBMapper(input_root, output_root)
     m.job_prefix = "Map_"
     m.input_suffix = ".fq.gz"
@@ -22,15 +22,18 @@ def main(input_root, output_root, exclusions=""):
     m.slurm_options['cpus'] = '20'
     m.exclusions_directory = exclusions
     m.exclusions = m.mate_marker
+    m.reference = reference
     m.verbose = False
     m.dry_run = False
     m.run()
 
 
 if __name__ == "__main__":
-    if len(sys.argv) == 4:
-        main(sys.argv[1], sys.argv[2],  sys.argv[3])
+    if len(sys.argv) == 5:
+        main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    elif len(sys.argv) == 4:
+        main(sys.argv[1], sys.argv[2], sys.argv[3])
     elif len(sys.argv) == 3:
-        main(sys.argv[1], sys.argv[2])
+        main(sys.argv[1], sys.argv[2], "reference.fasta")
     else:
         print("Check Arguments")

@@ -29,8 +29,8 @@ class BBMapper(ParallelCommand):
         bincov = re.sub(self.read_marker, "_bincov", read)
         bincov = re.sub(self.input_suffix, ".txt", bincov)
         bincov = self.output_file(bincov)
-        command = ("bbmap.sh in1={i1} in2={i2} outm={om} outu={ou} "
-                   "covstats={covstat} covhist={covhist} threads={t} "
+        command = ("bbmap.sh in1={i1} in2={i2} outm={om} outu={ou} nodisk "
+                   "covstats={covstat} covhist={covhist} threads={t} ref={r} "
                    "slow k=12 -Xmx{xmx} basecov={basecov} usejni=t"
                    " bincov={bincov}").format(i1=read,
                                               i2=mate,
@@ -41,5 +41,6 @@ class BBMapper(ParallelCommand):
                                               basecov=basecov,
                                               bincov=bincov,
                                               xmx=self.get_mem(),
-                                              t=self.get_threads())
+                                              t=self.get_threads(),
+                                              r=self.reference)
         return command
