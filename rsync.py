@@ -46,6 +46,12 @@ class serverinfo:
     def to_local(self):
         self.host = "localhost"
 
+    def target(self):
+        if self.host == "localhost":
+            return(self.path)
+        else:
+            return("{}:{}".format(self.host, self.path))
+
 
 class FabricAbort(Exception):
     def __init__(self, message):
@@ -58,12 +64,13 @@ def fab(command):
     else:
         process = Popen(command, stdout=PIPE, stderr=PIPE, shell=True)
         (out, err) = process.communicate()
-        return(out.decode('utf-8').split(linesep))
+        return (out.decode('utf-8').split(linesep),
+                err.decode('utf-8').split(linesep))
 
 
 def safe_call(command):
     try:
-        fab(command)
+        return(fab(command))
     except (FabricAbort, NetworkError, OSError, EOFError) as err:
         print("Command failed: {}".format(err))
         raise(err)
@@ -73,14 +80,14 @@ def direct_remote_to_remote(src, dest):
     try:
         env.host_string = src.host
         src.to_local()
-        single_remote_transfer(src, dest)
+        return(single_remote_transfer(src, dest))
     except (FabricAbort, NetworkError, OSError, EOFError) as err:
         print("Direct transfer from {} to {} on {} failed: {}".format(
               src.host, dest.host, src.host, err), )
         try:
             env.host_string = src.dest
             dest.to_local()
-            single_remote_transfer(src, dest)
+            return(single_remote_transfer(src, dest))
         except (FabricAbort, NetworkError, OSError, EOFError) as err:
             print("Direct from {} to {} on {} failed: {}".format(src.host,
                                                                  dest.host,
@@ -94,12 +101,12 @@ def remote_proxy_transfer(src, dest):
     try:
         cmd = ("ssh -L localhost:{p}:{dest}:22 {src} \"rsync -avz -e "
                "'ssh -p {p}' {src_p} {whoami}@locahost:{dest_p}\"")
-        safe_call(cmd.format(p=env.bridge_port,
-                             dest=dest.host,
-                             src=src.host,
-                             src_p=src.path,
-                             whoami=env.whoami,
-                             dest_p=dest.path))
+        return(safe_call(cmd.format(p=env.bridge_port,
+                         dest=dest.host,
+                         src=src.host,
+                         src_p=src.path,
+                         whoami=env.whoami,
+                         dest_p=dest.path)))
     except (FabricAbort, NetworkError, OSError, EOFError) as err:
         print(("Transfer from {} --> localhost --> {}"
                " with rsync from {} failed: {}").format(
@@ -107,12 +114,12 @@ def remote_proxy_transfer(src, dest):
         try:
             cmd = ("ssh -L localhost:{p}:{src}:22 {dest} \"rsync -avz -e "
                    "'ssh -p {p}' {whoami}@localhost:{src_p} {dest_p}\"")
-            safe_call(cmd.format(p=env.bridge_port,
-                                 dest=dest.host,
-                                 src=src.host,
-                                 src_p=src.path,
-                                 whoami=env.whoami,
-                                 dest_p=dest.path))
+            return(safe_call(cmd.format(p=env.bridge_port,
+                             dest=dest.host,
+                             src=src.host,
+                             src_p=src.path,
+                             whoami=env.whoami,
+                             dest_p=dest.path)))
         except (FabricAbort, NetworkError, OSError, EOFError) as err:
             print(("Transfer from {} --> localhost --> {}"
                    " with rsync from {} failed: {}").format(
@@ -122,13 +129,13 @@ def remote_proxy_transfer(src, dest):
 
 def double_remote_transfer(src, dest):
     try:
-        direct_remote_to_remote(src, dest)
+        return(direct_remote_to_remote(src, dest))
     except (FabricAbort, NetworkError, OSError, EOFError) as err:
         print("Direct from {} to {} failed: {}".format(src.host,
                                                        dest.host,
                                                        err))
         try:
-            remote_proxy_transfer(src, dest)
+            return(remote_proxy_transfer(src, dest))
         except (FabricAbort, NetworkError, OSError, EOFError) as err:
             print("Proxy transfer from {} to {} failed: {}".format(src.host,
                                                                    dest.host,
@@ -138,11 +145,8 @@ def double_remote_transfer(src, dest):
 
 def single_remote_transfer(src, dest):
     try:
-        cmd = ("rsync -avz {}:{} {}:{}").format(src.host,
-                                                src.path,
-                                                dest.host,
-                                                dest.path)
-        safe_call(cmd)
+        cmd = ("rsync -avz {} {}").format(src.target(), dest.target())
+        return(safe_call(cmd))
     except (FabricAbort, NetworkError, OSError, EOFError) as err:
         print("Direct transfer from {} to {} failed: {err}".format(src.host,
                                                                    dest.host,
@@ -150,12 +154,12 @@ def single_remote_transfer(src, dest):
         try:
             cmd = ("ssh -R {p}:localhost:22 {dest} \"rsync -avz -e "
                    "'ssh -p {p}' {whoami}@localhost:{src_p} {dest_p}\"")
-            safe_call(cmd.format(p=env.bridge_port,
-                                 src=src.host,
-                                 dest=dest.host,
-                                 whoami=env.whoami,
-                                 src_p=src.path,
-                                 dest_p=dest.path))
+            return(safe_call(cmd.format(p=env.bridge_port,
+                             src=src.host,
+                             dest=dest.host,
+                             whoami=env.whoami,
+                             src_p=src.path,
+                             dest_p=dest.path)))
         except (FabricAbort, NetworkError, OSError, EOFError) as err:
             print("Reverse transcer from {} to {} failed: {}".format(src.host,
                                                                      dest.host,
@@ -165,8 +169,8 @@ def single_remote_transfer(src, dest):
 
 def local_transfer(src, dest):
     try:
-        cmd = ("rsync -avz {} {}").format(src.path, dest.path)
-        safe_call(cmd)
+        cmd = ("rsync -avz {} {}").format(src.target(), dest.target())
+        return(safe_call(cmd))
     except (FabricAbort, NetworkError, OSError, EOFError) as err:
         print("Local transfer from {} to {} failed: {}".format(src.path,
                                                                dest.path,
@@ -179,11 +183,11 @@ def parse_hostname_path(hostname_path):
 
     if ":" in hostname:
         host_parts = hostname.split(":")
-        return serverinfo(host=host_parts[0],
-                          path=host_parts[1] + path.sep)
+        return(serverinfo(host=host_parts[0],
+                          path=host_parts[1] + path.sep))
     else:
-        return serverinfo(host="localhost",
-                          path=path.abspath(path.abspath(hostname) + path.sep))
+        return(serverinfo(host="localhost",
+                          path=path.abspath(path.abspath(hostname) + path.sep)))
 
 
 def main(source, destination):
@@ -200,11 +204,11 @@ def main(source, destination):
     try:
         if src.host == "localhost" or dest.host == "localhost":
             if src.host == "localhost" and dest.host == "localhost":
-                local_transfer(src, dest)
+                print(local_transfer(src, dest))
             else:
-                single_remote_transfer(src, dest)
+                print(single_remote_transfer(src, dest))
         else:
-            double_remote_transfer(src, dest)
+            print(double_remote_transfer(src, dest))
     except (FabricAbort, NetworkError, OSError, EOFError) as err:
         print('All methods of transfer failed...')
         raise(err)
