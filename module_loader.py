@@ -4,8 +4,8 @@ import os
 import subprocess
 import unittest
 
-# Setting up environment variables that may or may not be needed by the
-# environment module loader.
+__all__ = ['module']
+
 
 if 'MODULE_VERSION' not in os.environ:
     os.environ['MODULE_VERSION_STACK'] = '3.2.10'
@@ -57,25 +57,15 @@ def module(*args):
 
 
 class test_module_loader(unittest.TestCase):
-    """
-    Test cases for module_loader module. Tests initilization of environmental
-    variables and the usage of the module function to interface with the module
-    loader present on the system.
-    """
-    def setUp(self):
-        pass
-
-    def test_init(self):
-        # Check that the environment variables exist, have possible values
-        pass
-
     def test_module(self):
         # test module commands as they might be called in a bash shell, using
         # the module function from this python module
-        pass
-
-    def tearDown(self):
-        pass
+        with unittest.TestCase.assertRaises(Exception):
+            module({'wrong': "bad"})
+        module('load', 'python')
+        module('unload', 'python')
+        module('avail')
+        module('list')
 
 
 if __name__ == "__main__":

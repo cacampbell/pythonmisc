@@ -1,13 +1,10 @@
-#!/usr/bin/env python
-from __future__ import print_function
+#!/usr/bin/env python3
+import errno
 import os
 import sys
 import re
 from subprocess import call
-import errno
 from module_loader import module
-from clusterlib.scheduler import queued_or_running_jobs
-from clusterlib.scheduler import submit
 import unittest
 from abc import abstractmethod
 from abc import ABCMeta
@@ -84,7 +81,7 @@ class ParallelCommand:
         Allows 2 free cores to be used by non-worker processes
         :return: str: number of available worker threads
         """
-        return str(int(self.slurm_options['cpus']) * 4 - 2)
+        return str(int(self.slurm_options['cpus']) - 1)
 
     def get_mem(self, fraction=1):
         """
@@ -104,6 +101,7 @@ class ParallelCommand:
         Dispatch scripts to the slurm manager
         :return:
         """
+        # TODO: Refactor this
         scheduled_jobs = set(queued_or_running_jobs())  # current jobs
         for job_name, script in self.__scripts.items():  # each script
             if job_name not in scheduled_jobs:  # not already running
@@ -122,7 +120,7 @@ class ParallelCommand:
         slurm API
         :return:
         """
-        #TODO: Refactor
+        #  TODO: Refactor
         for job_name, command in self.__commands.items():  # for each cmd
             script = submit(command,
                             job_name=job_name or self.slurm_options['job_name'],
@@ -176,7 +174,7 @@ class ParallelCommand:
 
                         if self.verbose:
                             print("Removed {}, matching {}".format(filename,
-                                                                    regex))
+                                                                   regex))
 
     def __exclude_regex_matches_file(self, exclusions):
         try:
@@ -200,11 +198,11 @@ class ParallelCommand:
         for filename in list(self.__files):
             # So, it's a regex, search __files and remove if match
             if re.search(exclusions, filename) or exclusions in filename:
-                self.__files.remove(exclusions)
+                self.__files.remove(filename)
 
                 if self.verbose:
                     print("Removed {}, matching {}".format(filename,
-                                                            exclusions))
+                                                           exclusions))
 
     def exclude_regex_matches(self, exclusions):
         """
@@ -267,7 +265,7 @@ class ParallelCommand:
         """
         for root, _, files in os.walk(self.input_root):
             for filename in files:
-                if re.search(self.input_suffix, filename):  #TODO: refactor
+                if re.search(self.input_suffix, filename):  # TODO: refactor
                     abs_path = os.path.join(root, filename)
                     self.__files += [abs_path]
 

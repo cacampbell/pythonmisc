@@ -16,9 +16,9 @@ def main(input_, output_):
         'partition': 'bigmemh'
     }
     fqc.input_suffix = ".fq.gz"
-    fqc.job_prefix = "Fastqc_"
-    fqc.read_marker = "_1"
-    fqc.mate_marker = "_2"
+    fqc.job_prefix = "fqc_"
+    fqc.read_marker = "_R1"
+    fqc.mate_marker = "_R2"
     fqc.modules = ['java']
     fqc.verbose = False
     fqc.dry_run = False

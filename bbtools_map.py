@@ -18,12 +18,13 @@ def main(input_root, output_root, reference, exclusions=""):
     m.modules = ['java']
     m.slurm_options['partition'] = 'bigmemm'
     m.slurm_options['mail-user'] = 'cacampbell@ucdavis.edu'
-    m.slurm_options['mem'] = '300G'
-    m.slurm_options['cpus'] = '26'
+    m.slurm_options['mem'] = '320G'
+    m.slurm_options['cpus'] = '20'
+    m.exclusions_directory = exclusions
+    m.exclusions = m.mate_marker
     m.reference = reference
     m.verbose = False
     m.dry_run = False
-    m.exclusions_directory = exclusions
     m.run()
 
 
@@ -32,5 +33,7 @@ if __name__ == "__main__":
         main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
     elif len(sys.argv) == 4:
         main(sys.argv[1], sys.argv[2], sys.argv[3])
+    elif len(sys.argv) == 3:
+        main(sys.argv[1], sys.argv[2], "reference.fasta")
     else:
-        main(sys.argv[1], sys.argv[2], "reference.fa")
+        print("Check Arguments")
