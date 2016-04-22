@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from copy import deepcopy
 from fabric.api import env
 from fabric.api import run
 from fabric.exceptions import NetworkError
@@ -79,8 +80,9 @@ def safe_call(command):
 def direct_remote_to_remote(src, dest):
     try:
         env.host_string = src.host
-        src.to_local()
-        return(single_remote_transfer(src, dest))
+        new_src = deepcopy(src)
+        new_src.to_local()
+        return(single_remote_transfer(new_src, dest))
     except (FabricAbort, NetworkError, OSError, EOFError) as err:
         print("Direct transfer from {} to {} on {} failed: {}".format(src.host,
                                                                       dest.host,
@@ -88,8 +90,9 @@ def direct_remote_to_remote(src, dest):
                                                                       err))
         try:
             env.host_string = dest.host
-            dest.to_local()
-            return(single_remote_transfer(src, dest))
+            new_dest = deepcopy(dest)
+            new_dest.to_local()
+            return(single_remote_transfer(src, new_dest))
         except (FabricAbort, NetworkError, OSError, EOFError) as err:
             print("Direct from {} to {} on {} failed: {}".format(src.host,
                                                                  dest.host,

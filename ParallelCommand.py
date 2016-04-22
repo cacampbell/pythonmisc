@@ -1,13 +1,10 @@
-#!/usr/bin/env python
-from __future__ import print_function
+#!/usr/bin/env python3
+import errno
 import os
 import sys
 import re
 from subprocess import call
-import errno
 from module_loader import module
-from clusterlib.scheduler import queued_or_running_jobs
-from clusterlib.scheduler import submit
 import unittest
 from abc import abstractmethod
 from abc import ABCMeta
