@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 from __future__ import print_function
+
 from Bash import bash
 from module_loader import module
-module('slurm')  # Import slurm from environment module system
+
+module('load', 'slurm')  # Import slurm from environment module system
 
 
 def sbatch(command, *args):
@@ -11,12 +13,20 @@ def sbatch(command, *args):
     for argument in args:
         script += " {}".format(argument)
 
-    return bash(script)
+    return (bash(script))
 
 
 def squeue(*args):
-    return bash("squeue", *args)
+    return (bash("squeue", *args))
 
 
 def scancel(*args):
-    return bash("scancel", *args)
+    return (bash("scancel", *args))
+
+
+def scontrol(*args):
+    return (bash("scontrol", *args))
+
+
+def sjob(job):
+    return (scontrol(["show", job]))
