@@ -1,19 +1,20 @@
 #!/usr/bin/env python
-from ParallelCommand import ParallelCommand
 import re
+
+from ParallelCommand import ParallelCommand
 
 
 class RemoveContaminants(ParallelCommand):
-    def __init__(self, input_, output_):
+    def __init__(self, input_root, output_root):
         self.read_marker = "_R1"
         self.mate_marker = "_R2"
         self.reference = "reference.fa"
-        super(RemoveContaminants, self).__init__(input_, output_)
+        super(RemoveContaminants, self).__init__(input_root, output_root)
 
     def make_command(self, read):
         mate = re.sub(self.read_marker, self.mate_marker, read)
-        output1 = self.output_file(read)
-        output2 = self.output_file(mate)
+        output1 = self.rebase_file(read)
+        output2 = self.rebase_file(mate)
         contam1 = re.sub(self.input_suffix, ".contam.fq.gz", output1)
         contam2 = re.sub(self.input_suffix, ".contam.fq.gz", output2)
         stats_f = re.sub(self.read_marker, "_pe", output1)

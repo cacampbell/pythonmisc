@@ -1,15 +1,17 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import os
-from subprocess import call
-import paramiko
-import re
+
 import errno
 from multiprocessing.dummy import Pool
+from subprocess import call
+
+import os
+import paramiko
+import re
 from functools import partial
 
 # add a step to make local directories that need to be made before dispatching
-# the rsync commands.
+# the rsync format_commands.
 
 # Add configuration so that the remote and local is automatically figured out
 # behind the scenes -- so list all of the local files and make the appropriate

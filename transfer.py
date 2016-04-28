@@ -1,19 +1,19 @@
 #!/usr/bin/env python3
+from getpass import getuser
+from multiprocessing import Pool
+from multiprocessing import cpu_count
+from subprocess import PIPE
+from subprocess import Popen
+from sys import argv
+from sys import stderr as syserr
+
+import paramiko
 from fabric.api import env
 from fabric.api import run
 from fabric.exceptions import NetworkError
-from getpass import getuser
-from os import path
 from os import linesep
-import paramiko
+from os import path
 from re import search
-from sys import argv
-from sys import stderr as syserr
-from subprocess import Popen
-from subprocess import PIPE
-from multiprocessing import cpu_count
-from multiprocessing import Pool
-
 
 # {{{ Usage Statements
 __USAGE_STATEMENT = """
@@ -46,7 +46,7 @@ __local_help__ = """
     rsync -avz {src_path} {dest_path} on {server}.
 
     If you believe that you should be able to make this transfer, try running
-    the rsync commands manually for some subset of the files to see if you are
+    the rsync format_commands manually for some subset of the files to see if you are
     able.
 """
 __direct_help__ = """
@@ -315,7 +315,7 @@ def set_up(src, dest, threads):
         files = get_files(src)  # get files on host
         directories = set([path.dirname(x) for x in files])
         make_directories(dest, directories)  # make directories on destination
-        env.host_string = "localhost"  # localhost runs most commands
+        env.host_string = "localhost"  # localhost runs most format_commands
         return(files)  # hand off file list
     except (FabricAbort, NetworkError, OSError, EOFError) as err:
         print("Error during setup: {}".format(err))

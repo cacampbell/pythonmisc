@@ -1,14 +1,15 @@
 #!/usr/bin/env python
-from ParallelCommand import ParallelCommand
 import re
+
+from ParallelCommand import ParallelCommand
 
 
 class MarkDuplicates(ParallelCommand):
-    def __init__(self, input_, output_):
+    def __init__(self, input_root, output_root):
         self.read_marker = "_R1"
         self.mate_marker = "_R2"
         self.reference = "reference.fa"
-        super(MarkDuplicates, self).__init__(input_, output_)
+        super(MarkDuplicates, self).__init__(input_root, output_root)
 
     def make_command(self, read):
         metrics = re.sub(self.read_marker, "_metrics", read)

@@ -1,8 +1,9 @@
 #!/usr/bin/env python
-import sys
-import os
 import subprocess
+import sys
 import unittest
+
+import os
 
 __all__ = ['module']
 
@@ -58,7 +59,7 @@ def module(*args):
 
 class test_module_loader(unittest.TestCase):
     def test_module(self):
-        # test module commands as they might be called in a bash shell, using
+        # test module format_commands as they might be called in a bash shell, using
         # the module function from this python module
         with unittest.TestCase.assertRaises(Exception):
             module({'wrong': "bad"})

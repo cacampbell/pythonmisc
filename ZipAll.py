@@ -1,12 +1,14 @@
 #!/usr/bin/env python
 from __future__ import print_function
-from ParallelCommand import ParallelCommand
-import re
+
 import os
+import re
+
+from ParallelCommand import ParallelCommand
 
 
 class ZipAll(ParallelCommand):
-    def __init__(self, input_, output_, choice):
+    def __init__(self, input_root, output_root, choice):
         self.choice = choice
         super(ZipAll, self).__init__()
 

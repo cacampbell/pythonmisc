@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 from __future__ import print_function
-import os
-import sys
+
 import subprocess
+import sys
+
+import os
+import re
 from clusterlib.scheduler import queued_or_running_jobs
 from clusterlib.scheduler import submit
-import re
-from module_loader import module
 
+from module_loader import module
 
 fastqc = "/home/cacampbe/fastqc/FastQC/fastqc"
 max_memory = "18G"
@@ -102,11 +104,11 @@ def main():
     load_modules('java')
     print("Getting files....")
     files = get_files(input_root)
-    print("Writing commands...")
+    print("Writing format_commands...")
     commands = make_commands(output_root, files)
-    print("Writing scripts...")
+    print("Writing write_scripts...")
     scripts = write_scripts(commands)
-    print("Dispatching scripts...")
+    print("Dispatching write_scripts...")
     dispatch(scripts)
 
 

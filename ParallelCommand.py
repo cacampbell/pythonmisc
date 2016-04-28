@@ -1,75 +1,76 @@
 #!/usr/bin/env python3
 import errno
-import os
-import sys
-import re
-from subprocess import call
-from module_loader import module
 import unittest
-from abc import abstractmethod
+from sys import stderr
+
 from abc import ABCMeta
+from abc import abstractmethod
+from os import environ
+from os import getcwd
+from os import makedirs
+from os import path
+from os import walk
+from re import search
+
+from module_loader import module
+
+__all__ = ["ParallelCommand"]
 
 
 class ParallelCommand:
     """
     ParallelCommand
-    A class to gather files, write commands, and dispatch those commands to the
-    slurm manager. Finds all files at the input root, creates directories, and
-    dispatches commands. The actual commands are provided by derived classes
-    for various jobs.
+    Encapsulates the biolerplate required to run parallel identical jobs on
+    groups of files using a cluster backend. This includes gathering files below
+    a root directory, exlcuding undesired files, making a directory structure
+    at the output root, formatting format_commands for each file, writing a bash script
+    as a string for each format_commands, and finally, dispatching each script to the
+    appropriate cluster backend
     """
-    __metaclass__ = ABCMeta  # Make this class virtual
+    # Make this class virtual, since it requires make_command at the least to
+    # be overidden. Different scenarios will overwrite different methods.
+    __metaclass__ = ABCMeta
 
     @staticmethod
-    def rebase(filename, src_root, dest_root):
-        #  create relative output directory (rebase from src_root
-        #  to dest_root)
-        return os.path.join(dest_root, os.path.relpath(filename,
+    def rebase_directory(filename, src_root, dest_root):
+        """
+        "Rebases" a filename by csubstituting the src_root for dest_root
+        as the absolute path (preserves relative directory structure)
+        """
+        return path.join(dest_root, path.relpath(filename,
                                                        start=src_root))
 
-    def output_file(self, filename):
-        #  create the output file for the given filename
-        return ParallelCommand.rebase(filename,
-                                      self.input_root,
-                                      self.output_root)
-
-    @staticmethod
-    def mkdir_p(path):
+    def rebase_file(self, filename):
         """
-        Emulate mkdir -p behavior from unix systems -- attempts to make
-        a directory, prints a message if that directory already exists
-        :param path: the path to make
-        :return:
+        "Rebases" a file using the instance input root and output root
         """
-        try:
-            os.makedirs(path)
-        except OSError as exc:
-            if exc.errno == errno.EEXIST and os.path.isdir(path):
-                print("{} already exists".format(path),
-                      file=sys.stderr)
-            else:
-                raise exc
+        return ParallelCommand.rebase_directory(filename,
+                                                self.input_root,
+                                                self.output_root)
 
-    def __init__(self, input_=os.getcwd(), output_=os.getcwd()):
-        self.input_root = input_
-        self.output_root = output_
-        self.slurm_options = {
-            'mem': '200G',
-            'tasks': '1',
-            'cpus': '24',
-            'job-name': 'Dispatch',
-            'time': '0',
-            'mail-user': 'example@example.com',
-            'mail-type': 'END,FAIL',
-            'partition': 'bigmemm'
-        }
-        self.modules = ['']
-        self.job_prefix = ''
-        self.input_suffix = ''
-        self.dry_run = True
-        self.verbose = True
-        self.exclusions_directory = None
+    def __init__(self, input_root=getcwd(), output_root=getcwd()):
+        """
+        Initialize with an input root and an output root
+        """
+        self.input_root = input_root
+        self.output_root = output_root
+        self.modules = [environ.get['CLUSTER_BACKEND'], '']
+        self.input_regex = '.*'
         self.exclusions = None
+        self.dry_run = False
+        self.verbose = False
+
+        self.cluster_options = {
+            "memory": "2G",
+            "cores": "1",
+            "queue_name": "normal",
+            "job_name_prefix": "ParallelCommand_",
+            "dependencies": "",
+            "email_user": "",
+            "email_options": "END,FAIL",
+            "run_time": "0"
+        }
+
         self.__files = []
         self.__commands = {}
         self.__scripts = {}
@@ -77,213 +78,180 @@ class ParallelCommand:
 
     def get_threads(self):
         """
-        Calculates the number of available threads, assuming 4 per cpu
-        Allows 2 free cores to be used by non-worker processes
+        Calculates the number of threads based on the specified number of cores
         :return: str: number of available worker threads
         """
-        return str(int(self.slurm_options['cpus']) - 1)
+        return str(int(self.cluster_options["cores"]) - 1)
 
     def get_mem(self, fraction=1):
         """
-        Get fraction of available memory
+        Get the available memory, subset by fraction
         :param fraction: fraction of memory to get
         :return: str: available memory + unit of measure
         """
         assert (float(fraction) <= 1.0)
-        mem_int = float(self.slurm_options['mem'][:-1])  # All but last char
-        mem_unit = self.slurm_options['mem'][-1]  # last char
+        mem_int = float(self.cluster_options['memory'][:-1])  # All but last
+        mem_unit = self.cluster_options['memory'][-1]  # last char
         memory = float(mem_int) * float(fraction)  # fraction of avail mem
-        memory = int(memory)  # Must be int for slurm version on farm
-        return "{}{}".format(memory, mem_unit)  # [\d][U]
+        memory = int(memory)  # Must be int, partial units cause error
+        return "{0:s}{0:s}".format(memory, mem_unit)  # [\d][c], memory + units
 
     def dispatch(self):
         """
-        Dispatch scripts to the slurm manager
+        Dispatch the created write_scripts to the cluster scheduler, return the job
+        numbers for the dispatched jobs
+        :return: list<str>: job numbers as string in list
+        """
+        for script in self.__scripts:
+            pass
+
+    def write_scripts(self):
+        """
+        Write write_scripts to be dispatched to the cluster scheduler
+        Wraps each earlier crafted command into a job for cluster, using the
+        either the slurm API or the SGE API
         :return:
         """
-        # TODO: Refactor this
-        scheduled_jobs = set(queued_or_running_jobs())  # current jobs
-        for job_name, script in self.__scripts.items():  # each script
-            if job_name not in scheduled_jobs:  # not already running
-                if self.verbose:
-                    print("Dispatching {}...".format(job_name), file=sys.stderr)
-                if not self.dry_run:  # Call the script
-                    call(script, shell=True)
-            else:
-                print("{} already running, skipping...".format(job_name),
-                      file=sys.stderr)
-
-    def scripts(self):
-        """
-        Write scripts to be dispatched to the slurm manager
-        Wraps each earlier crafted command into a job for slurm, using the
-        slurm API
-        :return:
-        """
-        #  TODO: Refactor
-        for job_name, command in self.__commands.items():  # for each cmd
-            script = submit(command,
-                            job_name=job_name or self.slurm_options['job_name'],
-                            time=self.slurm_options['time'],
-                            memory=self.slurm_options['mem'],
-                            backend='slurm',
-                            shell_script='#!/usr/bin/env bash')
-            script += " --partition={}".format(self.slurm_options['partition'])
-            script += " --ntasks={}".format(self.slurm_options['tasks'])
-            script += " --cpus-per-task={}".format(self.slurm_options['cpus'])
-            script += " --mail-user={}".format(self.slurm_options['mail-user'])
-            script += " --mail-type={}".format(self.slurm_options['mail-type'])
-            self.__scripts[job_name] = script  # Script wraps cmd for slurm
-
-            if self.verbose:
-                print(script)
+        for (job_name, command) in self.__commands:
+            script = ""
+            self.__scripts += [script]
 
     @abstractmethod
-    def make_command(self, read):
+    def make_command(self, filename):
         """
-        Abstract method, must be overridden
-        The command for each read (each file matching suffix), can be generated
-        in this method.
-        :param read:
+        Ovveride this method to format command for each file
+        The command used is applied to each file and added to the list of
+        format_commands by looping through the list of files
+        The rebase_file method provides the output file for the given filename
+
+        :param filename: str: the filename that is being wrapped by this command
         :return:
         """
         pass
 
-    def commands(self):
+    def format_commands(self):
         """
-        Generate commands for each file gathered
+        Generate format_commands for each file gathered
         :return:
         """
-        for read in self.__files:  # for each file
-            job_name = "{}{}".format(self.job_prefix, os.path.basename(read))
-            command = self.make_command(read)  # derived class makes command
+        for file in self.__files:  # for each file
+            job_name = "{0:s}{0:s}".format(
+                self.cluster_options["job_name_prefix"], path.basename(file))
+
+            try:
+                command = self.make_command(file)  # derived class command
+            except Exception as ex:
+                if self.verbose:
+                    print("Command formatting failed: {0:s}".format(ex),
+                          file=stderr)
+
             assert (type(command) is str)  # at least, it has to be a str
             self.__commands[job_name] = command
 
             if self.verbose:
-                print(command)
-
-    def __exclude_regex_matches_list(self, exclusions):
-        for regex in exclusions:
-                for filename in list(self.__files):  # *copy* of the file list
-                    if re.search(regex, filename) or regex in filename:
-                        if self.verbose:
-                            print("Match: {} {}".format(regex, filename))
-
-                        self.__files.remove(filename)
-
-                        if self.verbose:
-                            print("Removed {}, matching {}".format(filename,
-                                                                   regex))
+                print(command, file=stderr)
 
     def __exclude_regex_matches_file(self, exclusions):
         try:
             with open(exclusions, "rb") as fh:  # try to open it
                 for regex in fh.readlines():  # for each line in it
-                    for filename in list(self.__files):
-                        #  If it matches a filename in __files, remove
-                        if re.search(regex, filename) or regex in filename:
-                            self.__files.remove(filename)
-
-                        if self.verbose:
-                            print("Removed {}, matching {}".format(
-                                  filename, regex))
+                    self.exclude_regex_matches(regex)
 
         except (OSError, IOError) as error:  # ... but couldn't open it
-            print("{} occurred while trying to read {}".format(
-                error, exclusions), file=sys.stderr)
-            print("No exclusions removed...", file=sys.stderr)
+            print("{0:s} occurred while trying to read {0:s}".format(
+                error, exclusions), file=stderr)
+            print("No exclusions removed...", file=stderr)
 
     def __exclude_regex_matches_single(self, exclusions):
         for filename in list(self.__files):
             # So, it's a regex, search __files and remove if match
-            if re.search(exclusions, filename) or exclusions in filename:
+            if search(exclusions, filename):
                 self.__files.remove(filename)
 
                 if self.verbose:
-                    print("Removed {}, matching {}".format(filename,
-                                                           exclusions))
+                    print("Removed {0:s}, matching {0:s}".format(filename,
+                                                                 exclusions),
+                          file=stderr)
 
-    def exclude_regex_matches(self, exclusions):
+    def exclude_regex_matches(self, exclusion):
         """
         Remove all files from the list of files that match "exclusions".
         "exclutions" should be either a single string regex / substring, a list
         of regexes / substrings, or a file containing a list of regexes /
-        substrings (one per line). This method attempts to differentiate
-        between these options by checking the type, then checking if the
-        string is a file on the system. If it is a file, then this method will
-        attempt to open it and read the lines into a list for usage as regexes /
-        substrings.
+        substrings (one per line), or a list of files containing regexes.
+
+        This method attempts to differentiate between these options by checking
+        the type, then checking if the string is a file on the system. If it is
+        a file, then this method will attempt to open it and read the lines into
+        a list for usage as regexes / substrings.
         :exclusions: str|list: regex/substring, list of regexes/substrings, file
         """
-        if type(exclusions) is list:
-            self.__exclude_regex_matches_list(exclusions)
+        if type(exclusion) is list:
+            for ex in exclusion:
+                self.exclude_regex_matches(ex)
 
-        elif type(exclusions) is str:  # inclusions is either file or regex
-            if os.path.isfile(exclusions):  # it's a file
-                self.__exclude_regex_matches_file(exclusions)
+        elif type(exclusion) is str:  # inclusions is either file or regex
+            if path.isfile(exclusion):  # it's a file
+                self.__exclude_regex_matches_file(exclusion)
             else:  # Not a file on the system
-                self.__exclude_regex_matches_single(exclusions)
+                self.__exclude_regex_matches_single(exclusion)
 
         else:  # Didn't get expected types, print message and continue
             print("Exclusions not str or list, no exclusions removed...",
-                  file=sys.stderr)
+                  file=stderr)
 
-    def exclude_files_from(self, previous_output_root):
+    def exclude_files_from(self, dirs):
         """
-        Find files that are below previous_output_path, strip them down to
-        the basename of those files (the name of each without extensions), then
-        use this list to remove exclusions from the gathered file list. This
-        method is given a directory that contains previous output and prevents
-        those files from being run again in the current run. Written in case of
-        needing to requeue large sets of jobs due to no space left on the
-        previously used device.
+        Method that excludes files that are below <dirs>. If dirs is a list (
+        presumably, of directory names) then remove files below the listed
+        directories. If dirs contains a comma, assume that this denotes a list,
+        and split the string on comma, then exclude files from below each.
         :param previous_output_root: str: a directory path (previous output)
         :return:
         """
         exclusions = []
+        if type(dirs) is list:  # dirs is a list
+            for directory in dirs:
+                self.exclude_files_from(directory)
+        elif "," in dirs:  # Assume that dirs is a comma separated list
+            for directory in dirs.split(","):
+                self.exclude_files_from(directory)
+        else:
+            for root, dirs, files in walk(dirs):
+                for filename in files:
+                    exclusions += [path.splitext(filename)[0]]
 
-        for root, dirs, files in os.walk(previous_output_root):
-            for filename in files:
-                f = os.path.splitext(filename)[0]
-
-                if "_pe" in f:
-                    exclusions += [f.replace("_pe", self.read_marker)]
-                    exclusions += [f.replace("_pe", self.mate_marker)]
-                else:
-                    exclusions += [f]
-
-        self.__exclude_regex_matches_list(list(set(exclusions)))
+        self.exclude_regex_matches(list(set(exclusions)))
 
     def get_files(self):
         """
-        Gather files below the input_root such that those files end with
-        input_suffix and contain read_marker within their name. For example,
-        input_suffix might be ".fq.gz" and read_marker might be "R1". This
-        method would thus gather all reads that match ^.*R1.*\.fq\.gz$
+        Gather all files that match the input_regex that are below the input
+        directory
         :return:
         """
-        for root, _, files in os.walk(self.input_root):
-            for filename in files:
-                if re.search(self.input_suffix, filename):  # TODO: refactor
-                    abs_path = os.path.join(root, filename)
+        for root, _, files in walk(self.input_root):
+            for filename in files:  # for all files
+                if search(self.input_regex, filename):  # matches input_regex
+                    abs_path = path.join(root, filename)
                     self.__files += [abs_path]
 
                     if self.verbose:
-                        print(abs_path, file=sys.stderr)
+                        print(abs_path, file=stderr)
 
-    def load_modules(self):
+    def module_cmd(self, args):
         """
         Load environment modules using environment module system
         :return:
         """
         try:
-            args = ['load']  # first argument is always 'load'
+            # first argument is always 'load'
             args.extend(self.modules)  # add specified modules to arguments
             module(args)  # call module system, using arguments ['load', '...']
         except (OSError, ValueError) as err:
-            print("Could not load module(s):{0:s}, {0:s}".format(self.modules,
-                                                                 err))
+            if self.verbose:
+                print("Could not load: {0:s}, {0:s}".format(self.modules,
+                                                            err),
+                      file=stderr)
 
     def make_directories(self):
         """
@@ -292,47 +260,83 @@ class ParallelCommand:
         below input_root will be created below output root
         :return:
         """
-        directories = [x[0] for x in os.walk(self.input_root)]  # all dirs
-        output_directories = [self.rebase(x, self.input_root, self.output_root)
-                              for x in directories]  # rebase each dir
+        directories = [x[0] for x in walk(self.input_root)]  # all dirs
+        output_directories = [self.rebase_directory(x, self.input_root,
+                                                    self.output_root)
+                              for x in directories]  # rebase_directory each dir
 
         for directory in output_directories:
             if self.verbose:
-                print("Attempting to make: {}".format(directory))
+                print("Attempting to make: {0:s}".format(directory))
             if not self.dry_run:
-                self.mkdir_p(directory)  # Attempt safe creation of each dir
+                mkdir_p(directory)  # Attempt safe creation of each dir
 
     def run(self):
+        """
+        Run the Parallel Command from start to finish
+        1) Load Environment Modules
+        2) Gather input files
+        3) Remove exclusions
+        4) Make Directories
+        5) Format Commands
+        6) Write Scripts
+        7) Dispatch Scripts to Cluster Scheduler
+        8) Unload the modules
+        """
         if self.verbose:
-            print('Loading environment modules...', file=sys.stderr)
-        self.load_modules()
+            print('Loading environment modules...', file=stderr)
+        self.module_cmd('load')
 
         if self.verbose:
-            print('Gathering input files...', file=sys.stderr)
+            print('Gathering input files...', file=stderr)
         self.get_files()
 
         if self.verbose:
             print('Removing exclusions...')
+
         if self.exclusions_directory:
             self.exclude_files_from(self.exclusions_directory)
+
         if self.exclusions:
             self.exclude_regex_matches(self.exclusions)
 
         if self.verbose:
-            print("Making output directories...", file=sys.stderr)
+            print("Making output directories...", file=stderr)
         self.make_directories()
 
         if self.verbose:
-            print('Writing commands...', file=sys.stderr)
-        self.commands()
+            print('Writing format_commands...', file=stderr)
+        self.format_commands()
 
         if self.verbose:
-            print('Writing scripts...', file=sys.stderr)
-        self.scripts()
+            print('Writing write_scripts...', file=stderr)
+        self.write_scripts()
 
         if self.verbose:
-            print('Dispatching scripts to slurm...', file=sys.stderr)
-        self.dispatch()
+            print('Dispatching write_scripts to cluster...', file=stderr)
+        return (self.dispatch())  # Return the job IDs from the dispatched cmds
+
+        if self.verbose:
+            print("Unloading environment modules....", file=stderr)
+        self.module_cmd('unload')
+
+
+def mkdir_p(path):
+    """
+    Emulates UNIX `mkdir -p` functionality
+    Attempts to make a directory, if it fails, error unless the failure was
+    due to the directory already existing
+    :param path: the path to make
+    :return:
+    """
+    try:
+        makedirs(path)
+    except OSError as exc:
+        if exc.errno == errno.EEXIST and path.isdir(path):
+            print("{0:s} already exists".format(path),
+                  file=stderr)
+        else:
+            raise exc
 
 
 class TestParallelCommand(unittest.TestCase):

@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 from __future__ import print_function
-from ParallelCommand import ParallelCommand
+
 import re
+
+from ParallelCommand import ParallelCommand
 
 
 class GzipAll(ParallelCommand):
-    def __init__(self, input_, output_, choice):
+    def __init__(self, input_root, output_root, choice):
         self.choice = choice
-        super(GzipAll, self).__init__(input_, output_)
+        super(GzipAll, self).__init__(input_root, output_root)
 
     def make_command(self, filename):
         assert(self.choice.upper().strip() in ["ZIP", "UNZIP"])

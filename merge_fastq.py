@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 from __future__ import print_function
-from Bio import SeqIO
-from FileHydra import FileHydra
-import threading
+
 import sys
+import threading
+
 import os
+from Bio import SeqIO
+
+from FileHydra import FileHydra
 
 
 def merge_files(files, output_file, threads=4):
@@ -20,7 +23,7 @@ def merge_files(files, output_file, threads=4):
                 for record in sequences:
                     print("Record")
                     print("{}: {}".format(record.id, record.seq))
-                # with lock, open(output_file, "w+") as output:
+                    # with lock, open(rebase_file, "w+") as output:
                 #     SeqIO.write(sequences, output, "fasta")
             except (OSError, IOError) as error:
                 print("Error writing to output occurred: {}".format(error),
@@ -53,9 +56,9 @@ def get_files(input_root):
 
 def main(input_root, output_file):
     """
-    Gather fq files below the input_root and merge them into output_file
+    Gather fq files below the input_root and merge them into rebase_file
     :input_root: str: path to input root
-    :output_file: str: path to output_file
+    :rebase_file: str: path to rebase_file
     """
     files = get_files(input_root)
     merge_files(files, output_file)
