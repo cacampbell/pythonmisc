@@ -10,6 +10,7 @@ def __get_backend():
         return ("torque")
 
 
+# Simple way to determine the backend for the cluster -- using API for commands
 __BACKEND__ = environ["CLUSTER_BACKEND"] or __get_backend()
 
 
@@ -43,34 +44,34 @@ def cancel_jobs(*args):
         __cancel_jobs_torque(*args)
 
 
-def __cancel_suspended_jobs_slurm(*args):
+def __cancel_suspended_jobs_slurm():
     pass
 
 
-def __cancel_suspended_jobs_torque(*args):
+def __cancel_suspended_jobs_torque():
     pass
 
 
 def cancel_suspended_jobs():
     if __BACKEND__ == "slurm":
-        __cancel_suspended_jobs_slurm(*args)
+        __cancel_suspended_jobs_slurm()
     elif __BACKEND__ == "torque":
-        __cancel_suspended_jobs_torque(*args)
+        __cancel_suspended_jobs_torque()
 
 
-def __requeue_suspended_jobs_slurm(*args):
+def __requeue_suspended_jobs_slurm():
     pass
 
 
-def __requeue_suspended_jobs_torque(*args):
+def __requeue_suspended_jobs_torque():
     pass
 
 
 def requeue_suspended_jobs():
     if __BACKEND__ == "slurm":
-        __requeue_suspended_jobs_slurm(*args)
+        __requeue_suspended_jobs_slurm()
     elif __BACKEND__ == "torque":
-        __requeue_suspended_jobs_torque(*args)
+        __requeue_suspended_jobs_torque()
 
 
 def __queued_jobs_slurm():
