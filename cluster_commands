@@ -2,6 +2,8 @@
 from os import environ
 from shutil import which
 
+from Bash import bash
+
 
 def __get_backend():
     if which("scontrol"):
@@ -14,20 +16,96 @@ def __get_backend():
 __BACKEND__ = environ["CLUSTER_BACKEND"] or __get_backend()
 
 
-def __submit_slurm(duplicate=False, *args):
-    pass
+def __submit_slurm(command_str, **kwargs):
+    """
+    Anticipated Keyword Arguments:
+    command_str, memory, tasks, pus_per_task, partition, job_name,
+    depends_on, email_address, email_options, time, bash, input, output,
+    error"""
+    submit_cmd = ("sbatch ")
+
+    if "memory" in kwargs.keys():
+        submit_cmd += (" --mem={}").format(kwargs["memory"])
+    if "tasks" in kwargs.keys():
+        submit_cmd += (" --ntasks={}").format(kwargs["tasks"])
+    if "cpus_per_task" in kwargs.keys():
+        submit_cmd += (" --cpus-per-task={}").format(kwargs["cpus_per_task"])
+    if "partition" in kwargs.keys():
+        submit_cmd += (" --partition={}").format(kwargs["partition"])
+    if "job_name" in kwargs.keys():
+        submit_cmd += (" --job-name={}").format(kwargs["job_name"])
+    if "depends_on" in kwargs.keys():
+        submit_cmd += (" --dependency=after_ok:{}").format(kwargs["depends_on"])
+    if "email_address" in kwargs.keys():
+        submit_cmd += (" --mail-user={}").format(kwargs["email_address"])
+    if "email_options" in kwargs.keys():
+        submit_cmd += (" --mail-options={}").format(kwargs["email_options"])
+    if "input" in kwargs.keys():
+        submit_cmd += (" --input={}").format(kwargs["input"])
+    if "output" in kwargs.keys():
+        submit_cmd += (" --output={}").format(kwargs["output"])
+    if "error" in kwargs.keys():
+        submit_cmd += (" --error={}").format(kwargs["error"])
 
 
-def __submit_torque(duplicate=False, *args):
-    pass
+def __submit_torque(command_str, **kwargs):
+    """
+        Anticipated Keyword Arguments:
+        command_str, memory, tasks, pus_per_task, partition, job_name,
+        depends_on, email_address, email_options, time, bash, input, output,
+        error"""
+    submit_cmd = ("qsub ")
+
+    if "memory" in kwargs.keys():
+        submit_cmd +=
+    if "tasks" in kwargs.keys():
+        submit_cmd +=
+    if "cpus_per_task" in kwargs.keys():
+        submit_cmd +=
+    if "partition" in kwargs.keys():
+        submit_cmd +=
+    if "job_name" in kwargs.keys():
+        submit_cmd +=
+    if "depends_on" in kwargs.keys():
+        submit_cmd +=
+    if "email_address" in kwargs.keys():
+        submit_cmd +=
+    if "email_options" in kwargs.keys():
+        submit_cmd +=
+    if "input" in kwargs.keys():
+        submit_cmd +=
+    if "output" in kwargs.keys():
+        submit_cmd +=
+    if "error" in kwargs.keys():
+        submit_cmd +=
+
+    return (submit_cmd)
 
 
-def submit_job(duplicate=False, *args):
-    if __BACKEND__ == "slurm":
-        __submit_slurm(duplicate=False * args)
-    elif __BACKEND__ == "torque":
-        __submit_torque(duplicate=False, *args)
+def submit_job(command_str, **kwargs):
+    shebang_line = kwargs["bash"] or "#!/usr/bin/env bash"
+    script = ("{shebang_line}\n{{command}}").format(shebang_line=shebang_line)
+    command = ("{command_str} | {{submit_cmd}}").format(command_str=command_str)
 
+    if __BACKEND__ == "slurm":  # Format with slurm options
+        command.format(submit_cmd=__submit_slurm(command_str, kwargs))
+    elif __BACKEND__ == "torque":  # Format with torque options
+        command.format(submit_cmd=__submit_torque(command_str, kwargs))
+
+    script.format(command=command)  # <Shebang>\n<Command> | <Submission>
+    (stdout, stderr) = bash(script)  # Actaully call the script using bash
+
+    try:  # To parse the output based on expected successful submission result
+        if __BACKEND__ == "slurm":
+            # Successfully submitted job <Job ID>.
+            return (stdout.split()[-1].rstrip("."))
+        if __BACKEND__ == "torque":
+            # <Job ID>.hostname.etc.etc
+            return (stdout.split(".")[0])
+
+    except (ValueError, IndexError) as err:
+        print("Could not capture Job ID! Dependency checks may fail!")
+        return ("")
 
 def __cancel_jobs_slurm(*args):
     pass
