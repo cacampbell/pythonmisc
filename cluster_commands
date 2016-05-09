@@ -16,20 +16,34 @@ def __get_backend():
 __BACKEND__ = environ["CLUSTER_BACKEND"] or __get_backend()
 
 
-def __submit_slurm(command_str, **kwargs):
+def __slurm_e_opts(str):
+    options = ""
+
+    for opt in str.split(",").upper().strip():
+        if opt == "BEGIN" or opt == "START":
+            options += "START,"
+        if opt == "END" or opt == "FINISH":
+            options += "END,"
+        if opt == "FAIL" or opt == "ABORT":
+            options += "FAIL,"
+
+    return (options.rstrip(","))
+
+
+def __submit_slurm(**kwargs):
     """
     Anticipated Keyword Arguments:
-    command_str, memory, tasks, pus_per_task, partition, job_name,
+    command_str, memory, nodes, cpus, partition, job_name,
     depends_on, email_address, email_options, time, bash, input, output,
     error"""
-    submit_cmd = ("sbatch ")
+    submit_cmd = ("sbatch")
 
     if "memory" in kwargs.keys():
         submit_cmd += (" --mem={}").format(kwargs["memory"])
-    if "tasks" in kwargs.keys():
-        submit_cmd += (" --ntasks={}").format(kwargs["tasks"])
-    if "cpus_per_task" in kwargs.keys():
-        submit_cmd += (" --cpus-per-task={}").format(kwargs["cpus_per_task"])
+    if "nodes" in kwargs.keys():
+        submit_cmd += (" --ntasks={}").format(kwargs["nodes"])
+    if "cpus" in kwargs.keys():
+        submit_cmd += (" --cpus-per-task={}").format(kwargs["cpus"])
     if "partition" in kwargs.keys():
         submit_cmd += (" --partition={}").format(kwargs["partition"])
     if "job_name" in kwargs.keys():
@@ -39,7 +53,8 @@ def __submit_slurm(command_str, **kwargs):
     if "email_address" in kwargs.keys():
         submit_cmd += (" --mail-user={}").format(kwargs["email_address"])
     if "email_options" in kwargs.keys():
-        submit_cmd += (" --mail-options={}").format(kwargs["email_options"])
+        submit_cmd += (" --mail-options={}").format(
+            __slurm_e_opts(kwargs["email_options"]))
     if "input" in kwargs.keys():
         submit_cmd += (" --input={}").format(kwargs["input"])
     if "output" in kwargs.keys():
@@ -48,36 +63,49 @@ def __submit_slurm(command_str, **kwargs):
         submit_cmd += (" --error={}").format(kwargs["error"])
 
 
-def __submit_torque(command_str, **kwargs):
+def __torque_e_opts(str):
+    options = ""
+
+    for opt in str.split(",").upper().strip():
+        if opt == "BEGIN" or opt == "START":
+            options += "b"
+        if opt == "END":
+            options += "e"
+        if opt == "FAIL" or opt == "ABORT":
+            options += "a"
+
+    return (options)
+
+
+def __submit_torque(**kwargs):
     """
         Anticipated Keyword Arguments:
-        command_str, memory, tasks, pus_per_task, partition, job_name,
+        command_str, memory, nodes, cpus, partition, job_name,
         depends_on, email_address, email_options, time, bash, input, output,
         error"""
-    submit_cmd = ("qsub ")
 
-    if "memory" in kwargs.keys():
-        submit_cmd +=
-    if "tasks" in kwargs.keys():
-        submit_cmd +=
-    if "cpus_per_task" in kwargs.keys():
-        submit_cmd +=
+    # Memory uses -l mem=<MEM>
+    # Tasks/Nodes and CPUs per node: " -l nodes=<Nodes>:ppn=<CPUs>"
+    # In total, for mem, nodes, CPUs:
+    # -l mem=<MEM>,nodes=<Nodes>:ppn=<CPUs_per_node>
+
+    submit_cmd = ("qsub")
     if "partition" in kwargs.keys():
-        submit_cmd +=
+        submit_cmd += " -q {}".format(kwargs["partition"])
     if "job_name" in kwargs.keys():
-        submit_cmd +=
+        submit_cmd += " -N {}".format(kwargs["job_name"])
     if "depends_on" in kwargs.keys():
-        submit_cmd +=
+        submit_cmd += " -hold_jid {}".format(kwargs["depends_on"])
     if "email_address" in kwargs.keys():
-        submit_cmd +=
+        submit_cmd += " -M {}".format(kwargs["email_address"])
     if "email_options" in kwargs.keys():
-        submit_cmd +=
+        submit_cmd += "-m {}".format(__torque_e_opts(kwargs["email_options"]))
     if "input" in kwargs.keys():
-        submit_cmd +=
+        submit_cmd += " -i {}".format(kwargs["input"])
     if "output" in kwargs.keys():
-        submit_cmd +=
+        submit_cmd += " -o {}".format(kwargs["output"])
     if "error" in kwargs.keys():
-        submit_cmd +=
+        submit_cmd += " -e {}".format(kwargs["error"])
 
     return (submit_cmd)
 
@@ -88,9 +116,9 @@ def submit_job(command_str, **kwargs):
     command = ("{command_str} | {{submit_cmd}}").format(command_str=command_str)
 
     if __BACKEND__ == "slurm":  # Format with slurm options
-        command.format(submit_cmd=__submit_slurm(command_str, kwargs))
+        command.format(submit_cmd=__submit_slurm(kwargs))
     elif __BACKEND__ == "torque":  # Format with torque options
-        command.format(submit_cmd=__submit_torque(command_str, kwargs))
+        command.format(submit_cmd=__submit_torque(kwargs))
 
     script.format(command=command)  # <Shebang>\n<Command> | <Submission>
     (stdout, stderr) = bash(script)  # Actaully call the script using bash
