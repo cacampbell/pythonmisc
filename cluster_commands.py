@@ -13,13 +13,19 @@ def __get_backend():
 
 
 # Simple way to determine the backend for the cluster -- using API for commands
-__BACKEND__ = environ["CLUSTER_BACKEND"] or __get_backend()
+__BACKEND__ = None
+
+if "CLUSTER_BACKGROUND" in environ:
+    __BACKEND__ = environ["CLUSTER_BACKEND"]
+else:
+    __BACKEND__ = __get_backend()
 
 
 def __slurm_e_opts(str):
     options = ""
 
-    for opt in str.split(",").upper().strip():
+    for opt in str.split(","):
+        opt = opt.upper().strip()
         if opt == "BEGIN" or opt == "START":
             options += "START,"
         if opt == "END" or opt == "FINISH":
@@ -53,7 +59,7 @@ def __submit_slurm(**kwargs):
     if "email_address" in kwargs.keys():
         submit_cmd += (" --mail-user={}").format(kwargs["email_address"])
     if "email_options" in kwargs.keys():
-        submit_cmd += (" --mail-options={}").format(
+        submit_cmd += (" --mail-type={}").format(
             __slurm_e_opts(kwargs["email_options"]))
     if "input" in kwargs.keys():
         submit_cmd += (" --input={}").format(kwargs["input"])
@@ -62,11 +68,14 @@ def __submit_slurm(**kwargs):
     if "error" in kwargs.keys():
         submit_cmd += (" --error={}").format(kwargs["error"])
 
+    return(submit_cmd)
+
 
 def __torque_e_opts(str):
     options = ""
 
-    for opt in str.split(",").upper().strip():
+    for opt in str.split(","):
+        opt = opt.upper().strip()
         if opt == "BEGIN" or opt == "START":
             options += "b"
         if opt == "END":
@@ -83,11 +92,6 @@ def __submit_torque(**kwargs):
         command_str, memory, nodes, cpus, partition, job_name,
         depends_on, email_address, email_options, time, bash, input, output,
         error"""
-
-    # Memory uses -l mem=<MEM>
-    # Tasks/Nodes and CPUs per node: " -l nodes=<Nodes>:ppn=<CPUs>"
-    # In total, for mem, nodes, CPUs:
-    # -l mem=<MEM>,nodes=<Nodes>:ppn=<CPUs_per_node>
 
     submit_cmd = ("qsub")
     if "memory" in kwargs.keys() and "cpus" in kwargs.keys() \
@@ -136,29 +140,37 @@ def __submit_torque(**kwargs):
 
 
 def submit_job(command_str, **kwargs):
-    shebang_line = kwargs["bash"] or "#!/usr/bin/env bash"
-    script = ("{shebang_line}\n{{command}}").format(shebang_line=shebang_line)
-    command = ("{command_str} | {{submit_cmd}}").format(command_str=command_str)
+    shebang_line = "#!/usr/bin/env bash"
+
+    if "bash" in kwargs:
+        shebang_line = kwargs["bash"]
+
+    script = ("{shebang_line}\n{command}").format(shebang_line=shebang_line,
+                                                  command=command_str)
+    sub_command = ("echo -e '{}' | {}")
 
     if __BACKEND__ == "slurm":  # Format with slurm options
-        command.format(submit_cmd=__submit_slurm(kwargs))
+        sub_script = sub_command.format(script, __submit_slurm(**kwargs))
     elif __BACKEND__ == "torque":  # Format with torque options
-        command.format(submit_cmd=__submit_torque(kwargs))
+        sub_script = sub_command.format(script, __submit_torque(**kwargs))
 
-    script.format(command=command)  # <Shebang>\n<Command> | <Submission>
-    (stdout, stderr) = bash(script)  # Actaully call the script using bash
+    print(sub_script)
+    (stdout, stderr) = bash(sub_script)  # Actaully call the script using bash
 
     try:  # To parse the output based on expected successful submission result
         if __BACKEND__ == "slurm":
-            # Successfully submitted job <Job ID>.
-            return (stdout.split()[-1].rstrip("."))
+            # Successfully submitted job <Job ID>
+            print(stdout, stderr)
+            return(stdout.split(" ")[-1])
         if __BACKEND__ == "torque":
             # <Job ID>.hostname.etc.etc
-            return (stdout.split(".")[0])
+            return (stdout.split(".")[1])
 
     except (ValueError, IndexError) as err:
         print("Could not capture Job ID! Dependency checks may fail!")
+        print("Err: {}".format(err))
         return ("")
+
 
 def __cancel_jobs_slurm(*args):
     pass
