@@ -90,6 +90,31 @@ def __submit_torque(**kwargs):
     # -l mem=<MEM>,nodes=<Nodes>:ppn=<CPUs_per_node>
 
     submit_cmd = ("qsub")
+    if "memory" in kwargs.keys() and "cpus" in kwargs.keys() \
+            and "nodes" in kwargs.keys():
+        submit_cmd += " -l mem={m},nodes={n}:ppn={c}".format(
+            m=kwargs["memory"], n=kwargs["nodes"], c=kwargs["cpus"]
+        )
+    elif "memory" in kwargs.keys() and "cpus" in kwargs.keys():
+        submit_cmd += " -l mem={m},nodes=1:ppn={c}".format(
+            m=kwargs["memory"], c=kwargs["cpus"]
+        )
+    elif "memory" in kwargs.keys() and "nodes" in kwargs.keys():
+        submit_cmd += " -l mem={m},nodes={n}".format(
+            m=kwargs["memory"], n=kwargs["nodes"]
+        )
+    elif "cpus" in kwargs.keys() and "nodes" in kwargs.keys():
+        submit_cmd += " -l nodes={n}:ppn={c}".format(
+            n=kwargs["nodes"], c=kwargs["cpus"]
+        )
+    else:
+        if "memory" in kwargs.keys():
+            submit_cmd += " -l {}".format(kwargs["memory"])
+        if "cpus" in kwargs.keys():
+            submit_cmd += " -l nodes=1:ppn={}".format(kwargs["cpus"])
+        if "nodes" in kwargs.keys():
+            submit_cmd += " -l nodes={}".format(kwargs["nodes"])
+
     if "partition" in kwargs.keys():
         submit_cmd += " -q {}".format(kwargs["partition"])
     if "job_name" in kwargs.keys():
