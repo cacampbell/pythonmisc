@@ -7,10 +7,7 @@ from os import environ
 from os import getuid
 
 from Bash import bash
-
-
-def which(prog):
-    return bash("which {}".format(prog))[0]
+from Bash import which
 
 
 def get_username():
