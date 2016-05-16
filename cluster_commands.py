@@ -147,21 +147,19 @@ def submit_job(command_str, **kwargs):
 
     script = ("{shebang_line}\n{command}").format(shebang_line=shebang_line,
                                                   command=command_str)
-    sub_command = ("echo -e '{}' | {}")
+    sub_command = ("echo '{}' | {}")
 
     if __BACKEND__ == "slurm":  # Format with slurm options
         sub_script = sub_command.format(script, __submit_slurm(**kwargs))
     elif __BACKEND__ == "torque":  # Format with torque options
         sub_script = sub_command.format(script, __submit_torque(**kwargs))
 
-    print(sub_script)
     (stdout, stderr) = bash(sub_script)  # Actaully call the script using bash
 
     try:  # To parse the output based on expected successful submission result
         if __BACKEND__ == "slurm":
             # Successfully submitted job <Job ID>
-            print(stdout, stderr)
-            return(stdout.split(" ")[-1])
+            return(stdout.split(" ")[-1].strip("\n"))
         if __BACKEND__ == "torque":
             # <Job ID>.hostname.etc.etc
             return (stdout.split(".")[1])
