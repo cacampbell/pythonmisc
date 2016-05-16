@@ -19,6 +19,8 @@ def __get_backend():
         return ("slurm")
     elif which("qstat"):
         return ("torque")
+    else:
+        raise(RuntimeError("No suitable cluster backend found."))
 
 
 # Simple way to determine the backend for the cluster -- using API for commands
@@ -198,6 +200,7 @@ def submit_job(command_str, **kwargs):
     script = ("{shebang_line}\n{command}").format(shebang_line=shebang_line,
                                                   command=command_str)
     sub_command = ("echo '{}' | {}")
+    sub_script = ""  # Will hold entire string that will be send to bash shell
 
     if __BACKEND__ == "slurm":  # Format with slurm options
         sub_script = sub_command.format(script, __submit_slurm(**kwargs))
