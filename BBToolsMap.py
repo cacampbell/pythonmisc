@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 from __future__ import print_function
 
-import re
-
-from ParallelCommand import ParallelCommand
+from PairedEndCommand import PairedEndCommand
 
 
-class BBMapper(ParallelCommand):
+class BBMapper(PairedEndCommand):
     def __init__(self, input_root, output_root):
         self.read_marker = "_R1"
         self.mate_marker = "_R2"
@@ -14,23 +12,38 @@ class BBMapper(ParallelCommand):
         super(BBMapper, self).__init__(input_root, output_root)
 
     def make_command(self, read):
-        mate = re.sub(self.read_marker, self.mate_marker, read)
-        map_sam = re.sub(self.read_marker, "_pe", read)
-        map_sam = re.sub(self.input_suffix, ".sam", map_sam)
+        # Mate File
+        mate = self.mate(read)
+
+        # Mapped Sam file
+        map_sam = self.replace_read_marker_with("_pe", read)
+        map_sam = self.replace_extension(".sam", map_sam)
         map_sam = self.rebase_file(map_sam)
-        unmap_sam = re.sub(".sam", ".unmapped.sam", map_sam)
-        covstat = re.sub(self.read_marker, "_covstats", read)
-        covstat = re.sub(self.input_suffix, ".txt", covstat)
+
+        # Unmapped Sam fioe
+        unmap_sam = self.replace_extension(".unmapped.sam", map_sam)
+
+        # Coverage Statistics
+        covstat = self.replace_read_marker_with("_covstats", read)
+        covstat = self.replace_extension(".txt", covstat)
         covstat = self.rebase_file(covstat)
-        covhist = re.sub(self.read_marker, "_covhist", read)
-        covhist = re.sub(self.input_suffix, ".txt", covhist)
+
+        # Coverage Hist
+        covhist = self.replace_read_marker_with("_covhist", read)
+        covhist = self.replace_extension(".txt", covhist)
         covhist = self.rebase_file(covhist)
-        basecov = re.sub(self.read_marker, "_basecov", read)
-        basecov = re.sub(self.input_suffix, ".txt", basecov)
+
+        # Base Coverage
+        basecov = self.replace_read_marker_with("_basecov", read)
+        basecov = self.replace_extension(".txt", basecov)
         basecov = self.rebase_file(basecov)
-        bincov = re.sub(self.read_marker, "_bincov", read)
-        bincov = re.sub(self.input_suffix, ".txt", bincov)
+
+        # Bin Coverage
+        bincov = self.replace_read_marker_with("_bincov", read)
+        bincov = self.replace_extension(".txt", bincov)
         bincov = self.rebase_file(bincov)
+
+        # Full Command
         command = ("bbmap.sh in1={i1} in2={i2} outm={om} outu={ou} nodisk "
                    "covstats={covstat} covhist={covhist} threads={t} ref={r} "
                    "slow k=12 -Xmx{xmx} basecov={basecov} usejni=t"
@@ -45,4 +58,4 @@ class BBMapper(ParallelCommand):
                                               xmx=self.get_mem(),
                                               t=self.get_threads(),
                                               r=self.reference)
-        return command
+        return (command)

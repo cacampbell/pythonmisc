@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import unittest
 from sys import stderr
 
 from abc import ABCMeta
@@ -14,11 +15,11 @@ from ParallelCommand import ParallelCommand
 class PairedEndCommand(ParallelCommand):
     """
     Extension of ParallelCommand to run parallel commands with paired end
-    sequencing files
+    sequencing files, mainly for Illumina data
     Makes small changes to the file gathering and init methods that every
     Paired job needs in order to run
     """
-    __metaclass__ = ABCMeta
+    __metaclass__ = ABCMeta  # Still requires overwrite for make_command
 
     def __init__(self, input_root, output_root):
         self.read_regex = ".*_R1\.fq.*"  # All input reads (file 1 of 2) match
@@ -33,6 +34,13 @@ class PairedEndCommand(ParallelCommand):
         read_match = search(self.read_regex, read).group(1)
         mate_match = sub("1", "2", read_match)
         return (sub(read_match, mate_match, read))
+
+    def replace_read_marker_with(self, replacement, read):
+        read_match = search(self.read_regex, read).group(1)
+        return (sub(read_match, replacement, read))
+
+    def replace_extension(self, extension, read):
+        return (read.rsplit(".", 1)[0] + extension)
 
     def get_files(self):
         """
@@ -54,3 +62,28 @@ class PairedEndCommand(ParallelCommand):
     @abstractmethod
     def make_command(self, filename):
         pass
+
+
+class TestPairedEndCommand(unittest.TestCase):
+    def setUp(self):
+        pass
+
+    def test_mate(self):
+        pass
+
+    def test_replace_read_marker_with(self):
+        pass
+
+    def test_replace_extension(self):
+        pass
+
+    def test_get_files(self):
+        pass
+
+    def tearDown(self):
+        pass
+
+
+if __name__ == "__main__":
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestPairedEndCommand)
+    unittest.TextTestRunner(verbosity=3).run(suite)

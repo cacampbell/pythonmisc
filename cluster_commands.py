@@ -1,8 +1,20 @@
 #!/usr/bin/env python3
+from pwd import getpwuid
+from xml.etree.ElementTree import XML
+from xml.etree.ElementTree import XMLParser
+
 from os import environ
-from shutil import which
+from os import getuid
 
 from Bash import bash
+
+
+def which(prog):
+    return bash("which {}".format(prog))[0]
+
+
+def get_username():
+    return getpwuid(getuid())[0]
 
 
 def __get_backend():
@@ -39,9 +51,20 @@ def __slurm_e_opts(str):
 def __submit_slurm(**kwargs):
     """
     Anticipated Keyword Arguments:
-    command_str, memory, nodes, cpus, partition, job_name,
-    depends_on, email_address, email_options, time, bash, input, output,
-    error"""
+        memory - The memory to be allocated to this job
+        nodes - The nodes to be allocated
+        cpus - The cpus **per node** to request
+        partition -  The queue name or partition name for the submitted job
+        job_name - The name of the job
+        depends_on - The dependencies (as comma separated list of job numbers)
+        email_address -  The email address to use for notifications
+        email_options - Email options: START|BEGIN,END|FINISH,FAIL|ABORT
+        time - time to request from the scheduler
+        bash -  The bash shebang line to use in the script
+        input - The input filename for the job
+        output - The output filename for the job
+        error - The error filename for the job
+    """
     submit_cmd = ("sbatch")
 
     if "memory" in kwargs.keys():
@@ -68,7 +91,7 @@ def __submit_slurm(**kwargs):
     if "error" in kwargs.keys():
         submit_cmd += (" --error={}").format(kwargs["error"])
 
-    return(submit_cmd)
+    return (submit_cmd)
 
 
 def __torque_e_opts(str):
@@ -88,10 +111,21 @@ def __torque_e_opts(str):
 
 def __submit_torque(**kwargs):
     """
-        Anticipated Keyword Arguments:
-        command_str, memory, nodes, cpus, partition, job_name,
-        depends_on, email_address, email_options, time, bash, input, output,
-        error"""
+    Anticipated Keyword Arguments:
+        memory - The memory to be allocated to this job
+        nodes - The nodes to be allocated
+        cpus - The cpus **per node** to request
+        partition -  The queue name or partition name for the submitted job
+        job_name - The name of the job
+        depends_on - The dependencies (as comma separated list of job numbers)
+        email_address -  The email address to use for notifications
+        email_options - Email options: START|BEGIN,END|FINISH,FAIL|ABORT
+        time - time to request from the scheduler
+        bash -  The bash shebang line to use in the script
+        input - The input filename for the job
+        output - The output filename for the job
+        error - The error filename for the job
+    """
 
     submit_cmd = ("qsub")
     if "memory" in kwargs.keys() and "cpus" in kwargs.keys() \
@@ -140,6 +174,25 @@ def __submit_torque(**kwargs):
 
 
 def submit_job(command_str, **kwargs):
+    """
+    Anticipated positional args:
+        command_str - The command to be wrapped for submission to scheduler
+
+    Anticipated keyword args:
+        memory - The memory to be allocated to this job
+        nodes - The nodes to be allocated
+        cpus - The cpus **per node** to request
+        partition -  The queue name or partition name for the submitted job
+        job_name - The name of the job
+        depends_on - The dependencies (as comma separated list of job numbers)
+        email_address -  The email address to use for notifications
+        email_options - Email options: START|BEGIN,END|FINISH,FAIL|ABORT
+        time - time to request from the scheduler
+        bash -  The bash shebang line to use in the script
+        input - The input filename for the job
+        output - The output filename for the job
+        error - The error filename for the job
+    """
     shebang_line = "#!/usr/bin/env bash"
 
     if "bash" in kwargs:
@@ -159,7 +212,7 @@ def submit_job(command_str, **kwargs):
     try:  # To parse the output based on expected successful submission result
         if __BACKEND__ == "slurm":
             # Successfully submitted job <Job ID>
-            return(stdout.split(" ")[-1].strip("\n"))
+            return (stdout.split(" ")[-1].strip("\n"))
         if __BACKEND__ == "torque":
             # <Job ID>.hostname.etc.etc
             return (stdout.split(".")[1])
@@ -215,16 +268,19 @@ def requeue_suspended_jobs():
         __requeue_suspended_jobs_torque()
 
 
-def __queued_jobs_slurm():
-    pass
+def __existing_jobs_slurm():
+    (out, err) = bash("squeue --noheader -o %j -u {}".format(get_username()))
+    return (out.splitlines())
 
 
-def __queued_jobs_torque():
-    pass
+def __existing_jobs_torque():
+    (out, err) = bash("qstat -xml -u {}".format(get_username()))
+    xml = XML(out, parser=XMLParser(encoding='utf-8'))
+    return ([node.text for node in xml.iter("JB_name")])
 
 
-def queued_jobs():
+def existing_jobs():
     if __BACKEND__ == "slurm":
-        return __queued_jobs_slurm()
+        return __existing_jobs_slurm()
     elif __BACKEND__ == "torque":
-        return __queued_jobs_torque()
+        return __existing_jobs_torque()

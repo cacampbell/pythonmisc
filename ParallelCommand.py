@@ -5,13 +5,14 @@ from sys import stderr
 
 from abc import ABCMeta
 from abc import abstractmethod
-from os import environ
 from os import getcwd
 from os import makedirs
 from os import path
 from os import walk
 from re import search
 
+from cluster_commands import existing_jobs
+from cluster_commands import submit_job
 from module_loader import module
 
 __all__ = ["ParallelCommand"]
@@ -23,9 +24,9 @@ class ParallelCommand:
     Encapsulates the biolerplate required to run parallel identical jobs on
     groups of files using a cluster backend. This includes gathering files below
     a root directory, exlcuding undesired files, making a directory structure
-    at the output root, formatting format_commands for each file, writing a bash script
-    as a string for each format_commands, and finally, dispatching each script to the
-    appropriate cluster backend
+    at the output root, formatting format_commands for each file, writing a bash
+    script as a string for each format_commands, and finally, dispatching each
+    script to the appropriate cluster backend
     """
     # Make this class virtual, since it requires make_command at the least to
     # be overidden. Different scenarios will overwrite different methods.
@@ -34,11 +35,11 @@ class ParallelCommand:
     @staticmethod
     def rebase_directory(filename, src_root, dest_root):
         """
-        "Rebases" a filename by csubstituting the src_root for dest_root
+        "Rebases" a filename by substituting the src_root for dest_root
         as the absolute path (preserves relative directory structure)
         """
         return path.join(dest_root, path.relpath(filename,
-                                                       start=src_root))
+                                                 start=src_root))
 
     def rebase_file(self, filename):
         """
@@ -54,26 +55,46 @@ class ParallelCommand:
         """
         self.input_root = input_root
         self.output_root = output_root
-        self.modules = [environ.get['CLUSTER_BACKEND'], '']
+        self.modules = ''
         self.input_regex = '.*'
         self.exclusions = None
         self.dry_run = False
         self.verbose = False
 
+        # """
+        #   memory - The memory to be allocated to this job
+        #   nodes - The nodes to be allocated
+        #   cpus - The cpus **per node** to request
+        #   partition -  The queue name or partition name for the submitted job
+        #   job_name - The name of the job
+        #   depends_on - The dependencies (as comma separated list of job numbers)
+        #   email_address -  The email address to use for notifications
+        #   email_options - Email options: START|BEGIN,END|FINISH,FAIL|ABORT
+        #   time - time to request from the scheduler
+        #   bash -  The bash shebang line to use in the script
+        #   input - The input filename for the job
+        #   output - The output filename for the job
+        #   error - The error filename for the job
+        # """
         self.cluster_options = {
             "memory": "2G",
-            "cores": "1",
-            "queue_name": "normal",
-            "job_name_prefix": "ParallelCommand_",
-            "dependencies": "",
+            "nodes": "1",
+            "cpus": "1",
+            "partition": "normal",
+            "job_name": "ParallelCommand_",
+            "depends_on": "",
             "email_user": "",
             "email_options": "END,FAIL",
-            "run_time": "0"
+            "run_time": "0",
+            "time": "0",
+            "bash": "#!/usr/bin/env bash",
+            "input": "",
+            "output": "",
+            "error": ""
         }
 
         self.__files = []
         self.__commands = {}
-        self.__scripts = {}
         self.__exclusions = []
 
     def get_threads(self):
@@ -81,7 +102,7 @@ class ParallelCommand:
         Calculates the number of threads based on the specified number of cores
         :return: str: number of available worker threads
         """
-        return str(int(self.cluster_options["cores"]) - 1)
+        return str(int(self.cluster_options["cpus"]) - 1)
 
     def get_mem(self, fraction=1):
         """
@@ -98,23 +119,33 @@ class ParallelCommand:
 
     def dispatch(self):
         """
-        Dispatch the created write_scripts to the cluster scheduler, return the job
-        numbers for the dispatched jobs
-        :return: list<str>: job numbers as string in list
+        For each command in self.__commands, submit that command to the cluster
+        scheduler using the desired options from self.cluster_options
         """
-        for script in self.__scripts:
-            pass
+        job_numbers = []
 
-    def write_scripts(self):
-        """
-        Write write_scripts to be dispatched to the cluster scheduler
-        Wraps each earlier crafted command into a job for cluster, using the
-        either the slurm API or the SGE API
-        :return:
-        """
-        for (job_name, command) in self.__commands:
-            script = ""
-            self.__scripts += [script]
+        for job_name, command in self.__commands.items():
+            # Full name is whole task job name + individual name
+            full_job_name = self.cluster_options["job_name"] + job_name
+
+            # If the job is not already running and actually submitting the job
+            if full_job_name not in existing_jobs() and not self.dry_run:
+                # Replace the job name for the cluster options
+                opts = dict(self.cluster_options)
+                opts["job_name"] = full_job_name
+
+                # Capture the job number for the submitted job
+                job_number = submit_job(command, **opts)
+                job_numbers.append(job_number)
+
+                if self.verbose:
+                    print("Submitted job: {}".format(job_number))
+            else:
+                print("Job {} already running or dry_run set to True".format(
+                    full_job_name
+                ), file=stderr)
+
+        return (job_numbers)
 
     @abstractmethod
     def make_command(self, filename):
@@ -206,7 +237,7 @@ class ParallelCommand:
         presumably, of directory names) then remove files below the listed
         directories. If dirs contains a comma, assume that this denotes a list,
         and split the string on comma, then exclude files from below each.
-        :param previous_output_root: str: a directory path (previous output)
+        :param: dirs: str: a directory path (previous output)
         :return:
         """
         exclusions = []
@@ -279,9 +310,8 @@ class ParallelCommand:
         3) Remove exclusions
         4) Make Directories
         5) Format Commands
-        6) Write Scripts
-        7) Dispatch Scripts to Cluster Scheduler
-        8) Unload the modules
+        6) Dispatch Scripts to Cluster Scheduler
+        7) Unload the modules
         """
         if self.verbose:
             print('Loading environment modules...', file=stderr)
@@ -305,15 +335,11 @@ class ParallelCommand:
         self.make_directories()
 
         if self.verbose:
-            print('Writing format_commands...', file=stderr)
+            print('Formatting commands...', file=stderr)
         self.format_commands()
 
         if self.verbose:
-            print('Writing write_scripts...', file=stderr)
-        self.write_scripts()
-
-        if self.verbose:
-            print('Dispatching write_scripts to cluster...', file=stderr)
+            print('Dispatching to cluster...', file=stderr)
         return (self.dispatch())  # Return the job IDs from the dispatched cmds
 
         if self.verbose:

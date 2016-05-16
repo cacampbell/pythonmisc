@@ -6,7 +6,7 @@ module('load', 'torque', 'maui')
 
 
 def qsub(command, *args):
-    script = ("echo '#!/usr/bin/env bash\n {}' | qsub".format(command))
+    script = ("echo '#!/usr/bin/env bash\n{}' | qsub".format(command))
 
     for argument in args:
         script += " {}".format(argument)

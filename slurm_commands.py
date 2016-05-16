@@ -8,7 +8,7 @@ module('load', 'slurm')  # Import slurm from environment module system
 
 
 def sbatch(command, *args):
-    script = "echo '#!/usr/bin/env bash\n {}' | sbatch".format(command)
+    script = "echo '#!/usr/bin/env bash\n{}' | sbatch".format(command)
 
     for argument in args:
         script += " {}".format(argument)
