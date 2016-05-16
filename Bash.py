@@ -36,12 +36,16 @@ def bash(command, *args):
         #  No such file or directory error, which can occur when the command
         #  neeeds a subshell to work correctly. So, in this case, recall the
         #  command / script with a subshell
-        if err.errno == errno.ENOENT:
-            process = Popen(cmd_args, stdin=PIPE, stdout=PIPE, stderr=PIPE,
-                            shell=True)  # this time with subshell
-            return __decode(process.communicate())
+        # Same is true for permission denied errors
+        if err.errno == errno.ENOENT or err.errno == errno.EACCES:
+            try:
+                process = Popen(cmd_args, stdin=PIPE, stdout=PIPE, stderr=PIPE,
+                                shell=True)  # this time with subshell
+                return __decode(process.communicate())
+            except Exception as err2:
+                raise (err2)  # rerunning with shell also failed
         else:
-            raise (err)  # :(
+            raise (err)  # Could not successfully execute the command
     except CalledProcessError as err:
         print("Error while calling command: {}\n{}".format(command, err))
         raise (err)
