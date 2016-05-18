@@ -15,6 +15,7 @@ def get_username():
 
 
 def __get_backend():
+    print(which("scontrol"))
     if which("scontrol"):
         return ("slurm")
     elif which("qstat"):
@@ -161,7 +162,7 @@ def __submit_torque(**kwargs):
     if "email_address" in kwargs.keys():
         submit_cmd += " -M {}".format(kwargs["email_address"])
     if "email_options" in kwargs.keys():
-        submit_cmd += "-m {}".format(__torque_e_opts(kwargs["email_options"]))
+        submit_cmd += " -m {}".format(__torque_e_opts(kwargs["email_options"]))
     if "input" in kwargs.keys():
         submit_cmd += " -i {}".format(kwargs["input"])
     if "output" in kwargs.keys():
@@ -215,7 +216,7 @@ def submit_job(command_str, **kwargs):
             return (stdout.split(" ")[-1].strip("\n"))
         if __BACKEND__ == "torque":
             # <Job ID>.hostname.etc.etc
-            return (stdout.split(".")[1])
+            return (stdout.split(".")[0])
 
     except (ValueError, IndexError) as err:
         print("Could not capture Job ID! Dependency checks may fail!")
