@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 from pwd import getpwuid
-from xml.etree.ElementTree import XML
-from xml.etree.ElementTree import XMLParser
 
 from os import environ
 from os import getuid
@@ -255,10 +253,18 @@ def __cancel_suspended_jobs_slurm():
 
 
 def __cancel_suspended_jobs_torque():
-    (out, err) = bash("qstat -u {}".format(get_username()))
-    xml = XML(out, parser=XMLParser(encoding='utf-8'))
-    for node in xml.iter("Job_ID"):
-        qdel(node)
+    (out, err) = qstat(" -f")
+    job_ids = []
+
+    for job in out.split("\n\n"):
+        # Each chunk is a job with each attribute listed on a line
+        if "    euser = {}".format(get_username()) in job:
+            if "   job_state = PD" in job:
+                for line in job.split("\n"):
+                    if "Job Id:" in line:
+                        job_ids += [line.split(":")[-1].strip()]
+
+    cancel_jobs(job_ids)
 
 
 
@@ -279,7 +285,18 @@ def __cancel_running_jobs_slurm():
 
 
 def __cancel_running_jobs_torque():
-    pass
+    (out, err) = qstat(" -f")
+    job_ids = []
+
+    for job in out.split("\n\n"):
+        # Each chunk is a job with each attribute listed on a line
+        if "    euser = {}".format(get_username()) in job:
+            if "   job_state = R" in job:
+                for line in job.split("\n"):
+                    if "Job Id:" in line:
+                        job_ids += [line.split(":")[-1].strip()]
+
+    cancel_jobs(job_ids)
 
 
 def cancel_running_jobs():
@@ -298,7 +315,7 @@ def __requeue_suspended_jobs_slurm():
     scontrol("requeue " + " ".join(job_list))
 
 def __requeue_suspended_jobs_torque():
-    pass
+    raise ("Requeue not supported by Torque")
 
 
 def requeue_suspended_jobs():
@@ -323,7 +340,7 @@ def __existing_jobs_torque():
         if "    euser = {}".format(get_username()) in job:
             for line in job.split("\n"):
                 if "Job_Name" in line:
-                    job_names += [line.split(":")[-1].strip()]
+                    job_names += [line.split("=")[-1].strip()]
 
     return (job_names)
 
