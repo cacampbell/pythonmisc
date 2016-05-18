@@ -1,39 +1,38 @@
 #!/usr/bin/env python
 from BBToolsMap import BBMapper
-import sys
+from BBToolsMap_NoStats import BBMapperNoStats
+from simple_argparse import run_with_args
 
 
-def main(input_root, output_root, reference, exclusions=""):
-    m = BBMapper(input_root, output_root)
-    m.job_prefix = "Map_"
-    m.input_suffix = ".fq.gz"
+def main(input_root, output_root, reference="reference.fa", stats=False,
+         exclusions="", cluster_options=None):
+    m = BBMapperNoStats(input_root, output_root)
 
-    if "Piar" in input_root:
-        m.read_marker = "_1"
-        m.mate_marker = "_2"
-    elif "Psme" in input_root:
-        m.read_marker = "_R1"
-        m.mate_marker = "_R2"
+    if stats:
+        m = BBMapper(input_root, output_root)
 
-    m.modules = ['java']
-    m.slurm_options['partition'] = 'bigmemm'
-    m.slurm_options['mail-user'] = 'cacampbell@ucdavis.edu'
-    m.slurm_options['mem'] = '320G'
-    m.slurm_options['cpus'] = '20'
-    m.exclusions_directory = exclusions
-    m.exclusions = m.mate_marker
     m.reference = reference
-    m.verbose = False
-    m.dry_run = False
+    m.modules = ['java']
+    m.exclusions = exclusions
+    # m.input_regex = ".*"  # All files match this
+    # m.read_regex = ".*_R1\.fq.*"  # Only Read 1 of 2 matches this
+    m.extension = ".fq.gz"  # The file extension, stated explicitly
+    m.dry_run = False  # Actually execute commands or not: True or False
+    m.verbose = False  # Print Statements throughout code: True or False
+    if not cluster_options:
+        m.cluster_options = {
+            "memory": "220G",
+            "nodes": "1",
+            "cpus": "20",
+            "partition": "bigmemh",
+            "job_name": "Map_",
+            "depends_on": "",
+            "email_user": "cacampbell@ucdavis.edu",
+            "email_options": "END,FAIL",
+            "time": "0",
+            "bash": "#!/usr/bin/env bash"
+        }
     m.run()
 
-
 if __name__ == "__main__":
-    if len(sys.argv) == 5:
-        main(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
-    elif len(sys.argv) == 4:
-        main(sys.argv[1], sys.argv[2], sys.argv[3])
-    elif len(sys.argv) == 3:
-        main(sys.argv[1], sys.argv[2], "reference.fasta")
-    else:
-        print("Check Arguments")
+    run_with_args(main)  # Runs main with arguments from argv

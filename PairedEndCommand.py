@@ -24,7 +24,8 @@ class PairedEndCommand(ParallelCommand):
     def __init__(self, input_root, output_root):
         self.read_regex = ".*_R1\.fq.*"  # All input reads (file 1 of 2) match
         super(self, PairedEndCommand).__init__(input_root=input_root,
-                                               output_root=output_root)
+                                               output_root=output_root,
+                                               input_regex=".fq.gz")
 
     def mate(self, read):
         """
@@ -40,6 +41,9 @@ class PairedEndCommand(ParallelCommand):
         return (sub(read_match, replacement, read))
 
     def replace_extension(self, extension, read):
+        if self.extension:
+            return (read.replace(self.extension, extension))
+
         return (read.rsplit(".", 1)[0] + extension)
 
     def get_files(self):
@@ -53,11 +57,19 @@ class PairedEndCommand(ParallelCommand):
                 # Match input_regex and read_regex in the files found
                 if (search(self.input_regex, filename) and
                         search(self.read_regex, filename)):
-                    abs_path = path.join(root, filename)
-                    self.__files += [abs_path]
+                    if self.extension is not None:
+                        if search(self.extension, filename):
+                            abs_path = path.join(root, filename)
+                            self.__files += [abs_path]
 
-                    if self.verbose:
-                        print(abs_path, file=stderr)
+                            if self.verbose:
+                                print(abs_path, file=stderr)
+                    else:
+                        abs_path = path.join(root, filename)
+                        self.__files += [abs_path]
+
+                        if self.verbose:
+                            print(abs_path, file=stderr)
 
     @abstractmethod
     def make_command(self, filename):

@@ -49,14 +49,16 @@ class ParallelCommand:
                                                 self.input_root,
                                                 self.output_root)
 
-    def __init__(self, input_root=getcwd(), output_root=getcwd()):
+    def __init__(self, input_root=getcwd(), output_root=getcwd(),
+                 input_regex=".*"):
         """
         Initialize with an input root and an output root
         """
         self.input_root = input_root
         self.output_root = output_root
+        self.input_regex = input_regex
         self.modules = ''
-        self.input_regex = '.*'
+        self.extension = None
         self.exclusions = None
         self.dry_run = False
         self.verbose = False
@@ -85,12 +87,8 @@ class ParallelCommand:
             "depends_on": "",
             "email_user": "",
             "email_options": "END,FAIL",
-            "run_time": "0",
             "time": "0",
-            "bash": "#!/usr/bin/env bash",
-            "input": "",
-            "output": "",
-            "error": ""
+            "bash": "#!/usr/bin/env bash"
         }
 
         self.__files = []
@@ -139,7 +137,7 @@ class ParallelCommand:
                 job_numbers.append(job_number)
 
                 if self.verbose:
-                    print("Submitted job: {}".format(job_number))
+                    print("Submitted job: {}".format(job_number), file=stderr)
             else:
                 print("Job {} already running or dry_run set to True".format(
                     full_job_name
@@ -262,12 +260,20 @@ class ParallelCommand:
         """
         for root, _, files in walk(self.input_root):
             for filename in files:  # for all files
-                if search(self.input_regex, filename):  # matches input_regex
-                    abs_path = path.join(root, filename)
-                    self.__files += [abs_path]
+                if search(self.input_regex, filename):
+                    if self.extension is not None:
+                        if search(self.extension, filename):
+                            abs_path = path.join(root, filename)
+                            self.__files += [abs_path]
 
-                    if self.verbose:
-                        print(abs_path, file=stderr)
+                            if self.verbose:
+                                print(abs_path, file=stderr)
+                    else:
+                        abs_path = path.join(root, filename)
+                        self.__files += [abs_path]
+
+                        if self.verbose:
+                            print(abs_path, file=stderr)
 
     def module_cmd(self, args):
         """
@@ -298,7 +304,8 @@ class ParallelCommand:
 
         for directory in output_directories:
             if self.verbose:
-                print("Attempting to make: {0:s}".format(directory))
+                print("Attempting to make: {0:s}".format(directory),
+                      file=stderr)
             if not self.dry_run:
                 mkdir_p(directory)  # Attempt safe creation of each dir
 
@@ -322,7 +329,7 @@ class ParallelCommand:
         self.get_files()
 
         if self.verbose:
-            print('Removing exclusions...')
+            print('Removing exclusions...', file=stderr)
 
         if self.exclusions_directory:
             self.exclude_files_from(self.exclusions_directory)

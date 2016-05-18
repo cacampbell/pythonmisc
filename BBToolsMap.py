@@ -5,12 +5,6 @@ from PairedEndCommand import PairedEndCommand
 
 
 class BBMapper(PairedEndCommand):
-    def __init__(self, input_root, output_root):
-        self.read_marker = "_R1"
-        self.mate_marker = "_R2"
-        self.reference = "reference.fa"
-        super(BBMapper, self).__init__(input_root, output_root)
-
     def make_command(self, read):
         # Mate File
         mate = self.mate(read)
@@ -20,8 +14,10 @@ class BBMapper(PairedEndCommand):
         map_sam = self.replace_extension(".sam", map_sam)
         map_sam = self.rebase_file(map_sam)
 
-        # Unmapped Sam fioe
-        unmap_sam = self.replace_extension(".unmapped.sam", map_sam)
+        # Unmapped Sam file
+        unmap_sam = self.replace_read_marker_with("_pe", read)
+        unmap_sam = self.replace_extension(".unmapped.sam", unmap_sam)
+        unmap_sam = self.rebase_file(unmap_sam)
 
         # Coverage Statistics
         covstat = self.replace_read_marker_with("_covstats", read)
