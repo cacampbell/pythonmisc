@@ -8,6 +8,10 @@ from os import getuid
 
 from Bash import bash
 from Bash import which
+from slurm_commands import scancel
+from slurm_commands import scontrol
+from slurm_commands import squeue
+from torque_commands import qdel, qstat
 
 
 def get_username():
@@ -225,11 +229,13 @@ def submit_job(command_str, **kwargs):
 
 
 def __cancel_jobs_slurm(*args):
-    pass
+    for job in args:
+        scancel(job)
 
 
 def __cancel_jobs_torque(*args):
-    pass
+    for job in args:
+        qdel(job)
 
 
 def cancel_jobs(*args):
@@ -240,11 +246,20 @@ def cancel_jobs(*args):
 
 
 def __cancel_suspended_jobs_slurm():
-    pass
+    job_list = []
+
+    for line in squeue("-u {} -l -h -t {}".format(get_username(), "PD"))[0]:
+        job_list.append(line.split()[0])
+
+    scancel(" ".join(job_list))
 
 
 def __cancel_suspended_jobs_torque():
-    pass
+    (out, err) = bash("qstat -u {}".format(get_username()))
+    xml = XML(out, parser=XMLParser(encoding='utf-8'))
+    for node in xml.iter("Job_ID"):
+        qdel(node)
+
 
 
 def cancel_suspended_jobs():
@@ -254,9 +269,33 @@ def cancel_suspended_jobs():
         __cancel_suspended_jobs_torque()
 
 
-def __requeue_suspended_jobs_slurm():
+def __cancel_running_jobs_slurm():
+    job_list = []
+
+    for line in squeue("-u {} -l -h -t {}".format(get_username(), "R"))[0]:
+        job_list.append(line.split()[0])
+
+    scancel(" ".join(job_list))
+
+
+def __cancel_running_jobs_torque():
     pass
 
+
+def cancel_running_jobs():
+    if __BACKEND__ == "slurm":
+        __cancel_running_jobs_slurm()
+    elif __BACKEND__ == "torque":
+        __cancel_running_jobs_torque()
+
+
+def __requeue_suspended_jobs_slurm():
+    job_list = []
+
+    for line in squeue("-u {} -l -h -t {}".format(get_username(), "PD"))[0]:
+        job_list.append(line.split()[0])
+
+    scontrol("requeue " + " ".join(job_list))
 
 def __requeue_suspended_jobs_torque():
     pass
@@ -270,14 +309,23 @@ def requeue_suspended_jobs():
 
 
 def __existing_jobs_slurm():
-    (out, err) = bash("squeue --noheader -o %j -u {}".format(get_username()))
+    # Return the job names of the Pending or Running jobs for this user
+    (out, err) = squeue(" --noheader -o %j -u {}".format(get_username()))
     return (out.splitlines())
 
 
 def __existing_jobs_torque():
-    (out, err) = bash("qstat -xml -u {}".format(get_username()))
-    xml = XML(out, parser=XMLParser(encoding='utf-8'))
-    return ([node.text for node in xml.iter("JB_name")])
+    (out, err) = qstat(" -f")
+    job_names = []
+
+    for job in out.split("\n\n"):
+        # Each chunk is a job with each attribute listed on a line
+        if "    euser = {}".format(get_username()) in job:
+            for line in job.split("\n"):
+                if "Job_Name" in line:
+                    job_names += [line.split(":")[-1].strip()]
+
+    return (job_names)
 
 
 def existing_jobs():
