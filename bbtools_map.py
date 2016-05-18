@@ -5,7 +5,7 @@ from simple_argparse import run_with_args
 
 
 def main(input_root, output_root, reference="reference.fa", stats=False,
-         exclusions="", cluster_options=None):
+         exclusions="", cluster_options=None, dry_run=False, verbose=False):
     m = BBMapperNoStats(input_root, output_root)
 
     if stats:
@@ -17,8 +17,8 @@ def main(input_root, output_root, reference="reference.fa", stats=False,
     # m.input_regex = ".*"  # All files match this
     # m.read_regex = ".*_R1\.fq.*"  # Only Read 1 of 2 matches this
     m.extension = ".fq.gz"  # The file extension, stated explicitly
-    m.dry_run = False  # Actually execute commands or not: True or False
-    m.verbose = False  # Print Statements throughout code: True or False
+    m.dry_run = dry_run  # Actually execute commands or not: True or False
+    m.verbose = verbose  # Print Statements throughout code: True or False
     if not cluster_options:
         m.cluster_options = {
             "memory": "220G",
