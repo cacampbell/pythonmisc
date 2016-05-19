@@ -6,7 +6,8 @@ from PairedEndCommand import PairedEndCommand
 
 class BBMapperNoStats(PairedEndCommand):
     def __init__(self, input_root, output_root, input_regex=".fq.gz"):
-        PairedEndCommand.__init__(input_root=input_root,
+        PairedEndCommand.__init__(self,
+                                  input_root=input_root,
                                   output_root=output_root)
         self.input_regex = input_regex
 
