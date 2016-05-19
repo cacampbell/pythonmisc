@@ -60,6 +60,7 @@ class ParallelCommand:
         self.modules = ''
         self.extension = None
         self.exclusions = None
+        self.exclusions_paths = None
         self.dry_run = False
         self.verbose = False
 
@@ -331,8 +332,8 @@ class ParallelCommand:
         if self.verbose:
             print('Removing exclusions...', file=stderr)
 
-        if self.exclusions_directory:
-            self.exclude_files_from(self.exclusions_directory)
+        if self.exclusions_paths:
+            self.exclude_files_from(self.exclusions_paths)
 
         if self.exclusions:
             self.exclude_regex_matches(self.exclusions)
