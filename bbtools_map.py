@@ -32,7 +32,8 @@ def main(input_root, output_root, reference="reference.fa", stats=False,
             "time": "0",
             "bash": "#!/usr/bin/env bash"
         }
-    m.run()
+    return (m.run())
 
 if __name__ == "__main__":
-    run_with_args(main)  # Runs main with arguments from argv
+    job_list = run_with_args(main)  # Runs main with arguments from argv
+    print(job_list)

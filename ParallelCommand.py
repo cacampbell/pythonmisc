@@ -322,7 +322,7 @@ class ParallelCommand:
         """
         if self.verbose:
             print('Loading environment modules...', file=stderr)
-        self.module_cmd('load')
+        self.module_cmd(['load'])
 
         if self.verbose:
             print('Gathering input files...', file=stderr)
@@ -351,7 +351,7 @@ class ParallelCommand:
 
         if self.verbose:
             print("Unloading environment modules....", file=stderr)
-        self.module_cmd('unload')
+        self.module_cmd(['unload'])
 
 
 def mkdir_p(path):

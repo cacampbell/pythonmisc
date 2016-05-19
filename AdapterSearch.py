@@ -20,3 +20,6 @@ class AdapterFinder(ParallelCommand):
                                       t=self.get_threads(), i1=filename,
                                       i2=mate, o=adapter)
         return command
+
+
+class AdapterFinder
