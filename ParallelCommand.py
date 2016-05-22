@@ -92,9 +92,9 @@ class ParallelCommand:
             "bash": "#!/usr/bin/env bash"
         }
 
-        self.__files = []
-        self.__commands = {}
-        self.__exclusions = []
+        self.files = []
+        self.commands = {}
+        self.exclusions = []
 
     def get_threads(self):
         """
@@ -118,12 +118,12 @@ class ParallelCommand:
 
     def dispatch(self):
         """
-        For each command in self.__commands, submit that command to the cluster
+        For each command in self.commands, submit that command to the cluster
         scheduler using the desired options from self.cluster_options
         """
         job_numbers = []
 
-        for job_name, command in self.__commands.items():
+        for job_name, command in self.commands.items():
             # Full name is whole task job name + individual name
             full_job_name = self.cluster_options["job_name"] + job_name
 
@@ -164,7 +164,7 @@ class ParallelCommand:
         Generate format_commands for each file gathered
         :return:
         """
-        for file in self.__files:  # for each file
+        for file in self.files:  # for each file
             job_name = "{0:s}{0:s}".format(
                 self.cluster_options["job_name_prefix"], path.basename(file))
 
@@ -176,7 +176,7 @@ class ParallelCommand:
                           file=stderr)
 
             assert (type(command) is str)  # at least, it has to be a str
-            self.__commands[job_name] = command
+            self.commands[job_name] = command
 
             if self.verbose:
                 print(command, file=stderr)
@@ -193,10 +193,10 @@ class ParallelCommand:
             print("No exclusions removed...", file=stderr)
 
     def __exclude_regex_matches_single(self, exclusions):
-        for filename in list(self.__files):
-            # So, it's a regex, search __files and remove if match
+        for filename in list(self.files):
+            # So, it's a regex, search files and remove if match
             if search(exclusions, filename):
-                self.__files.remove(filename)
+                self.files.remove(filename)
 
                 if self.verbose:
                     print("Removed {0:s}, matching {0:s}".format(filename,
@@ -265,13 +265,13 @@ class ParallelCommand:
                     if self.extension is not None:
                         if search(self.extension, filename):
                             abs_path = path.join(root, filename)
-                            self.__files += [abs_path]
+                            self.files += [abs_path]
 
                             if self.verbose:
                                 print(abs_path, file=stderr)
                     else:
                         abs_path = path.join(root, filename)
-                        self.__files += [abs_path]
+                        self.files += [abs_path]
 
                         if self.verbose:
                             print(abs_path, file=stderr)

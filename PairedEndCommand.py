@@ -22,10 +22,10 @@ class PairedEndCommand(ParallelCommand):
     __metaclass__ = ABCMeta  # Still requires overwrite for make_command
 
     def __init__(self, input_root, output_root, input_regex="*.fq.gz"):
-        self.read_regex = ".*_R1\.fq.*"  # All input reads (file 1 of 2) match
         super(PairedEndCommand, self).__init__(input_root=input_root,
                                                output_root=output_root,
                                                input_regex=input_regex)
+        self.read_regex = ".*_R1\.fq.*"  # All input reads (file 1 of 2) match
 
     def mate(self, read):
         """
@@ -60,13 +60,13 @@ class PairedEndCommand(ParallelCommand):
                     if self.extension is not None:
                         if search(self.extension, filename):
                             abs_path = path.join(root, filename)
-                            self.__files += [abs_path]
+                            self.files += [abs_path]
 
                             if self.verbose:
                                 print(abs_path, file=stderr)
                     else:
                         abs_path = path.join(root, filename)
-                        self.__files += [abs_path]
+                        self.files += [abs_path]
 
                         if self.verbose:
                             print(abs_path, file=stderr)
