@@ -8,6 +8,15 @@ def main(input_root, output_root, reference="reference.fa", stats=False,
          exclusions=None, cluster_options=None, dry_run=False, verbose=False):
     m = BBMapperNoStats(input_root, output_root, input_regex="*.fq.gz")
 
+    print("input_root: {}".format(m.input_root))
+    print("output_root: {}".format(m.output_root))
+    print("reference: {}".format(reference))
+    print("stats: {}".fomrat(stats))
+    print("exclusions: {}".format(exclusions))
+    print("cluster_options: {}".format(cluster_options))
+    print("dry_run: {}".format(dry_run))
+    print("verbose: {}".format(verbose))
+
     if stats:
         m = BBMapper(input_root, output_root)
 
@@ -33,8 +42,6 @@ def main(input_root, output_root, reference="reference.fa", stats=False,
             "time": "0",
             "bash": "#!/usr/bin/env bash"
         }
-    print(m.input_root, m.output_root, m.reference, m.input_regex, m.extension,
-          m.dry_run, m.verbose, m.exclusions, m.cluster_options)
     return (m.run())
 
 if __name__ == "__main__":
