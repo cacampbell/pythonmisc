@@ -11,15 +11,14 @@ class BBMapperNoStats(PairedEndCommand):
                                               input_regex=input_regex)
 
     def make_command(self, read):
-        # Mate File
-        print()
         mate = self.mate(read)
+        print(mate)
 
         # Mapped Sam file
         map_sam = self.replace_read_marker_with("_pe", read)
         map_sam = self.replace_extension(".sam", map_sam)
         map_sam = self.rebase_file(map_sam)
-
+        print(map_sam)
 
         # Full Command
         command = ("bbmap.sh in1={i1} in2={i2} outm={om} nodisk "
@@ -30,4 +29,5 @@ class BBMapperNoStats(PairedEndCommand):
                                       xmx=self.get_mem(),
                                       t=self.get_threads(),
                                       r=self.reference)
+        print(command)
         return (command)
