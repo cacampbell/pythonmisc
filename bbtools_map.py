@@ -33,6 +33,8 @@ def main(input_root, output_root, reference="reference.fa", stats=False,
             "time": "0",
             "bash": "#!/usr/bin/env bash"
         }
+    print(m.input_root, m.output_root, m.reference, m.input_regex, m.extension,
+          m.dry_run, m.verbose, m.exclusions, m.cluster_options)
     return (m.run())
 
 if __name__ == "__main__":

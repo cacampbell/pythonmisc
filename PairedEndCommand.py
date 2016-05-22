@@ -52,18 +52,13 @@ class PairedEndCommand(ParallelCommand):
             directory
             :return:
         """
-        print("Verbose is: {}".format(self.verbose))
-
         for root, _, files in walk(self.input_root):
             for filename in files:  # for all files
-                print(filename)
                 # Match input_regex and read_regex in the files found
                 if (search(self.input_regex, filename) and
                         search(self.read_regex, filename)):
-                    print(filename)
                     if self.extension is not None:
                         if search(self.extension, filename):
-                            print(filename)
                             abs_path = path.join(root, filename)
                             self.files += [abs_path]
 

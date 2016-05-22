@@ -184,17 +184,6 @@ class ParallelCommand:
             if self.verbose:
                 print(command, file=stderr)
 
-    def __exclude_regex_matches_file(self, exclusions):
-        try:
-            with open(exclusions, "rb") as fh:  # try to open it
-                for regex in fh.readlines():  # for each line in it
-                    self.exclude_regex_matches(regex)
-
-        except (OSError, IOError) as error:  # ... but couldn't open it
-            print("{0:s} occurred while trying to read {0:s}".format(
-                error, exclusions), file=stderr)
-            print("No exclusions removed...", file=stderr)
-
     def __exclude_regex_matches_single(self, exclusions):
         for filename in list(self.files):
             # So, it's a regex, search files and remove if match
@@ -222,13 +211,8 @@ class ParallelCommand:
         if type(exclusion) is list:
             for ex in exclusion:
                 self.exclude_regex_matches(ex)
-
         elif type(exclusion) is str:  # inclusions is either file or regex
-            if path.isfile(exclusion):  # it's a file
-                self.__exclude_regex_matches_file(exclusion)
-            else:  # Not a file on the system
-                self.__exclude_regex_matches_single(exclusion)
-
+            self.__exclude_regex_matches_single(exclusion)
         else:  # Didn't get expected types, print message and continue
             print("Exclusions not str or list, no exclusions removed...",
                   file=stderr)
