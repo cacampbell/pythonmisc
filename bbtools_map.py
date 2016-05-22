@@ -6,7 +6,7 @@ from simple_argparse import run_with_args
 
 def main(input_root, output_root, reference="reference.fa", stats=False,
          exclusions=None, cluster_options=None, dry_run=False, verbose=False):
-    m = BBMapperNoStats(input_root, output_root)
+    m = BBMapperNoStats(input_root, output_root, input_regex="*.fq.gz")
 
     if stats:
         m = BBMapper(input_root, output_root)

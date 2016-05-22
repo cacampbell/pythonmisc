@@ -6,8 +6,9 @@ from PairedEndCommand import PairedEndCommand
 
 class BBMapper(PairedEndCommand):
     def __init__(self, input_root, output_root, input_regex=".fq.gz"):
-        self.input_regex = input_regex
-        super().__init__(input_root=input_root, output_root=output_root)
+        super(BBMapper, self).__init__(input_root=input_root,
+                                       output_root=output_root,
+                                       input_regex=input_regex)
 
     def make_command(self, read):
         # Mate File
