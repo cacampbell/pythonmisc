@@ -175,7 +175,7 @@ class ParallelCommand:
                 command = self.make_command(file)  # derived class command
             except Exception as ex:
                 if self.verbose:
-                    print("Command formatting failed: {0:s}".format(ex),
+                    print("Command formatting failed: {}".format(ex),
                           file=stderr)
 
             assert (type(command) is str)  # at least, it has to be a str
