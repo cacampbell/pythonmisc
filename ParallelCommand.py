@@ -166,7 +166,7 @@ class ParallelCommand:
         """
         for file in self.files:  # for each file
             job_name = "{0:s}{0:s}".format(
-                self.cluster_options["job_name_prefix"], path.basename(file))
+                self.cluster_options["job_name"], path.basename(file))
 
             try:
                 command = self.make_command(file)  # derived class command
