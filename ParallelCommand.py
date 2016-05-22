@@ -9,6 +9,7 @@ from os import getcwd
 from os import makedirs
 from os import path
 from os import walk
+from os.path import isdir
 from re import search
 
 from cluster_commands import existing_jobs
@@ -366,7 +367,7 @@ def mkdir_p(path):
     try:
         makedirs(path)
     except OSError as exc:
-        if exc.errno == errno.EEXIST and path.isdir(path):
+        if exc.errno == errno.EEXIST and isdir(path):
             print("{0:s} already exists".format(path),
                   file=stderr)
         else:
