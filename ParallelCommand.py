@@ -9,7 +9,7 @@ from os import getcwd
 from os import makedirs
 from os import path
 from os import walk
-from os.path import isdir
+from os.path import isdir, basename
 from re import search
 
 from cluster_commands import existing_jobs
@@ -165,14 +165,14 @@ class ParallelCommand:
         Generate format_commands for each file gathered
         :return:
         """
-        for file in self.files:  # for each file
+        for filename in self.files:  # for each file
             command = ""
 
-            job_name = "{0:s}{0:s}".format(
-                self.cluster_options["job_name"], path.basename(file))
+            job_name = "{}{}".format(self.cluster_options["job_name"],
+                                     basename(filename))
 
             try:
-                command = self.make_command(file)  # derived class command
+                command = self.make_command(filename)  # derived class command
             except Exception as ex:
                 if self.verbose:
                     print("Command formatting failed: {}".format(ex),
