@@ -266,6 +266,7 @@ class ParallelCommand:
 
         for root, _, files in walk(self.input_root):
             for filename in files:  # for all files
+                print(filename)
                 if search(self.input_regex, filename):
                     print(filename)
                     if self.extension is not None:
