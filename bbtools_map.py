@@ -11,7 +11,7 @@ def main(input_root, output_root, reference="reference.fa", stats=False,
     print("input_root: {}".format(m.input_root))
     print("output_root: {}".format(m.output_root))
     print("reference: {}".format(reference))
-    print("stats: {}".fomrat(stats))
+    print("stats: {}".format(stats))
     print("exclusions: {}".format(exclusions))
     print("cluster_options: {}".format(cluster_options))
     print("dry_run: {}".format(dry_run))
