@@ -166,6 +166,8 @@ class ParallelCommand:
         :return:
         """
         for file in self.files:  # for each file
+            command = ""
+
             job_name = "{0:s}{0:s}".format(
                 self.cluster_options["job_name"], path.basename(file))
 
