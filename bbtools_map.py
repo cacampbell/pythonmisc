@@ -14,6 +14,7 @@ def main(input_root, output_root, reference="reference.fa", stats=False,
     m.reference = reference
     m.modules = ['java']
     m.exclusions = exclusions
+    # The following three attributes constrain the files
     # m.input_regex = ".*"  # All files match this
     # m.read_regex = ".*_R1\.fq.*"  # Only Read 1 of 2 matches this
     m.extension = ".fq.gz"  # The file extension, stated explicitly
