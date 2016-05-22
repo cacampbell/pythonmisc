@@ -21,7 +21,7 @@ class PairedEndCommand(ParallelCommand):
     """
     __metaclass__ = ABCMeta  # Still requires overwrite for make_command
 
-    def __init__(self, input_root, output_root, input_regex="*.fq.gz"):
+    def __init__(self, input_root, output_root, input_regex="fq.gz$"):
         super(PairedEndCommand, self).__init__(input_root=input_root,
                                                output_root=output_root,
                                                input_regex=input_regex)
