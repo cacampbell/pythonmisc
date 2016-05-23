@@ -25,7 +25,7 @@ class PairedEndCommand(ParallelCommand):
         super(PairedEndCommand, self).__init__(input_root=input_root,
                                                output_root=output_root,
                                                input_regex=input_regex)
-        self.read_regex = "_R1\.fq.*"  # All input reads (file 1 of 2) match
+        self.read_regex = "_R1"
 
     def mate(self, read):
         """
