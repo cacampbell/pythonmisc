@@ -11,6 +11,7 @@ class BBMapperNoStats(PairedEndCommand):
                                               input_regex=input_regex)
 
     def make_command(self, read):
+        print("Entered Make Commands...")
         mate = self.mate(read)
         print("Mate: {}".format(mate))
 

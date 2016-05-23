@@ -164,7 +164,6 @@ class ParallelCommand:
         """
         for filename in self.files:  # for each file
             command = ""
-
             job_name = "{}{}".format(self.cluster_options["job_name"],
                                      basename(filename))
 

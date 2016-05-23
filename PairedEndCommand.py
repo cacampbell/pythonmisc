@@ -25,26 +25,40 @@ class PairedEndCommand(ParallelCommand):
         super(PairedEndCommand, self).__init__(input_root=input_root,
                                                output_root=output_root,
                                                input_regex=input_regex)
-        self.read_regex = ".*_R1\.fq.*"  # All input reads (file 1 of 2) match
+        self.read_regex = "_R1\.fq.*"  # All input reads (file 1 of 2) match
 
     def mate(self, read):
         """
         Return the filename of the mate for this read
         :param: read: str: the read filename
         """
-        read_match = search(self.read_regex, read).group(1)
-        mate_match = sub("1", "2", read_match)
-        return (sub(read_match, mate_match, read))
+        try:
+            read_match = search(self.read_regex, read).group(1)
+            mate_match = sub("1", "2", read_match)
+            return (sub(read_match, mate_match, read))
+        except Exception as err:
+            print("Could not find and replace using read_regex", file=stderr)
+            raise (err)
 
     def replace_read_marker_with(self, replacement, read):
-        read_match = search(self.read_regex, read).group(1)
-        return (sub(read_match, replacement, read))
+        try:
+            read_match = search(self.read_regex, read).group(1)
+            return (sub(read_match, replacement, read))
+        except Exception as err:
+            print("Could not find and replace using read_regex", file=stderr)
+            raise (err)
 
     def replace_extension(self, extension, read):
         if self.extension:
-            return (read.replace(self.extension, extension))
-
-        return (read.rsplit(".", 1)[0] + extension)
+            try:
+                return (read.replace(self.extension, extension))
+            except Exception as err:
+                print("Cannot find and replace by extension", file=stderr)
+                raise (err)
+        try:
+            return (read.rsplit(".", 1)[0] + extension)
+        except Exception as err:
+            print("Could not automatically replace extension", file=stderr)
 
     def get_files(self):
         """
