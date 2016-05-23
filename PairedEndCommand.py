@@ -34,7 +34,10 @@ class PairedEndCommand(ParallelCommand):
         """
         try:
             print(read)
-            print(search(self.read_regex, read))
+
+            for i in search(self.read_regex, read).group():
+                print(i)
+
             read_match = search(self.read_regex, read).group(1)
             mate_match = sub("1", "2", read_match)
             return (sub(read_match, mate_match, read))
