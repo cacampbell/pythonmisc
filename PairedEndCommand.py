@@ -25,7 +25,7 @@ class PairedEndCommand(ParallelCommand):
         super(PairedEndCommand, self).__init__(input_root=input_root,
                                                output_root=output_root,
                                                input_regex=input_regex)
-        self.read_regex = "_R1"
+        self.read_regex = "_R1\.fq.*"
 
     def mate(self, read):
         """
