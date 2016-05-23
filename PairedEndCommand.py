@@ -33,12 +33,7 @@ class PairedEndCommand(ParallelCommand):
         :param: read: str: the read filename
         """
         try:
-            print(read)
-
-            for i in search(self.read_regex, read).group():
-                print(i)
-
-            read_match = search(self.read_regex, read).group(1)
+            read_match = search(self.read_regex, read).group(0)
             mate_match = sub("1", "2", read_match)
             return (sub(read_match, mate_match, read))
         except Exception as err:
@@ -47,7 +42,7 @@ class PairedEndCommand(ParallelCommand):
 
     def replace_read_marker_with(self, replacement, read):
         try:
-            read_match = search(self.read_regex, read).group(1)
+            read_match = search(self.read_regex, read).group(0)
             return (sub(read_match, replacement, read))
         except Exception as err:
             print("Could not find and replace using read_regex", file=stderr)
