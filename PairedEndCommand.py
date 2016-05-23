@@ -37,7 +37,8 @@ class PairedEndCommand(ParallelCommand):
             mate_match = sub("1", "2", read_match)
             return (sub(read_match, mate_match, read))
         except Exception as err:
-            print("Could not find and replace using read_regex", file=stderr)
+            print("Could not find and replace using read_regex: {}".format(err),
+                  file=stderr)
             raise (err)
 
     def replace_read_marker_with(self, replacement, read):
@@ -45,7 +46,8 @@ class PairedEndCommand(ParallelCommand):
             read_match = search(self.read_regex, read).group(0)
             return (sub(read_match, replacement, read))
         except Exception as err:
-            print("Could not find and replace using read_regex", file=stderr)
+            print("Could not find and replace using read_regex: {}".format(err),
+                  file=stderr)
             raise (err)
 
     def replace_extension(self, extension, read):
@@ -53,12 +55,15 @@ class PairedEndCommand(ParallelCommand):
             try:
                 return (read.replace(self.extension, extension))
             except Exception as err:
-                print("Cannot find and replace by extension", file=stderr)
+                print("Cannot find and replace by extension: {}".format(err),
+                      file=stderr)
                 raise (err)
         try:
             return (read.rsplit(".", 1)[0] + extension)
         except Exception as err:
-            print("Could not automatically replace extension", file=stderr)
+            print("Could not automatically replace extension: {}".format(err),
+                  file=stderr)
+            raise (err)
 
     def get_files(self):
         """
