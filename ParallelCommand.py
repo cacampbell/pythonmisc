@@ -50,52 +50,73 @@ class ParallelCommand:
                                                 self.input_root,
                                                 self.output_root)
 
-    def __init__(self, input_root=getcwd(), output_root=getcwd(),
-                 input_regex=".*"):
+    def __init__(self, *args, **kwargs):
         """
-        Initialize with an input root and an output root
+        Initialize this class using arguments passed to it
+
+        Expected positional args:
+            None
+
+        Expcected kwargs:
+        :param: input_root: str: the input root for this series of commands
+        :param: output_root: str: the output root for this series of commands
+        :param: input_regex: str: regex specifying all input files
+        :param: extension: str: regex for extension on files
+        :param: exclusions: str: regex, comma separated list of regex, or python
+        list that specifies which files are to be excluded from the given run
+        :param: exlcusions_path: str: a directory conaining files with basenames
+        that should be excluded from the given run
+        :param: dry_run: bool: Toggles whether or not commands are actually run
+        :param: verbose: bool: Toggles print statements throughout
+        :param: cluster_options: dict: dictionary of cluster options
+            memory - The memory to be allocated to this job
+            nodes - The nodes to be allocated
+            cpus - The cpus **per node** to request
+            partition -  The queue name or partition name for the submitted job
+            job_name - The name of the job
+            depends_on - The dependencies (as comma separated list of job numbers)
+            email_address -  The email address to use for notifications
+            email_options - Email options: START|BEGIN,END|FINISH,FAIL|ABORT
+            time - time to request from the scheduler
+            bash -  The bash shebang line to use in the script
+
+        Any other keyword arguments will be added as an attribute with that name
+        to the instance of this class. So, if additional parameters are needed
+        for formatting commands or any other overriden methods, then they
+        can be specified as a keyword agument to init for convenience
         """
-        self.input_root = input_root
-        self.output_root = output_root
-        self.input_regex = input_regex
+        self.input_root = getcwd()
+        self.output_root = getcwd()
+        self.input_regex = ".*"
         self.modules = ''
-        self.extension = None
-        self.exclusions = None
-        self.exclusions_paths = None
+        self.extension = ".fq.gz"
+        self.exclusions = ""
         self.dry_run = False
         self.verbose = False
-
-        # """
-        #   memory - The memory to be allocated to this job
-        #   nodes - The nodes to be allocated
-        #   cpus - The cpus **per node** to request
-        #   partition -  The queue name or partition name for the submitted job
-        #   job_name - The name of the job
-        #   depends_on - The dependencies (as comma separated list of job numbers)
-        #   email_address -  The email address to use for notifications
-        #   email_options - Email options: START|BEGIN,END|FINISH,FAIL|ABORT
-        #   time - time to request from the scheduler
-        #   bash -  The bash shebang line to use in the script
-        #   input - The input filename for the job
-        #   output - The output filename for the job
-        #   error - The error filename for the job
-        # """
-        self.cluster_options = {
-            "memory": "2G",
-            "nodes": "1",
-            "cpus": "1",
-            "partition": "normal",
-            "job_name": "ParallelCommand_",
-            "depends_on": "",
-            "email_user": "",
-            "email_options": "END,FAIL",
-            "time": "0",
-            "bash": "#!/usr/bin/env bash"
-        }
+        self.cluster_options = dict(memory="2G",
+                                    nodes="1",
+                                    cpus="1",
+                                    partition="normal",
+                                    job_name="ParallelCommand_",
+                                    depends_on="",
+                                    email_user="",
+                                    email_options="END,FAIL",
+                                    time="0",
+                                    bash="#!/usr/bin/env bash")
 
         self.files = []
         self.commands = {}
         self.exclusions = []
+
+        for key, value in kwargs.items():
+            try:
+                assert (hasattr(self, key))
+            except AssertionError as err:
+                if self.verbose:
+                    print("Adding Attribute from Keyword: {}".format(key),
+                          file=stderr)
+            finally:
+                setattr(self, key, value)
 
     def get_threads(self):
         """
@@ -130,6 +151,8 @@ class ParallelCommand:
                 # Replace the job name for the cluster options copy (per job)
                 opts = dict(self.cluster_options)
                 opts["job_name"] = job_name
+                opts["output"] = "{}_output".format(job_name)
+                opts["error"] = "{}_error".format(job_name)
 
                 # Capture the job number for the submitted job
                 job_number = submit_job(command, **opts)

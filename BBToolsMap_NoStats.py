@@ -5,7 +5,10 @@ from PairedEndCommand import PairedEndCommand
 
 
 class BBMapperNoStats(PairedEndCommand):
-    def __init__(self, input_root, output_root, input_regex="fq.gz$"):
+    def __init__(self,
+                 input_root=".",
+                 output_root=".",
+                 input_regex="fq.gz$"):
         super(BBMapperNoStats, self).__init__(input_root=input_root,
                                               output_root=output_root,
                                               input_regex=input_regex)
