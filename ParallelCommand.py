@@ -125,14 +125,11 @@ class ParallelCommand:
         job_numbers = []
 
         for job_name, command in self.commands.items():
-            # Full name is whole task job name + individual name
-            full_job_name = self.cluster_options["job_name"] + job_name
-
             # If the job is not already running and actually submitting the job
-            if full_job_name not in existing_jobs() and not self.dry_run:
-                # Replace the job name for the cluster options
+            if job_name not in existing_jobs() and not self.dry_run:
+                # Replace the job name for the cluster options copy (per job)
                 opts = dict(self.cluster_options)
-                opts["job_name"] = full_job_name
+                opts["job_name"] = job_name
 
                 # Capture the job number for the submitted job
                 job_number = submit_job(command, **opts)
@@ -142,7 +139,7 @@ class ParallelCommand:
                     print("Submitted job: {}".format(job_number), file=stderr)
             else:
                 print("Job {} already running or dry_run set to True".format(
-                    full_job_name
+                    job_name
                 ), file=stderr)
 
         return (job_numbers)
