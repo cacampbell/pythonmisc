@@ -4,18 +4,17 @@ from BBToolsMap_NoStats import BBMapperNoStats
 from simple_argparse import run_with_args
 
 
-def main(input_root, output_root, reference="reference.fa", stats=False,
-         exclusions=None, cluster_options=None, dry_run=False, verbose=False):
-    m = BBMapperNoStats(input_root, output_root, input_regex="fq.gz$")
-
-    print("input_root: {}".format(m.input_root))
-    print("output_root: {}".format(m.output_root))
-    print("reference: {}".format(reference))
-    print("stats: {}".format(stats))
-    print("exclusions: {}".format(exclusions))
-    print("cluster_options: {}".format(cluster_options))
-    print("dry_run: {}".format(dry_run))
-    print("verbose: {}".format(verbose))
+def main(input_root,
+         output_root,
+         reference="reference.fa",
+         stats=False,
+         exclusions=None,
+         cluster_options=None,
+         dry_run=False,
+         verbose=False):
+    m = BBMapperNoStats(input_root,
+                        output_root,
+                        input_regex="fq.gz$")
 
     if stats:
         m = BBMapper(input_root, output_root)
@@ -45,5 +44,7 @@ def main(input_root, output_root, reference="reference.fa", stats=False,
     return (m.run())
 
 if __name__ == "__main__":
+    # Positional Arguments first, then specify keyword arguments with '--'
+    # i.e - bbtools_map.py <in> <out> <ref> --verbose=True --stats=False
     job_list = run_with_args(main)  # Runs main with arguments from argv
     print(job_list)
