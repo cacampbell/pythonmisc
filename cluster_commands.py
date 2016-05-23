@@ -16,6 +16,19 @@ def get_username():
     return getpwuid(getuid())[0]
 
 
+def __check(key, dictionary):
+    try:
+        assert (isinstance(dictionary, dict))
+        assert (isinstance(key, str))
+    except AssertionError as err:
+        print("Could not check dictionary for key: {}".format(err))
+        raise (err)
+
+    if key in dictionary.keys():
+        if dictionary[key] is not None and dictionary[key] is not "":
+            return True
+    return False
+
 def __get_backend():
     print(which("scontrol"))
     if which("scontrol"):
@@ -69,28 +82,28 @@ def __submit_slurm(**kwargs):
     """
     submit_cmd = ("sbatch")
 
-    if "memory" in kwargs.keys():
+    if __check("memory", kwargs):
         submit_cmd += (" --mem={}").format(kwargs["memory"])
-    if "nodes" in kwargs.keys():
+    if __check("nodes", kwargs):
         submit_cmd += (" --ntasks={}").format(kwargs["nodes"])
-    if "cpus" in kwargs.keys():
+    if __check("cpus", kwargs):
         submit_cmd += (" --cpus-per-task={}").format(kwargs["cpus"])
-    if "partition" in kwargs.keys():
+    if __check("partition", kwargs):
         submit_cmd += (" --partition={}").format(kwargs["partition"])
-    if "job_name" in kwargs.keys():
+    if __check("job_name", kwargs):
         submit_cmd += (" --job-name={}").format(kwargs["job_name"])
-    if "depends_on" in kwargs.keys():
+    if __check("depends_on", kwargs):
         submit_cmd += (" --dependency=after_ok:{}").format(kwargs["depends_on"])
-    if "email_address" in kwargs.keys():
+    if __check("email_address", kwargs):
         submit_cmd += (" --mail-user={}").format(kwargs["email_address"])
-    if "email_options" in kwargs.keys():
+    if __check("email_options", kwargs):
         submit_cmd += (" --mail-type={}").format(
             __slurm_e_opts(kwargs["email_options"]))
-    if "input" in kwargs.keys():
+    if __check("input", kwargs):
         submit_cmd += (" --input={}").format(kwargs["input"])
-    if "output" in kwargs.keys():
+    if __check("output", kwargs):
         submit_cmd += (" --output={}").format(kwargs["output"])
-    if "error" in kwargs.keys():
+    if __check("error", kwargs):
         submit_cmd += (" --error={}").format(kwargs["error"])
 
     return (submit_cmd)
@@ -130,46 +143,46 @@ def __submit_torque(**kwargs):
     """
 
     submit_cmd = ("qsub")
-    if "memory" in kwargs.keys() and "cpus" in kwargs.keys() \
-            and "nodes" in kwargs.keys():
+    if __check("memory", kwargs) and __check("cpus", kwargs) and __check(
+            "nodes", kwargs):
         submit_cmd += " -l mem={m},nodes={n}:ppn={c}".format(
             m=kwargs["memory"], n=kwargs["nodes"], c=kwargs["cpus"]
         )
-    elif "memory" in kwargs.keys() and "cpus" in kwargs.keys():
+    elif __check("memory", kwargs) and __check("cpus", kwargs):
         submit_cmd += " -l mem={m},nodes=1:ppn={c}".format(
             m=kwargs["memory"], c=kwargs["cpus"]
         )
-    elif "memory" in kwargs.keys() and "nodes" in kwargs.keys():
+    elif __check("memory", kwargs) and __check("nodes", kwargs):
         submit_cmd += " -l mem={m},nodes={n}".format(
             m=kwargs["memory"], n=kwargs["nodes"]
         )
-    elif "cpus" in kwargs.keys() and "nodes" in kwargs.keys():
+    elif __check("cpus", kwargs) and __check("nodes", kwargs):
         submit_cmd += " -l nodes={n}:ppn={c}".format(
             n=kwargs["nodes"], c=kwargs["cpus"]
         )
     else:
-        if "memory" in kwargs.keys():
+        if __check("memory", kwargs):
             submit_cmd += " -l {}".format(kwargs["memory"])
-        if "cpus" in kwargs.keys():
+        if __check("cpus", kwargs):
             submit_cmd += " -l nodes=1:ppn={}".format(kwargs["cpus"])
-        if "nodes" in kwargs.keys():
+        if __check("nodes", kwargs):
             submit_cmd += " -l nodes={}".format(kwargs["nodes"])
 
-    if "partition" in kwargs.keys():
+    if __check("partition", kwargs):
         submit_cmd += " -q {}".format(kwargs["partition"])
-    if "job_name" in kwargs.keys():
+    if __check("job_name", kwargs):
         submit_cmd += " -N {}".format(kwargs["job_name"])
-    if "depends_on" in kwargs.keys():
+    if __check("depends_on", kwargs):
         submit_cmd += " -hold_jid {}".format(kwargs["depends_on"])
-    if "email_address" in kwargs.keys():
+    if __check("email_address", kwargs):
         submit_cmd += " -M {}".format(kwargs["email_address"])
-    if "email_options" in kwargs.keys():
+    if __check("email_options", kwargs):
         submit_cmd += " -m {}".format(__torque_e_opts(kwargs["email_options"]))
-    if "input" in kwargs.keys():
+    if __check("input", kwargs):
         submit_cmd += " -i {}".format(kwargs["input"])
-    if "output" in kwargs.keys():
+    if __check("output", kwargs):
         submit_cmd += " -o {}".format(kwargs["output"])
-    if "error" in kwargs.keys():
+    if __check("error", kwargs):
         submit_cmd += " -e {}".format(kwargs["error"])
 
     return (submit_cmd)

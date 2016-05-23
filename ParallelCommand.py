@@ -85,38 +85,54 @@ class ParallelCommand:
         for formatting commands or any other overriden methods, then they
         can be specified as a keyword agument to init for convenience
         """
-        self.input_root = getcwd()
-        self.output_root = getcwd()
-        self.input_regex = ".*"
-        self.modules = ''
-        self.extension = ".fq.gz"
-        self.exclusions = ""
-        self.dry_run = False
-        self.verbose = False
-        self.cluster_options = dict(memory="2G",
-                                    nodes="1",
-                                    cpus="1",
-                                    partition="normal",
-                                    job_name="ParallelCommand_",
-                                    depends_on="",
-                                    email_user="",
-                                    email_options="END,FAIL",
-                                    time="0",
-                                    bash="#!/usr/bin/env bash")
+        for key, value in kwargs.items():
+            try:
+                setattr(self, key, value)
+            except Exception as err:
+                print("Could not set attribute: {}".format(key), file=stderr)
+                raise (err)
+
+        self.set_default("input_root", getcwd())
+        self.set_default("output_root", getcwd())
+        self.set_default("input_regex", ".*")
+        self.set_default("modules", None)
+        self.set_default("extension", ".fq.gz")
+        self.set_default("exclusions", None)
+        self.set_default("exclusions_path", None)
+        self.set_default("dry_run", False)
+        self.set_default("verbose", False)
+        self.set_default("cluster_options", dict(memory="2G",
+                                                 nodes="1",
+                                                 cpus="1",
+                                                 partition="normal",
+                                                 job_name="ParallelCommand_",
+                                                 depends_on=None,
+                                                 email_user=None,
+                                                 email_options=None,
+                                                 time=None,
+                                                 bash="#!/usr/bin/env bash"
+                                                 )  # End Dict
+                         )  # End Set Default
 
         self.files = []
         self.commands = {}
         self.exclusions = []
 
-        for key, value in kwargs.items():
-            try:
-                assert (hasattr(self, key))
-            except AssertionError as err:
-                if self.verbose:
-                    print("Adding Attribute from Keyword: {}".format(key),
-                          file=stderr)
-            finally:
-                setattr(self, key, value)
+    def set_default(self, attribute, default_value):
+        """
+        Check that an attribute exists and that it has a non-None value, then
+        set that attribute to a value if it does not, for this instance
+        :param attribute: str: the name of the attribute to check and set
+        :param default_value: <obj>: the default value for the attribute
+        :return:
+        """
+        try:
+            assert (getattr(self, attribute) is not None)
+        except (AssertionError, AttributeError) as err:
+            setattr(self, attribute, default_value)
+
+            if self.verbose:
+                print("Set default for: {}".format(attribute), file=stderr)
 
     def get_threads(self):
         """
@@ -329,7 +345,8 @@ class ParallelCommand:
         """
         if self.verbose:
             print('Loading environment modules...', file=stderr)
-        self.module_cmd(['load'])
+            if self.modules is not None:
+                self.module_cmd(['load'])
 
         if self.verbose:
             print('Gathering input files...', file=stderr)
@@ -358,7 +375,8 @@ class ParallelCommand:
 
         if self.verbose:
             print("Unloading environment modules....", file=stderr)
-        self.module_cmd(['unload'])
+            if self.modules is not None:
+                self.module_cmd(['unload'])
 
 
 def mkdir_p(path):

@@ -61,6 +61,8 @@ class PairedEndCommand(ParallelCommand):
         can be specified as a keyword agument to init for convenience
         """
         super(PairedEndCommand, self).__init__(*args, **kwargs)
+        self.set_default("read_regex", "_R1\.fq.*")
+
 
     def mate(self, read):
         """

@@ -5,14 +5,8 @@ from PairedEndCommand import PairedEndCommand
 
 
 class BBMapperNoStats(PairedEndCommand):
-    def __init__(self,
-                 input_root=".",
-                 output_root=".",
-                 input_regex="fq.gz$"):
-        super(BBMapperNoStats, self).__init__(input_root=input_root,
-                                              output_root=output_root,
-                                              input_regex=input_regex)
-        self.read_regex = "_R1(?=\.fq)"
+    def __init__(self, *args, **kwargs):
+        super(BBMapperNoStats, self).__init__(*args, **kwargs)
 
     def make_command(self, read):
         mate = self.mate(read)
