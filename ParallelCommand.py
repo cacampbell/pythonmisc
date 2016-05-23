@@ -115,7 +115,7 @@ class ParallelCommand:
         mem_unit = self.cluster_options['memory'][-1]  # last char
         memory = float(mem_int) * float(fraction)  # fraction of avail mem
         memory = int(memory)  # Must be int, partial units cause error
-        return "{0:s}{0:s}".format(memory, mem_unit)  # [\d][c], memory + units
+        return "{}{}".format(memory, mem_unit)  # [\d][c], memory + units
 
     def dispatch(self):
         """
@@ -187,8 +187,8 @@ class ParallelCommand:
                 self.files.remove(filename)
 
                 if self.verbose:
-                    print("Removed {0:s}, matching {0:s}".format(filename,
-                                                                 exclusions),
+                    print("Removed {}, matching {}".format(filename,
+                                                           exclusions),
                           file=stderr)
 
     def exclude_regex_matches(self, exclusion):
@@ -270,8 +270,8 @@ class ParallelCommand:
             module(args)  # call module system, using arguments ['load', '...']
         except (OSError, ValueError) as err:
             if self.verbose:
-                print("Could not load: {0:s}, {0:s}".format(self.modules,
-                                                            err),
+                print("Could not load: {}, {}".format(self.modules,
+                                                      err),
                       file=stderr)
 
     def make_directories(self):
@@ -288,7 +288,7 @@ class ParallelCommand:
 
         for directory in output_directories:
             if self.verbose:
-                print("Attempting to make: {0:s}".format(directory),
+                print("Attempting to make: {}".format(directory),
                       file=stderr)
             if not self.dry_run:
                 mkdir_p(directory)  # Attempt safe creation of each dir
@@ -350,7 +350,7 @@ def mkdir_p(path):
         makedirs(path)
     except OSError as exc:
         if exc.errno == errno.EEXIST and isdir(path):
-            print("{0:s} already exists".format(path),
+            print("{} already exists".format(path),
                   file=stderr)
         else:
             raise exc
