@@ -11,6 +11,7 @@ from re import sub
 
 from ParallelCommand import ParallelCommand
 
+__all__ = ["PairedEndCommand"]
 
 class PairedEndCommand(ParallelCommand):
     """

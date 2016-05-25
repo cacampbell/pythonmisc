@@ -1,8 +1,10 @@
 """
 From Perlence/simple_argparse.py
 """
-import sys
+import unittest
 from ast import literal_eval
+from sys import argv
+from sys import stderr
 
 
 def run_parallel_command_with_args(func, args=None):
@@ -21,8 +23,23 @@ def run_parallel_command_with_args(func, args=None):
                             "email_options",
                             "time",
                             "bash")
-    cluster_options = dict((k, kwargs[k]) for k in cluster_options_keys)
+
+    cluster_options_found = dict((k, kwargs[k]) for k in cluster_options_keys)
     new_kwargs = dict()
+    cluster_options = dict()
+
+    if "cluster_options" in kwargs.keys():
+        try:
+            assert (type(kwargs["cluster_options"]) is type(dict()))
+            user_cluster_options = kwargs["cluster_options"]
+            for key in user_cluster_options.keys():
+                if key in cluster_options_keys:
+                    cluster_options[key] = user_cluster_options[key]
+
+        except AssertionError:
+            print("Supplied non-dictionary to cluster_options, ignoring...",
+                  file=stderr)
+
 
     for key, val in kwargs.items():
         if key not in cluster_options_keys:
@@ -48,7 +65,7 @@ def parse_args(args=None):
     :param: args: List<String>: optional: list of arguments as strings
     """
     if args is None:
-        args = sys.argv[1:]
+        args = argv[1:]
 
     positional_args, kwargs = (), {}
     for arg in args:
@@ -76,3 +93,37 @@ def parse_literal(string):
         return literal_eval(string)
     except (ValueError, SyntaxError):
         return string
+
+
+class TestArgParse(unittest.TestCase):
+    def setUp(self):
+        def test_func(*args, **kwargs):
+            for arg in args:
+                print("Arg: {}".format(arg))
+
+            for (key, value) in kwargs.items():
+                print("Key: {} Value: {}".format(key, value))
+
+    def test_run_with_args(self):
+        run_with_args(test_func,
+                      "positional argument 1",
+                      "positional argument 2",
+                      "--cpus=43",
+                      "--email-address=example@example.com",
+                      '--cluster_options=dict(memory="5G", mail_options="END")',
+                      "--memory=50G")
+
+    def test_run_parallel_command_with_args(self):
+        run_parallel_command_with_args(
+            test_func,
+            "positional argument 1",
+            "positional argument 2",
+            "--cpus=43",
+            "--email-address=example@example.com",
+            '--cluster_options=dict(memory="5G", mail_options="END")',
+            "--memory=50G")
+
+
+if __name__ == "__main__":
+    suite = unittest.TestLoader().loadTestsFromTestCase(TestArgParse)
+    unittest.TextTestRunner(verbosity=3).run(suite)
