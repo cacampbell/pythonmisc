@@ -11,6 +11,26 @@ def run_parallel_command_with_args(func, args=None):
     the ParallelCommand / PairedEndCommand class,
     """
     (args, kwargs) = parse_args(args)
+    cluster_options_keys = ("memory",
+                            "nodes",
+                            "cpus",
+                            "partition",
+                            "job_name",
+                            "depends_on",
+                            "email_user",
+                            "email_options",
+                            "time",
+                            "bash")
+    cluster_options = dict((k, kwargs[k]) for k in cluster_options_keys)
+    new_kwargs = dict()
+
+    for key, val in kwargs.items():
+        if key not in cluster_options_keys:
+            new_kwargs[key] = kwargs[key]
+
+    new_kwargs["cluster_options"] = cluster_options
+    return func(*args, **new_kwargs)
+
 
 
 def run_with_args(func, args=None):

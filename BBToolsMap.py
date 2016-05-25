@@ -43,7 +43,7 @@ class BBMapper(PairedEndCommand):
             to the instance of this class. So, if additional parameters are needed
             for formatting commands or any other overriden methods, then they
             can be specified as a keyword agument to init for convenience
-            """
+        """
         super(BBMapper, self).__init__(*args, **kwargs)
         self.set_default("reference", "reference.fa")
 
