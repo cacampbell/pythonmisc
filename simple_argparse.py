@@ -35,14 +35,17 @@ def run_parallel_command_with_args(func, args=None):
     new_kwargs = dict()
     cluster_options = {}
 
+    # If a cluster_options dict was supplied
     if "cluster_options" in kwargs.keys():
         cluster_options = kwargs["cluster_options"]
 
+    # Find standalone cluster options provided by command line
     for (key, value) in kwargs.items():
         if key in CLUSTER_OPTIONS:
             # Cluster Options for Parallel Command are all strings
             cluster_options[key] = __str(value)
 
+    # Remove keys in cluster options that are not supposed to be there
     cluster_options_copy = cluster_options.copy()
     for (key, value) in cluster_options_copy.items():
         if key not in CLUSTER_OPTIONS:
@@ -372,7 +375,9 @@ class TestArgParse(unittest.TestCase):
             'email_user': 'user@example.com',
             'email_options': 'START,END,FAIL',
             'time': '24:00:00',
-            'bash': '#!/bin/bash'}"""]
+            'bash': '#!/bin/bash',
+            'fake': 'fake',
+            'rattlesnake': 'death'}"""]
         expected_args = []
         expected_kwargs = {'cluster_options': {
             'memory': '100G',
@@ -398,10 +403,34 @@ class TestArgParse(unittest.TestCase):
         cluster_options_arguments: 0
         cluster_options_dictionary: 1
         """
-        all = []
-        expected_args = []
-        expected_kwargs = {}
-
+        all = ["positional argument 1",
+               "positional argument 2",
+               """--cluster-options={
+                   'memory': '100G',
+                   'nodes': '1',
+                   'cpus': '20',
+                   'partition': 'bigmem',
+                   'job_name': 'JOBNAME',
+                   'depends_on': '1,2,3,4,5,6',
+                   'email_user': 'user@example.com',
+                   'email_options': 'START,END,FAIL',
+                   'time': '24:00:00',
+                   'bash': '#!/bin/bash'}"""]
+        expected_args = ["positional argument 1",
+                         "positional argument 2"]
+        expected_kwargs = {'cluster_options': {
+            'memory': '100G',
+            'nodes': '1',
+            'cpus': '20',
+            'partition': 'bigmem',
+            'job_name': 'JOBNAME',
+            'depends_on': '1,2,3,4,5,6',
+            'email_user': 'user@example.com',
+            'email_options': 'START,END,FAIL',
+            'time': '24:00:00',
+            'bash': '#!/bin/bash'
+        }
+        }
         (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
         self.evaluate(args, expected_args, kwargs, expected_kwargs)
 
@@ -412,9 +441,37 @@ class TestArgParse(unittest.TestCase):
         cluster_options_arguments: 0
         cluster_options_dictionary: 1
         """
-        all = []
+        all = ["--keyword=keyword",
+               "--longer-keyword-opt=meep",
+               "--verbose",
+               """--cluster-options={
+                'memory': '100G',
+                'nodes': '1',
+                'cpus': '20',
+                'partition': 'bigmem',
+                'job_name': 'JOBNAME',
+                'depends_on': '1,2,3,4,5,6',
+                'email_user': 'user@example.com',
+                'email_options': 'START,END,FAIL',
+                'time': '24:00:00',
+                'bash': '#!/bin/bash'}"""]
         expected_args = []
-        expected_kwargs = {}
+        expected_kwargs = {'cluster_options': {
+            'memory': '100G',
+            'nodes': '1',
+            'cpus': '20',
+            'partition': 'bigmem',
+            'job_name': 'JOBNAME',
+            'depends_on': '1,2,3,4,5,6',
+            'email_user': 'user@example.com',
+            'email_options': 'START,END,FAIL',
+            'time': '24:00:00',
+            'bash': '#!/bin/bash'
+        },
+            'verbose': True,
+            'longer_keyword_opt': 'meep',
+            'keyword': 'keyword'
+        }
 
         (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
         self.evaluate(args, expected_args, kwargs, expected_kwargs)
@@ -426,9 +483,40 @@ class TestArgParse(unittest.TestCase):
         cluster_options_arguments: 0
         cluster_options_dictionary: 1
         """
-        all = []
-        expected_args = []
-        expected_kwargs = {}
+        all = ["positional 1",
+               "positional 2",
+               "--keyword=keyword",
+               "--longer-keyword-opt=meep",
+               "--verbose",
+               """--cluster-options={
+                'memory': '100G',
+                'nodes': '1',
+                'cpus': '20',
+                'partition': 'bigmem',
+                'job_name': 'JOBNAME',
+                'depends_on': '1,2,3,4,5,6',
+                'email_user': 'user@example.com',
+                'email_options': 'START,END,FAIL',
+                'time': '24:00:00',
+                'bash': '#!/bin/bash'}"""]
+
+        expected_args = ["positional 1", "positional 2"]
+        expected_kwargs = {'cluster_options': {
+            'memory': '100G',
+            'nodes': '1',
+            'cpus': '20',
+            'partition': 'bigmem',
+            'job_name': 'JOBNAME',
+            'depends_on': '1,2,3,4,5,6',
+            'email_user': 'user@example.com',
+            'email_options': 'START,END,FAIL',
+            'time': '24:00:00',
+            'bash': '#!/bin/bash'
+        },
+            'verbose': True,
+            'longer_keyword_opt': 'meep',
+            'keyword': 'keyword'
+        }
 
         (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
         self.evaluate(args, expected_args, kwargs, expected_kwargs)
@@ -440,9 +528,37 @@ class TestArgParse(unittest.TestCase):
         cluster_options_arguments: 1
         cluster_options_dictionary: 1
         """
-        all = []
+        all = ["--memory=100G",
+               "--nodes=1",
+               "--cpus=30",
+               "--partition=bigmem",
+               "--job-name=JOBNAME",
+               "--email-user=user@example.com",
+               "--email-options=FAIL",
+               "--time=0",
+               """--cluster-options={
+                   'memory': '100G',
+                   'partition': 'bigmem',
+                   'job_name': 'JOBNAME',
+                   'depends_on': '1,2,3,4,5,6',
+                   'email_user': 'user@example.com',
+                   'email_options': 'START,END,FAIL',
+                   'time': '24:00:00',
+                   'bash': '#!/bin/bash',
+                   'NEPA': 'CEQA',
+                   'Jack': 'Black'}"""
+               ]
         expected_args = []
-        expected_kwargs = {}
+        expected_kwargs = {'cluster_options': {'memory': '100G',
+                                               'nodes': '1',
+                                               'cpus': '30',
+                                               'partition': 'bigmem',
+                                               'job_name': 'JOBNAME',
+                                               'email_user': 'user@example.com',
+                                               'email_options': 'FAIL',
+                                               'time': '0',
+                                               'depends_on': '1,2,3,4,5,6',
+                                               'bash': '#!/bin/bash'}}
 
         (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
         self.evaluate(args, expected_args, kwargs, expected_kwargs)
@@ -454,9 +570,40 @@ class TestArgParse(unittest.TestCase):
         cluster_options_arguments: 1
         cluster_options_dictionary: 1
         """
-        all = []
-        expected_args = []
-        expected_kwargs = {}
+        all = ["positional argument 1",
+               "positional argument 2",
+               "--memory=100G",
+               "--nodes=1",
+               "--cpus=30",
+               "--partition=BIGMEM",
+               "--job-name=JOBNAME",
+               "--email-user=user@example.com",
+               "--email-options=FAIL",
+               "--time=0",
+               """--cluster-options={
+                   'memory': '100G',
+                   'partition': 'bigmem',
+                   'job_name': 'JOBNAME',
+                   'depends_on': '1,2,3,4,5,6',
+                   'email_user': 'user@example.com',
+                   'email_options': 'START,END,FAIL',
+                   'time': '24:00:00',
+                   'bash': '#!/bin/bash',
+                   'NEPA': 'CEQA',
+                   'Jack': 'Black'}"""
+               ]
+
+        expected_args = ["positional argument 1", "positional argument 2"]
+        expected_kwargs = {'cluster_options': {'memory': '100G',
+                                               'nodes': '1',
+                                               'cpus': '30',
+                                               'partition': 'BIGMEM',
+                                               'job_name': 'JOBNAME',
+                                               'email_user': 'user@example.com',
+                                               'email_options': 'FAIL',
+                                               'time': '0',
+                                               'depends_on': '1,2,3,4,5,6',
+                                               'bash': '#!/bin/bash'}}
 
         (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
         self.evaluate(args, expected_args, kwargs, expected_kwargs)
@@ -468,9 +615,42 @@ class TestArgParse(unittest.TestCase):
         cluster_options_arguments: 1
         cluster_options_dictionary: 1
         """
-        all = []
+        all = ["--keyword1=keyword1",
+               "--keyword2=keyword2",
+               "--memory=100G",
+               "--nodes=1",
+               "--cpus=30",
+               "--partition=BIGMEM",
+               "--job-name=JOBNAME",
+               "--email-user=user@example.com",
+               "--email-options=FAIL",
+               "--time=0",
+               """--cluster-options={
+                   'memory': '100G',
+                   'partition': 'bigmem',
+                   'job_name': 'JOBNAME',
+                   'depends_on': '1,2,3,4,5,6',
+                   'email_user': 'user@example.com',
+                   'email_options': 'START,END,FAIL',
+                   'time': '24:00:00',
+                   'bash': '#!/bin/bash',
+                   'NEPA': 'CEQA',
+                   'Jack': 'Black'}"""
+               ]
+
         expected_args = []
-        expected_kwargs = {}
+        expected_kwargs = {'cluster_options': {'memory': '100G',
+                                               'nodes': '1',
+                                               'cpus': '30',
+                                               'partition': 'BIGMEM',
+                                               'job_name': 'JOBNAME',
+                                               'email_user': 'user@example.com',
+                                               'email_options': 'FAIL',
+                                               'time': '0',
+                                               'depends_on': '1,2,3,4,5,6',
+                                               'bash': '#!/bin/bash'},
+                           'keyword1': 'keyword1',
+                           'keyword2': 'keyword2'}
 
         (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
         self.evaluate(args, expected_args, kwargs, expected_kwargs)
@@ -482,9 +662,44 @@ class TestArgParse(unittest.TestCase):
         cluster_options_arguments: 1
         cluster_options_dictionary: 1
         """
-        all = []
-        expected_args = []
-        expected_kwargs = {}
+        all = ["positional argument 1",
+               "positional argument 2",
+               "--keyword1=keyword1",
+               "--keyword2=keyword2",
+               "--memory=100G",
+               "--nodes=1",
+               "--cpus=30",
+               "--partition=BIGMEM",
+               "--job-name=JOBNAME",
+               "--email-user=user@example.com",
+               "--email-options=FAIL",
+               "--time=0",
+               """--cluster-options={
+                   'memory': '100G',
+                   'partition': 'bigmem',
+                   'job_name': 'JOBNAME',
+                   'depends_on': '1,2,3,4,5,6',
+                   'email_user': 'user@example.com',
+                   'email_options': 'START,END,FAIL',
+                   'time': '24:00:00',
+                   'bash': '#!/bin/bash',
+                   'NEPA': 'CEQA',
+                   'Jack': 'Black'}"""
+               ]
+
+        expected_args = ["positional argument 1", "positional argument 2"]
+        expected_kwargs = {'cluster_options': {'memory': '100G',
+                                               'nodes': '1',
+                                               'cpus': '30',
+                                               'partition': 'BIGMEM',
+                                               'job_name': 'JOBNAME',
+                                               'email_user': 'user@example.com',
+                                               'email_options': 'FAIL',
+                                               'time': '0',
+                                               'depends_on': '1,2,3,4,5,6',
+                                               'bash': '#!/bin/bash'},
+                           'keyword1': 'keyword1',
+                           'keyword2': 'keyword2'}
 
         (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
         self.evaluate(args, expected_args, kwargs, expected_kwargs)
@@ -493,23 +708,25 @@ class TestArgParse(unittest.TestCase):
         """
         Broken Arguments
         """
-        all = []
-        expected_args = []
-        expected_kwargs = {}
-
-        (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
-        self.evaluate(args, expected_args, kwargs, expected_kwargs)
+        all = [3, '--key1=4', 5, '--key2=5']
+        expected_args = [3, 5]
+        expected_kwargs = {'key1': 4,
+                           'key2': 5}
+        with self.assertRaises(AttributeError):
+            (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
+            self.evaluate(args, expected_args, kwargs, expected_kwargs)
 
     def test_broken2(self):
         """
         Broken Arguments
         """
-        all = []
+        all = ['--=--', '--x + 7=5 == 5']
         expected_args = []
-        expected_kwargs = {}
+        expected_kwargs = {'x + 7': '5 == 5', '--': '--'}
 
-        (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
-        self.evaluate(args, expected_args, kwargs, expected_kwargs)
+        with self.assertRaises(AssertionError):
+            (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
+            self.evaluate(args, expected_args, kwargs, expected_kwargs)
 
 
 if __name__ == "__main__":
