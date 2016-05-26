@@ -23,6 +23,14 @@ def run_parallel_command_with_args(func, args=None):
     Parse arguments from argv or given list of args, parse them for usage with
     the ParallelCommand / PairedEndCommand class,
     """
+
+    def __str(val):
+        if type(val) is list:
+            return (
+            ",".join(map(str, val)))  # Cluster options take lists as csv
+        else:
+            return (str(val))
+
     (args, kwargs) = parse_args(args)
     new_kwargs = dict()
     cluster_options = {}
@@ -32,7 +40,8 @@ def run_parallel_command_with_args(func, args=None):
 
     for (key, value) in kwargs.items():
         if key in CLUSTER_OPTIONS:
-            cluster_options[key] = str(value)
+            # Cluster Options for Parallel Command are all strings
+            cluster_options[key] = __str(value)
 
     cluster_options_copy = cluster_options.copy()
     for (key, value) in cluster_options_copy.items():
@@ -45,8 +54,8 @@ def run_parallel_command_with_args(func, args=None):
         new_kwargs["cluster_options"] = cluster_options
 
     for key in kwargs.keys():
-        if key not in CLUSTER_OPTIONS:
-            new_kwargs[key] = str(kwargs[key])
+        if key not in CLUSTER_OPTIONS and key is not "cluster_options":
+            new_kwargs[key] = kwargs[key]
 
     return func(*args, **new_kwargs)
 
@@ -106,375 +115,401 @@ class TestArgParse(unittest.TestCase):
             for (key, value) in kwargs.items():
                 print("Key: {} Value: {}".format(key, value))
 
-            positional = list(args)
-            keywords = dict(kwargs)
-            return (positional, keywords)
+            return (args, kwargs)
+
+        def evaluate_arguments(args, expected_args):
+            # Assert that each argument in the expected arguments appears in
+            # the actual arguments in order, and that it has the right value
+            for (i, arg) in enumerate(expected_args):
+                assert (arg == args[i])
+
+            # Assert that the actual arguments list does not contain extras
+            for arg in args:
+                assert (arg in expected_args)
+
+        def evaluate_keywords(kwargs, expected_dict):
+            # Assert that each expected key appears in the actual kwargs
+            # Assert hat each value for each expected key is correct
+            for (key, val) in expected_dict.items():
+                assert (key in kwargs)
+                assert (val == kwargs[key])
+
+            # Assert that each key in the actual arguments is expected
+            # This insures there are no extra keys
+            for key in kwargs.keys():
+                assert (key in expected_dict.keys())
+
+        def evaluate(args, expected_args, kwargs, expected_kwargs):
+            evaluate_arguments(args, expected_args)
+            evaluate_keywords(kwargs, expected_kwargs)
 
         self.test_func = test_func
+        self.evaluate = evaluate
 
-    def test_1(self):
-        arguments = ["positional argument 1",
-                     "positional argument 2",
-                     "--memory=40G",
-                     "--nodes=1",
-                     "--cpus=10",
-                     "--partition=bigmem",
-                     "--job-name=test_job",
-                     "--depends-on=12345,12346,12347",
-                     "--email-user=test@example.com",
-                     "--email-options=END,FAIL,START",
-                     "--time=24:00:00",
-                     "--bash='#!/usr/bin/env bash'",
-                     "--verbose",
-                     "--dry-run",
-                     "--output-root=/home/example/output",
-                     "--input-root=/home/example/input",
-                     "--stats=True",
-                     "--test-keyword='Test Keyword Value'"]
-        (args, kwargs) = run_parallel_command_with_args(self.test_func,
-                                                        arguments)
-        assert (args[0] == "positional argument 1")
-        assert (args[1] == "positional argument 2")
-        expected_dict = {'memory': '40G',
-                         'nodes': '1',
-                         'cpus': '10',
-                         'partition': 'bigmem',
-                         'job_name': 'test_job',
-                         'depends_on': '12345,12346,12347',
-                         'email_user': 'test@example.com',
-                         'email_options': 'END,FAIL,START',
-                         'time': '24:00:00',
-                         'bash': '#!/usr/bin/env bash'}
+    def test_0000(self):
+        """
+        positional arguments: 0
+        keyword arguments: 0
+        cluster_options_arguments: 0
+        cluster_options_dictionary: 0
+        """
+        all = []
+        expected_args = []
+        expected_kwargs = {}
 
-        for (key, value) in dict(kwargs["cluster_options"]).items():
-            try:
-                assert (expected_dict[key] == value)
-            except AssertionError as err:
-                print("Disagreement: {}".format(key))
-                raise (err)
+        (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
+        self.evaluate(args, expected_args, kwargs, expected_kwargs)
 
-        assert (kwargs["cluster_options"] == expected_dict)
-        assert (kwargs["verbose"] is True)
-        assert (kwargs["dry_run"] is True)
-        assert (kwargs["input_root"] == "/home/example/input")
-        assert (kwargs["output_root"] == "/home/example/output")
-        assert (kwargs["stats"] is True)
-        assert (kwargs["test_keyword"] == "Test Keyword Value")
+    def test_0001(self):
+        """
+        positional arguments: 1
+        keyword arguments: 0
+        cluster_options_arguments: 0
+        cluster_options_dictionary: 0
+        """
+        all = ["positional argument 1",
+               "positional argument 2"]
+        expected_args = ["positional argument 1",
+                         "positional argument 2"]
+        expected_kwargs = {}
 
-    def test_2(self):
-        arguments = ["positional argument 1",
-                     "positional argument 2",
-                     "--memory=40G",
-                     "--nodes=1",
-                     "--cpus=10",
-                     "--partition=bigmem",
-                     "--job-name=test_job",
-                     "--depends-on=12345,12346,12347",
-                     "--email-user=test@example.com",
-                     "--email-options=END,FAIL,START",
-                     "--time=24:00:00",
-                     "--bash='#!/usr/bin/env bash'",
-                     "--verbose",
-                     "--dry-run",
-                     "--output-root=/home/example/output",
-                     "--input-root=/home/example/input",
-                     "--stats=True",
-                     "--test-keyword='Test Keyword Value'",
-                     "--cluster-options={}"]
+        (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
+        self.evaluate(args, expected_args, kwargs, expected_kwargs)
 
-        (args, kwargs) = run_parallel_command_with_args(self.test_func,
-                                                        arguments)
+    def test_0011(self):
+        """
+        positional arguments: 1
+        keyword arguments: 1
+        cluster_options_arguments: 0
+        cluster_options_dictionary: 0
+        """
+        all = ["positional argument 1",
+               "positional argument 2",
+               "--keyword-argument='non cluster keyword value'",
+               "--foo=bar",
+               "--baz={'a':'1', 'b':'2'}",
+               "--expression=6 + 7"]
+        expected_args = ["positional argument 1",
+                         "positional argument 2"]
+        expected_kwargs = {'keyword_argument': 'non cluster keyword value',
+                           'foo': 'bar',
+                           'baz': {'a': '1', 'b': '2'},
+                           'expression': 13}
 
-        assert (args[0] == "positional argument 1")
-        assert (args[1] == "positional argument 2")
-        expected_dict = {'memory': '40G',
-                         'nodes': '1',
-                         'cpus': '10',
-                         'partition': 'bigmem',
-                         'job_name': 'test_job',
-                         'depends_on': '12345,12346,12347',
-                         'email_user': 'test@example.com',
-                         'email_options': 'END,FAIL,START',
-                         'time': '24:00:00',
-                         'bash': '#!/usr/bin/env bash'}
+        (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
+        self.evaluate(args, expected_args, kwargs, expected_kwargs)
 
-        for (key, value) in dict(kwargs["cluster_options"]).items():
-            try:
-                assert (expected_dict[key] == value)
-            except AssertionError as err:
-                print("Disagreement: {}".format(key))
-                raise (err)
+    def test_0100(self):
+        """
+        positional arguments: 0
+        keyword arguments: 0
+        cluster_options_arguments: 1
+        cluster_options_dictionary: 0
+        """
+        all = ["--memory=100G",
+               "--nodes=1",
+               "--cpus=20",
+               "--partition=bigmem",
+               "--job-name=JOBNAME",
+               "--depends-on='1,2,3,4,5,6'",  # Important! NOT A LIST
+               "--email-user=user@example.com",
+               "--email-options=START,END,FAIL",
+               "--time=24:00:00",
+               "--bash=#!/bin/bash"]
+        expected_args = []
+        expected_kwargs = {'cluster_options': {
+            'memory': '100G',
+            'nodes': '1',
+            'cpus': '20',
+            'partition': 'bigmem',
+            'job_name': 'JOBNAME',
+            'depends_on': '1,2,3,4,5,6',
+            'email_user': 'user@example.com',
+            'email_options': 'START,END,FAIL',
+            'time': '24:00:00',
+            'bash': '#!/bin/bash'
+        }}
+        (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
+        self.evaluate(args, expected_args, kwargs, expected_kwargs)
 
-        assert (kwargs["cluster_options"] == expected_dict)
+    def test_0101(self):
+        """
+        positional arguments: 1
+        keyword arguments: 0
+        cluster_options_arguments: 1
+        cluster_options_dictionary: 0
+        """
+        all = ["positional argument 1",
+               "positional argument 2",
+               "--memory=100G",
+               "--nodes=1",
+               "--cpus=20",
+               "--partition=bigmem",
+               "--job-name=JOBNAME",
+               "--depends-on='1,2,3,4,5,6'",  # Important! NOT A LIST
+               "--email-user=user@example.com",
+               "--email-options=START,END,FAIL",
+               "--time=24:00:00",
+               "--bash=#!/bin/bash"
+               ]
+        expected_args = ["positional argument 1",
+                         "positional argument 2"]
+        expected_kwargs = {'cluster_options': {
+            'memory': '100G',
+            'nodes': '1',
+            'cpus': '20',
+            'partition': 'bigmem',
+            'job_name': 'JOBNAME',
+            'depends_on': '1,2,3,4,5,6',
+            'email_user': 'user@example.com',
+            'email_options': 'START,END,FAIL',
+            'time': '24:00:00',
+            'bash': '#!/bin/bash'
+        }}
 
-        assert (kwargs["verbose"] is True)
-        assert (kwargs["dry_run"] is True)
-        assert (kwargs["input_root"] == "/home/example/input")
-        assert (kwargs["output_root"] == "/home/example/output")
-        assert (kwargs["stats"] is True)
-        assert (kwargs["test_keyword"] == "Test Keyword Value")
+        (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
+        self.evaluate(args, expected_args, kwargs, expected_kwargs)
 
-    def test_3(self):
-        arguments = ["positional argument 1",
-                     "positional argument 2",
-                     "--memory=40G",
-                     "--nodes=1",
-                     "--cpus=10",
-                     "--partition=bigmem",
-                     "--job-name=test_job",
-                     "--depends-on=12345,12346,12347",
-                     "--email-user=test@example.com",
-                     "--email-options=END,FAIL,START",
-                     "--time=24:00:00",
-                     "--bash='#!/usr/bin/env bash'",
-                     "--verbose",
-                     "--dry-run",
-                     "--output-root=/home/example/output",
-                     "--input-root=/home/example/input",
-                     "--stats=True",
-                     "--test-keyword='Test Keyword Value'",
-                     "--cluster-options={'memory':'4000000G', "
-                     "'cpus':'2000', 'nodes':'50', 'partition':'shortq',"
-                     " 'job_name':'test_job_name', 'depends_on':'123,456,123',"
-                     " 'email_user':'a@b.c.net', 'email_options':'START,FAIL',"
-                     " 'time':'0'}"]
-        (args, kwargs) = run_parallel_command_with_args(self.test_func,
-                                                        arguments)
+    def test_0110(self):
+        """
+        positional arguments: 0
+        keyword arguments: 1
+        cluster_options_arguments: 1
+        cluster_options_dictionary: 0
+        """
+        all = ["--baz=5000",
+               "--foo=bar",
+               "--memory=100G",
+               "--nodes=1",
+               "--cpus=20",
+               "--partition=bigmem",
+               "--job-name=JOBNAME",
+               "--depends-on='1,2,3,4,5,6'",  # Important! NOT A LIST
+               "--email-user=user@example.com",
+               "--email-options=START,END,FAIL",
+               "--time=24:00:00",
+               "--bash=#!/bin/bash"
+               ]
 
-        assert (args[0] == "positional argument 1")
-        assert (args[1] == "positional argument 2")
+        expected_args = []
+        expected_kwargs = {'cluster_options': {
+            'memory': '100G',
+            'nodes': '1',
+            'cpus': '20',
+            'partition': 'bigmem',
+            'job_name': 'JOBNAME',
+            'depends_on': '1,2,3,4,5,6',
+            'email_user': 'user@example.com',
+            'email_options': 'START,END,FAIL',
+            'time': '24:00:00',
+            'bash': '#!/bin/bash'
+        },
+            'foo': 'bar',
+            'baz': 5000
+        }
 
-        expected_dict = {'memory': '40G',
-                         'nodes': '1',
-                         'cpus': '10',
-                         'partition': 'bigmem',
-                         'job_name': 'test_job',
-                         'depends_on': '12345,12346,12347',
-                         'email_user': 'test@example.com',
-                         'email_options': 'END,FAIL,START',
-                         'time': '24:00:00',
-                         'bash': '#!/usr/bin/env bash'}
+        (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
+        self.evaluate(args, expected_args, kwargs, expected_kwargs)
 
-        for (key, value) in dict(kwargs["cluster_options"]).items():
-            try:
-                assert (expected_dict[key] == value)
-            except AssertionError as err:
-                print("Disagreement: {}".format(key))
-                raise (err)
+    def test_0111(self):
+        """
+        positional arguments: 1
+        keyword arguments: 1
+        cluster_options_arguments: 1
+        cluster_options_dictionary: 0
+        """
+        all = ["positional argument 1",
+               "positional argument 2",
+               "--baz=5000",
+               "--foo=bar",
+               "--memory=100G",
+               "--nodes=1",
+               "--cpus=20",
+               "--partition=bigmem",
+               "--job-name=JOBNAME",
+               "--depends-on='1,2,3,4,5,6'",  # Important! NOT A LIST
+               "--email-user=user@example.com",
+               "--email-options=START,END,FAIL",
+               "--time=24:00:00",
+               "--bash=#!/bin/bash"
+               ]
 
-        assert (kwargs["cluster_options"] == expected_dict)
-        assert (kwargs["verbose"] is True)
-        assert (kwargs["dry_run"] is True)
-        assert (kwargs["input_root"] == "/home/example/input")
-        assert (kwargs["output_root"] == "/home/example/output")
-        assert (kwargs["stats"] is True)
-        assert (kwargs["test_keyword"] == "Test Keyword Value")
+        expected_args = ["positional argument 1",
+                         "positional argument 2"]
+        expected_kwargs = {'cluster_options': {
+            'memory': '100G',
+            'nodes': '1',
+            'cpus': '20',
+            'partition': 'bigmem',
+            'job_name': 'JOBNAME',
+            'depends_on': '1,2,3,4,5,6',
+            'email_user': 'user@example.com',
+            'email_options': 'START,END,FAIL',
+            'time': '24:00:00',
+            'bash': '#!/bin/bash'
+        },
+            'foo': 'bar',
+            'baz': 5000
+        }
 
-    def test_4(self):
-        arguments = ["positional argument 1",
-                     "positional argument 2",
-                     "--cluster-options={'memory':'4000000G', "
-                     "'cpus':'2000', 'nodes':'50', 'partition':'shortq',"
-                     " 'job_name':'test_job_name', 'depends_on':'123,456,123',"
-                     " 'email_user':'a@b.c.net', 'email_options':'START,FAIL',"
-                     " 'time':'0', 'bash':'#!/bin/bash'}"]
+        (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
+        self.evaluate(args, expected_args, kwargs, expected_kwargs)
 
-        (args, kwargs) = run_parallel_command_with_args(self.test_func,
-                                                        arguments)
+    def test_1000(self):
+        """
+        positional arguments: 0
+        keyword arguments: 0
+        cluster_options_arguments: 0
+        cluster_options_dictionary: 1
+        """
+        all = ["""--cluster-options={
+            'memory': '100G',
+            'nodes': '1',
+            'cpus': '20',
+            'partition': 'bigmem',
+            'job_name': 'JOBNAME',
+            'depends_on': '1,2,3,4,5,6',
+            'email_user': 'user@example.com',
+            'email_options': 'START,END,FAIL',
+            'time': '24:00:00',
+            'bash': '#!/bin/bash'}"""]
+        expected_args = []
+        expected_kwargs = {'cluster_options': {
+            'memory': '100G',
+            'nodes': '1',
+            'cpus': '20',
+            'partition': 'bigmem',
+            'job_name': 'JOBNAME',
+            'depends_on': '1,2,3,4,5,6',
+            'email_user': 'user@example.com',
+            'email_options': 'START,END,FAIL',
+            'time': '24:00:00',
+            'bash': '#!/bin/bash'
+        }
+        }
 
-        assert (args[0] == "positional argument 1")
-        assert (args[1] == "positional argument 2")
-        expected_dict = {'memory': '4000000G',
-                         'nodes': '50',
-                         'cpus': '2000',
-                         'partition': 'shortq',
-                         'job_name': 'test_job_name',
-                         'depends_on': '123,456,123',
-                         'email_user': 'a@b.c.net',
-                         'email_options': 'START,FAIL',
-                         'time': '0',
-                         'bash': '#!/bin/bash'}
+        (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
+        self.evaluate(args, expected_args, kwargs, expected_kwargs)
 
-        for (key, value) in dict(kwargs["cluster_options"]).items():
-            try:
-                assert (expected_dict[key] == value)
-            except AssertionError as err:
-                print("Disagreement: {}".format(key))
-                raise (err)
+    def test_1001(self):
+        """
+        positional arguments: 1
+        keyword arguments: 0
+        cluster_options_arguments: 0
+        cluster_options_dictionary: 1
+        """
+        all = []
+        expected_args = []
+        expected_kwargs = {}
 
-        assert (kwargs["cluster_options"] == expected_dict)
+        (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
+        self.evaluate(args, expected_args, kwargs, expected_kwargs)
 
-    def test_5(self):
-        arguments = ["positional argument 1",
-                     "positional argument 2",
-                     "--memory=40G",
-                     "--nodes=1",
-                     "--cpus=10",
-                     "--bash='#!/usr/bin/env bash'",
-                     "--verbose",
-                     "--dry-run",
-                     "--output-root=/home/example/output",
-                     "--input-root=/home/example/input",
-                     "--stats=True",
-                     "--test-keyword='Test Keyword Value'",
-                     "--cluster-options={'memory':'4000000G', "
-                     "'fake':'fake', 'fake2':'fake', 'partition':'shortq',"
-                     " 'job_name':'test_job_name', 'depends_on':'123,456,123',"
-                     " 'email_user':'a@b.c.net', 'email_options':'START,FAIL',"
-                     " 'time':'0', 'bash':'#!/bin/bash'}"]
-        (args, kwargs) = run_parallel_command_with_args(self.test_func,
-                                                        arguments)
+    def test_1010(self):
+        """
+        positional arguments: 0
+        keyword arguments: 1
+        cluster_options_arguments: 0
+        cluster_options_dictionary: 1
+        """
+        all = []
+        expected_args = []
+        expected_kwargs = {}
 
-        assert (args[0] == "positional argument 1")
-        assert (args[1] == "positional argument 2")
-        expected_dict = {'memory': '40G',
-                         'nodes': '1',
-                         'cpus': '10',
-                         'partition': 'shortq',
-                         'job_name': 'test_job_name',
-                         'depends_on': '123,456,123',
-                         'email_user': 'a@b.c.net',
-                         'email_options': 'START,FAIL',
-                         'time': '0',
-                         'bash': '#!/usr/bin/env bash'}
+        (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
+        self.evaluate(args, expected_args, kwargs, expected_kwargs)
 
-        for (key, value) in dict(kwargs["cluster_options"]).items():
-            try:
-                assert (expected_dict[key] == value)
-            except AssertionError as err:
-                print("Disagreement: {}".format(key))
-                raise (err)
+    def test_1011(self):
+        """
+        positional arguments: 1
+        keyword arguments: 1
+        cluster_options_arguments: 0
+        cluster_options_dictionary: 1
+        """
+        all = []
+        expected_args = []
+        expected_kwargs = {}
 
-        assert (kwargs["cluster_options"] == expected_dict)
-        assert (kwargs["verbose"] is True)
-        assert (kwargs["dry_run"] is True)
-        assert (kwargs["input_root"] == "/home/example/input")
-        assert (kwargs["output_root"] == "/home/example/output")
-        assert (kwargs["stats"] is True)
-        assert (kwargs["test_keyword"] == "Test Keyword Value")
+        (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
+        self.evaluate(args, expected_args, kwargs, expected_kwargs)
 
-    def test_6(self):
-        arguments = ["positional argument 1",
-                     "positional argument 2",
-                     "--memory=40G",
-                     "--nodes=1",
-                     "--cpus=10",
-                     "--partition=bigmem",
-                     "--job-name=test_job",
-                     "--depends-on=12345,12346,12347",
-                     "--email-user=test@example.com",
-                     "--email-options=END,FAIL,START",
-                     "--time=24:00:00",
-                     "--bash='#!/usr/bin/env bash'",
-                     "--verbose",
-                     "--dry-run",
-                     "--output-root=/home/example/output",
-                     "--input-root=/home/example/input",
-                     "--stats=True",
-                     "--test-keyword='Test Keyword Value'",
-                     "--cluster-options={'memory':'4000000G', "
-                     "'cpus':'2000', 'nodes':'50', 'partition':'shortq',"
-                     " 'job_name':'test_job_name', 'depends_on':'123,456,123',"
-                     " 'email_user':'a@b.c.net', 'email_options':'START,FAIL',"
-                     " 'time':'0', 'bash':'#!/bin/bash'}"]
-        (args, kwargs) = run_parallel_command_with_args(self.test_func,
-                                                        arguments)
+    def test_1100(self):
+        """
+        positional arguments: 0
+        keyword arguments: 0
+        cluster_options_arguments: 1
+        cluster_options_dictionary: 1
+        """
+        all = []
+        expected_args = []
+        expected_kwargs = {}
 
-        assert (args[0] == "positional argument 1")
-        assert (args[1] == "positional argument 2")
-        expected_dict = {'memory': '40G',
-                         'nodes': '1',
-                         'cpus': '10',
-                         'partition': 'bigmem',
-                         'job_name': 'test_job',
-                         'depends_on': '12345,12346,12347',
-                         'email_user': 'test@example.com',
-                         'email_options': 'END,FAIL,START',
-                         'time': '24:00:00',
-                         'bash': '#!/usr/bin/env bash'}
-        for (key, value) in dict(kwargs["cluster_options"]).items():
-            try:
-                assert (expected_dict[key] == value)
-            except AssertionError as err:
-                print("Disagreement: {}".format(key))
-                raise (err)
+        (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
+        self.evaluate(args, expected_args, kwargs, expected_kwargs)
 
-        assert (kwargs["cluster_options"] == expected_dict)
-        assert (kwargs["verbose"] is True)
-        assert (kwargs["dry_run"] is True)
-        assert (kwargs["input_root"] == "/home/example/input")
-        assert (kwargs["output_root"] == "/home/example/output")
-        assert (kwargs["stats"] is True)
-        assert (kwargs["test_keyword"] == "Test Keyword Value")
+    def test_1101(self):
+        """
+        positional arguments: 1
+        keyword arguments: 0
+        cluster_options_arguments: 1
+        cluster_options_dictionary: 1
+        """
+        all = []
+        expected_args = []
+        expected_kwargs = {}
 
-    def test_7(self):
-        arguments = ["positional argument 1",
-                     "positional argument 2",
-                     "--verbose",
-                     "--dry-run",
-                     "--output-root=/home/example/output",
-                     "--input-root=/home/example/input",
-                     "--stats=True",
-                     "--test-keyword='Test Keyword Value'",
-                     "--cluster-options={'memory':'4000000G', "
-                     "'cpus':'2000', 'nodes':'50', 'partition':'shortq',"
-                     " 'job_name':'test_job_name', 'depends_on':'123,456,123',"
-                     " 'email_user':'a@b.c.net', 'email_options':'START,FAIL',"
-                     " 'time':'0', 'bash':'#!/bin/bash'}"]
-        (args, kwargs) = run_parallel_command_with_args(self.test_func,
-                                                        arguments)
+        (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
+        self.evaluate(args, expected_args, kwargs, expected_kwargs)
 
-        expected_dict = {'memory': '4000000G',
-                         'nodes': '50',
-                         'cpus': '2000',
-                         'partition': 'shortq',
-                         'job_name': 'test_job_name',
-                         'depends_on': '123,456,123',
-                         'email_user': 'a@b.c.net',
-                         'email_options': 'START,FAIL',
-                         'time': '0',
-                         'bash': '#!/bin/bash'}
-        assert (args[0] == "positional argument 1")
-        assert (args[1] == "positional argument 2")
+    def test_1110(self):
+        """
+        positional arguments: 0
+        keyword arguments: 1
+        cluster_options_arguments: 1
+        cluster_options_dictionary: 1
+        """
+        all = []
+        expected_args = []
+        expected_kwargs = {}
 
-        for (key, value) in dict(kwargs["cluster_options"]).items():
-            try:
-                assert (expected_dict[key] == value)
-            except AssertionError as err:
-                print("Disagreement: {}".format(key))
-                raise (err)
+        (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
+        self.evaluate(args, expected_args, kwargs, expected_kwargs)
 
-        assert (kwargs["cluster_options"] == expected_dict)
-        assert (kwargs["verbose"] is True)
-        assert (kwargs["dry_run"] is True)
-        assert (kwargs["input_root"] == "/home/example/input")
-        assert (kwargs["output_root"] == "/home/example/output")
-        assert (kwargs["stats"] is True)
-        assert (kwargs["test_keyword"] == "Test Keyword Value")
+    def test_1111(self):
+        """
+        positional arguments: 1
+        keyword arguments: 1
+        cluster_options_arguments: 1
+        cluster_options_dictionary: 1
+        """
+        all = []
+        expected_args = []
+        expected_kwargs = {}
 
-    def test_8(self):
-        arguments = ["positional argument 1",
-                     "positional argument 2",
-                     "--verbose",
-                     "--dry-run",
-                     "--output-root=/home/example/output",
-                     "--input-root=/home/example/input",
-                     "--stats=True",
-                     "--test-keyword='Test Keyword Value'",
-                     ]
-        (args, kwargs) = run_parallel_command_with_args(self.test_func,
-                                                        arguments)
-        assert (args[0] == "positional argument 1")
-        assert (args[1] == "positional argument 2")
-        assert (kwargs["verbose"] is True)
-        assert (kwargs["dry_run"] is True)
-        assert (kwargs["input_root"] == "/home/example/input")
-        assert (kwargs["output_root"] == "/home/example/output")
-        assert (kwargs["stats"] is True)
-        assert (kwargs["test_keyword"] == "Test Keyword Value")
+        (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
+        self.evaluate(args, expected_args, kwargs, expected_kwargs)
 
-        with self.assertRaises(KeyError):
-            print(kwargs["cluster_options"], file=stderr)
+    def test_broken1(self):
+        """
+        Broken Arguments
+        """
+        all = []
+        expected_args = []
+        expected_kwargs = {}
+
+        (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
+        self.evaluate(args, expected_args, kwargs, expected_kwargs)
+
+    def test_broken2(self):
+        """
+        Broken Arguments
+        """
+        all = []
+        expected_args = []
+        expected_kwargs = {}
+
+        (args, kwargs) = run_parallel_command_with_args(self.test_func, all)
+        self.evaluate(args, expected_args, kwargs, expected_kwargs)
 
 
 if __name__ == "__main__":
