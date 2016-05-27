@@ -131,9 +131,6 @@ class ParallelCommand:
         except (AssertionError, AttributeError) as err:
             setattr(self, attribute, default_value)
 
-            if self.verbose:
-                print("Set default for: {}".format(attribute), file=stderr)
-
     def get_threads(self):
         """
         Calculates the number of threads based on the specified number of cores
