@@ -98,7 +98,7 @@ class ParallelCommand:
         self.set_default("modules", None)
         self.set_default("extension", ".fq.gz")
         self.set_default("exclusions", None)
-        self.set_default("exclusions_path", None)
+        self.set_default("exclusions_paths", None)
         self.set_default("dry_run", False)
         self.set_default("verbose", False)
         self.set_default("cluster_options", dict(memory="2G",
