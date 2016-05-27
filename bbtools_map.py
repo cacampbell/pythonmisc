@@ -5,11 +5,11 @@ from simple_argparse import run_parallel_command_with_args
 
 
 def main(*args, **kwargs):
-    mapper = BBMapperNoStats(args, kwargs)
+    mapper = BBMapperNoStats(*args, **kwargs)
 
     if 'stats' in kwargs:
         if kwargs['stats'] is True:
-            mapper = BBMapper(args, kwargs)
+            mapper = BBMapper(*args, **kwargs)
 
     return (mapper.run())  # List of slurm jobs generated
 
