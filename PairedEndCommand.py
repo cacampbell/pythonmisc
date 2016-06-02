@@ -103,6 +103,29 @@ class PairedEndCommand(ParallelCommand):
                   file=stderr)
             raise (err)
 
+    def exclude_files_from(self, dirs):
+        """
+        Method that excludes files that are below <dirs>. If dirs is a list (
+        presumably, of directory names) then remove files below the listed
+        directories. If dirs contains a comma, assume that this denotes a list,
+        and split the string on comma, then exclude files from below each.
+        :param: dirs: str: a directory path (previous output)
+        :return:
+        """
+        exclusions = []
+        if type(dirs) is list:  # dirs is a list
+            for directory in dirs:
+                self.exclude_files_from(directory)
+        elif "," in dirs:  # Assume that dirs is a comma separated list
+            for directory in dirs.split(","):
+                self.exclude_files_from(directory)
+        else:
+            for root, dirs, files in walk(dirs):
+                for filename in files:
+                    f = path.splitext(filename)[0]
+                    exclusions += [self.replace_read_marker_with("_pe"), f]
+                    exclusions += [f]
+
     def get_files(self):
         """
             Gather all files that match the input_regex that are below the input
