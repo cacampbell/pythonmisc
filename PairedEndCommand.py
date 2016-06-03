@@ -128,12 +128,16 @@ class PairedEndCommand(ParallelCommand):
                     f = path.splitext(filename)[0]
                     exclusions += [f]
 
-                    if search('_pe_!', filename):
+                    if search('_pe_', filename):
                         exclusions += [self.__replace_regex('_pe_', '_R1_',
                                                             filename)]
                     elif search("_pe", filename):
                         exclusions += [self.__replace_regex('_pe', '_R1',
                                                             filename)]
+
+        for exclusion in exclusions:
+            print(exclusion)
+
         self.exclude_regex_matches(list(set(exclusions)))
 
     def get_files(self):
