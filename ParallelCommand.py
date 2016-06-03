@@ -241,9 +241,9 @@ class ParallelCommand:
 
         if path.isdir(root):
             if self.verbose:
-                print("Removing files form {}".format(directory), stderr)
+                print("Removing files form {}".format(root), stderr)
 
-            for root, dir, files in walk(directory):
+            for root, dir, files in walk(root):
                 for filename in files:
                     base = basename(filename)
                     base_no_ext = path.splitext(base)[0]
