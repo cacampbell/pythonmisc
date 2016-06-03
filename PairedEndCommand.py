@@ -127,6 +127,10 @@ class PairedEndCommand(ParallelCommand):
                     base = basename(filename)
                     base_no_ext = path.splitext(base)[0]
                     exclusions += [base_no_ext]
+                    possible_input = self.__replace_regex("_pe", "_R1")
+                    exclusions += [possible_input]
+                    possible_input2 = self.__replace_regex("_pe", "_1")
+                    exclusions += [possible_input2]
 
         for regex in list(set(exclusions)):
             self.remove_regex_from_input(regex)
