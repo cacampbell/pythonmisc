@@ -249,7 +249,8 @@ class ParallelCommand:
                     base_no_ext = path.splitext(base)[0]
                     exclusions += [base_no_ext]
 
-        self.remove_regex_from_input(list(set(exclusions)))
+        for regex in list(set(exclusions)):
+            self.remove_regex_from_input(regex)
 
 
     def get_files(self):
