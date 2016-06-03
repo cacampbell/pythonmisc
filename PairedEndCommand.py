@@ -75,10 +75,9 @@ class PairedEndCommand(ParallelCommand):
             read_match = search(self.read_regex, read).group(0)
             mate_match = sub("1", "2", read_match)
             return (sub(read_match, mate_match, read))
-        except Exception as err:
+        except AttributeError as err:
             print("Could not find and replace using read_regex: {}".format(err),
                   file=stderr)
-            raise (err)
 
     def __replace_regex(self, regex, replacement, string):
         try:
