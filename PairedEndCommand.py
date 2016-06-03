@@ -83,10 +83,9 @@ class PairedEndCommand(ParallelCommand):
         try:
             match = search(regex, string).group(0)
             return (sub(match, replacement, string))
-        except Exception as err:
+        except AttributeError as err:
             print("Could not find and replace using read_regex: {}".format(err),
                   file=stderr)
-            raise (err)
 
     def replace_read_marker_with(self, replacement, read):
         return self.__replace_regex(self.read_regex, replacement, read)
