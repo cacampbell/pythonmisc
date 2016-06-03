@@ -226,7 +226,7 @@ class ParallelCommand:
                 self.files.remove(filename)
 
                 if self.verbose:
-                    print("Removed: {}".format(filename))
+                    print("Removed: {}".format(filename), file=stderr)
 
     def remove_files_below(self, root):
         if type(root) is list:
@@ -241,7 +241,7 @@ class ParallelCommand:
 
         if path.isdir(root):
             if self.verbose:
-                print("Removing files form {}".format(root), stderr)
+                print("Removing files form {}".format(root), file=stderr)
 
             for root, dir, files in walk(root):
                 for filename in files:

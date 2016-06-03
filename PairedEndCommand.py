@@ -6,6 +6,7 @@ from abc import ABCMeta
 from abc import abstractmethod
 from os import path
 from os import walk
+from os.path import basename
 from re import search
 from re import sub
 
@@ -105,6 +106,30 @@ class PairedEndCommand(ParallelCommand):
             print("Could not automatically replace extension: {}".format(err),
                   file=stderr)
             raise (err)
+
+    def remove_files_below(self, root):
+        if type(root) is list:
+            for directory in root:
+                self.remove_files_below(directory)
+
+        if "," in root:
+            for directory in root.split(","):
+                self.remove_files_below(directory)
+
+        exclusions = []
+
+        if path.isdir(root):
+            if self.verbose:
+                print("Removing files form {}".format(root), file=stderr)
+
+            for root, dir, files in walk(root):
+                for filename in files:
+                    base = basename(filename)
+                    base_no_ext = path.splitext(base)[0]
+                    exclusions += [base_no_ext]
+
+        for regex in list(set(exclusions)):
+            self.remove_regex_from_input(regex)
 
     def get_files(self):
         """
