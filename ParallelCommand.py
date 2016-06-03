@@ -223,7 +223,7 @@ class ParallelCommand:
 
         for filename in list(self.files):
             if search(regex, filename):
-                self.files.remove(regex)
+                self.files.remove(filename)
 
                 if self.verbose:
                     print("Removed: {}".format(filename))
