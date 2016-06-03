@@ -216,62 +216,37 @@ class ParallelCommand:
             if self.verbose:
                 print(command, file=stderr)
 
-    def __exclude_regex_matches_single(self, exclusions):
-        print(exclusions)
-        for filename in list(self.files):  # a copy of the files list
-            # So, it's a regex, search files and remove if match
-            if search(exclusions, filename) or exclusions in filename:
-                self.files.remove(filename)
+    def remove_regex_from_input(self, regex):
+        if type(regex) is list:
+            for r in regex:
+                self.remove_regex_from_input(r)
+
+        for filename in list(self.files):
+            if search(regex, filename):
+                self.files.remove(regex)
 
                 if self.verbose:
-                    print("Removed {}, matching {}".format(filename,
-                                                           exclusions),
-                          file=stderr)
+                    print("Removed: {}".format(filename))
 
-    def exclude_regex_matches(self, exclusion):
-        """
-        Remove all files from the list of files that match "exclusions".
-        "exclutions" should be either a single string regex / substring, a list
-        of regexes / substrings, or a file containing a list of regexes /
-        substrings (one per line), or a list of files containing regexes.
+    def remove_files_below(self, directories):
+        if "," in directories:
+            for directory in directories.split(","):
+                self.remove_files_below(directory)
 
-        This method attempts to differentiate between these options by checking
-        the type, then checking if the string is a file on the system. If it is
-        a file, then this method will attempt to open it and read the lines into
-        a list for usage as regexes / substrings.
-        :exclusions: str|list: regex/substring, list of regexes/substrings, file
-        """
-        if type(exclusion) is list:
-            for ex in exclusion:
-                self.exclude_regex_matches(ex)
-        elif type(exclusion) is str:  # inclusions is either file or regex
-            self.__exclude_regex_matches_single(exclusion)
-        else:  # Didn't get expected types, print message and continue
-            print("Exclusions not str or list, no exclusions removed...",
-                  file=stderr)
-
-    def exclude_files_from(self, dirs):
-        """
-        Method that excludes files that are below <dirs>. If dirs is a list (
-        presumably, of directory names) then remove files below the listed
-        directories. If dirs contains a comma, assume that this denotes a list,
-        and split the string on comma, then exclude files from below each.
-        :param: dirs: str: a directory path (previous output)
-        :return:
-        """
         exclusions = []
-        if type(dirs) is list:  # dirs is a list
-            for directory in dirs:
-                self.exclude_files_from(directory)
-        elif "," in dirs:  # Assume that dirs is a comma separated list
-            for directory in dirs.split(","):
-                self.exclude_files_from(directory)
-        else:
-            for root, dirs, files in walk(dirs):
-                for filename in files:
-                    exclusions += [path.splitext(filename)[0]]
 
-        self.exclude_regex_matches(list(set(exclusions)))
+        if path.isdir(directory):
+            if self.verbose:
+                print("Removing files form {}".format(directory), stderr)
+
+            for root, dir, files in walk(directory):
+                for filename in files:
+                    base = basename(filename)
+                    base_no_ext = path.splitext(base)[0]
+                    exclusions += [base_no_ext]
+
+        self.remove_regex_from_input(list(set(exclusions)))
+
 
     def get_files(self):
         """
@@ -354,11 +329,12 @@ class ParallelCommand:
             print('Removing exclusions...', file=stderr)
 
         if self.exclusions_paths:
-            self.exclude_files_from(self.exclusions_paths)
-            self.exclude_files_from(self.output_root)
+            self.remove_files_below(self.exclusions_paths)
+
+        self.remove_files_below(self.output_root)
 
         if self.exclusions:
-            self.exclude_regex_matches(self.exclusions)
+            self.remove_regex_from_input(self.exclusions)
 
         if self.verbose:
             print("Making output directories...", file=stderr)
