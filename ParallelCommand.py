@@ -217,9 +217,9 @@ class ParallelCommand:
                 print(command, file=stderr)
 
     def __exclude_regex_matches_single(self, exclusions):
-        for filename in list(self.files):
+        for filename in list(self.files):  # a copy of the files list
             # So, it's a regex, search files and remove if match
-            if search(exclusions, filename):
+            if search(exclusions, filename) or exclusions in filename:
                 self.files.remove(filename)
 
                 if self.verbose:

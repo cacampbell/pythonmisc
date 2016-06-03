@@ -79,14 +79,17 @@ class PairedEndCommand(ParallelCommand):
                   file=stderr)
             raise (err)
 
-    def replace_read_marker_with(self, replacement, read):
+    def __replace_regex(self, regex, replacement, string):
         try:
-            read_match = search(self.read_regex, read).group(0)
-            return (sub(read_match, replacement, read))
+            match = search(regex, string).group(0)
+            return (sub(match, replacement, string))
         except Exception as err:
             print("Could not find and replace using read_regex: {}".format(err),
                   file=stderr)
             raise (err)
+
+    def replace_read_marker_with(self, replacement, read):
+        return self.__replace_regex(self.read_regex, replacement, read)
 
     def replace_extension(self, extension, read):
         if self.extension:
@@ -123,8 +126,14 @@ class PairedEndCommand(ParallelCommand):
             for root, dirs, files in walk(dirs):
                 for filename in files:
                     f = path.splitext(filename)[0]
-                    exclusions += [self.replace_read_marker_with("_pe"), f]
                     exclusions += [f]
+
+                    if search('_pe_!', filename):
+                        exclusions += [self.__replace_regex('_pe_', '_R1_',
+                                                            filename)]
+                    elif search("_pe", filename):
+                        exclusions += [self.__replace_regex('_pe', '_R1',
+                                                            filename)]
 
     def get_files(self):
         """
