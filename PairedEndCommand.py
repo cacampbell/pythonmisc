@@ -76,16 +76,23 @@ class PairedEndCommand(ParallelCommand):
             mate_match = sub("1", "2", read_match)
             return (sub(read_match, mate_match, read))
         except AttributeError as err:
-            print("Could not find and replace using read_regex: {}".format(err),
-                  file=stderr)
+            if self.verbose:
+                print("Could not find and replace using read_regex: {}".format(
+                    err),
+                      file=stderr)
+            raise (err)
 
     def __replace_regex(self, regex, replacement, string):
         try:
             match = search(regex, string).group(0)
             return (sub(match, replacement, string))
         except AttributeError as err:
-            print("Could not find and replace using read_regex: {}".format(err),
-                  file=stderr)
+            if self.verbose:
+                print("Could not find and replace using read_regex: {}".format(
+                    err),
+                      file=stderr)
+            raise (err)
+
 
     def replace_read_marker_with(self, replacement, read):
         return self.__replace_regex(self.read_regex, replacement, read)
@@ -95,14 +102,18 @@ class PairedEndCommand(ParallelCommand):
             try:
                 return (read.replace(self.extension, extension))
             except Exception as err:
-                print("Cannot find and replace by extension: {}".format(err),
-                      file=stderr)
+                if self.verbose:
+                    print(
+                        "Cannot find and replace by extension: {}".format(err),
+                        file=stderr)
                 raise (err)
         try:
             return (read.rsplit(".", 1)[0] + extension)
         except Exception as err:
-            print("Could not automatically replace extension: {}".format(err),
-                  file=stderr)
+            if self.verbose:
+                print(
+                    "Could not automatically replace extension: {}".format(err),
+                    file=stderr)
             raise (err)
 
     def remove_files_below(self, root):
@@ -125,12 +136,19 @@ class PairedEndCommand(ParallelCommand):
                     base = basename(filename)
                     base_no_ext = path.splitext(base)[0]
                     exclusions += [base_no_ext]
-                    possible_input = self.__replace_regex("_pe", "_R1",
-                                                          base_no_ext)
-                    exclusions += [possible_input]
-                    possible_input2 = self.__replace_regex("_pe", "_1",
-                                                           base_no_ext)
-                    exclusions += [possible_input2]
+                    try:
+                        possible_input = self.__replace_regex("_pe", "_R1",
+                                                              base_no_ext)
+                        exclusions += [possible_input]
+                    except AttributeError:
+                        pass
+
+                    try:
+                        possible_input = self.__replace_regex("_pe", "_1",
+                                                              base_no_ext)
+                        exclusions += [possible_input]
+                    except AttributeError:
+                        pass
 
         for regex in list(set(exclusions)):
             self.remove_regex_from_input(regex)
