@@ -134,9 +134,6 @@ class PairedEndCommand(ParallelCommand):
                     elif search("_pe", filename):
                         exclusions += [self.__replace_regex('_pe', '_R1',
                                                             filename)]
-
-        print(exclusions)
-
         self.exclude_regex_matches(list(set(exclusions)))
 
     def get_files(self):
