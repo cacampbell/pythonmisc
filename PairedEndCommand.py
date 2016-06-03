@@ -135,6 +135,8 @@ class PairedEndCommand(ParallelCommand):
                         exclusions += [self.__replace_regex('_pe', '_R1',
                                                             filename)]
 
+        self.exclude_regex_matches(list(set(exclusions)))
+
     def get_files(self):
         """
             Gather all files that match the input_regex that are below the input
