@@ -354,6 +354,7 @@ class ParallelCommand:
 
         if self.exclusions_paths:
             self.exclude_files_from(self.exclusions_paths)
+            self.exclude_files_from(self.output_root)
 
         if self.exclusions:
             self.exclude_regex_matches(self.exclusions)
