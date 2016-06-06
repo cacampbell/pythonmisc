@@ -264,12 +264,10 @@ def cancel_jobs(*args):
 
 
 def __cancel_suspended_jobs_slurm():
-    job_list = []
-
-    for line in squeue("-u {} -l -h -t {}".format(get_username(), "PD"))[0]:
-        job_list.append(line.split()[0])
-
+    (out, err) = squeue(" -u {} -l -h -t {} -o %i".format(get_username(), "S"))
+    job_list = [out.splitlines()]
     scancel(" ".join(job_list))
+
 
 
 def __cancel_suspended_jobs_torque():
@@ -295,13 +293,9 @@ def cancel_suspended_jobs():
 
 
 def __cancel_running_jobs_slurm():
-    job_list = []
-
-    for line in squeue("-u {} -l -h -t {}".format(get_username(), "R"))[0]:
-        job_list.append(line.split()[0])
-
+    (out, err) = squeue(" -u {} -l -h -t {} -o %i".format(get_username(), "R"))
+    job_list = [out.splitlines()]
     scancel(" ".join(job_list))
-
 
 def __cancel_running_jobs_torque():
     (out, err) = qstat(" -f")
@@ -326,11 +320,8 @@ def cancel_running_jobs():
 
 
 def __requeue_suspended_jobs_slurm():
-    job_list = []
-
-    for line in squeue("-u {} -l -h -t {}".format(get_username(), "PD"))[0]:
-        job_list.append(line.split()[0])
-
+    (out, err) = squeue(" -u {} -l -h -t {} -o %i".format(get_username(), "PD"))
+    job_list = [out.splitlines()]
     scontrol("requeue " + " ".join(job_list))
 
 
@@ -347,7 +338,7 @@ def requeue_suspended_jobs():
 
 def __existing_jobs_slurm():
     # Return the job names of the Pending or Running jobs for this user
-    (out, err) = squeue(" --noheader -o %j -u {}".format(get_username()))
+    (out, err) = squeue(" -h -o %j -u {}".format(get_username()))
     return (out.splitlines())
 
 
