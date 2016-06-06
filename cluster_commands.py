@@ -59,6 +59,8 @@ def __slurm_e_opts(str):
             options += "END,"
         if opt == "FAIL" or opt == "ABORT":
             options += "FAIL,"
+        else:
+            raise (RuntimeWarning("{} is not an email option".format(opt)))
 
     return (options.rstrip(","))
 
