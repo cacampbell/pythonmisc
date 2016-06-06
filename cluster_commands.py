@@ -29,6 +29,7 @@ def __check(key, dictionary):
             return True
     return False
 
+
 def __get_backend():
     print(which("scontrol"))
     if which("scontrol"):
@@ -48,21 +49,25 @@ else:
     __BACKEND__ = __get_backend()
 
 
-def __slurm_e_opts(str):
+def __slurm_e_opts(string):
+    # Possible SLURM email options include: NONE, BEGIN, END, FAIL, REQUEUE,
+    # STAGE_OUT, ALL (equivalent to BEGIN, END, FAIL, REQUEUE, STAGE_OUT)
+    # This interface will handle only those options also supported by Torque:
+    # BEGIN, END, FAIL (ALL will be equivalent to BEGIN,END,FAIL)
     options = ""
 
-    for opt in str.split(","):
-        opt = opt.upper().strip()
-        if opt == "BEGIN" or opt == "START":
-            options += "START,"
-        if opt == "END" or opt == "FINISH":
-            options += "END,"
-        if opt == "FAIL" or opt == "ABORT":
-            options += "FAIL,"
-        else:
-            raise (RuntimeWarning("{} is not an email option".format(opt)))
+    if "," in string.strip():
+        for chunk in string.split(","):
+            new_chunk = chunk.upper().strip()
 
-    return (options.rstrip(","))
+            if new_chunk == "END" or new_chunk == "FAIL" or \
+                    new_chunk == "BEGIN" or new_chunk == "ALL":
+                    options = options + new_chunk + ","
+
+    else:
+        options = string
+
+    return(options.rstrip(","))
 
 
 def __submit_slurm(**kwargs):
@@ -282,7 +287,6 @@ def __cancel_suspended_jobs_torque():
     cancel_jobs(job_ids)
 
 
-
 def cancel_suspended_jobs():
     if __BACKEND__ == "slurm":
         __cancel_suspended_jobs_slurm()
@@ -328,6 +332,7 @@ def __requeue_suspended_jobs_slurm():
         job_list.append(line.split()[0])
 
     scontrol("requeue " + " ".join(job_list))
+
 
 def __requeue_suspended_jobs_torque():
     raise ("Requeue not supported by Torque")

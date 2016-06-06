@@ -2,7 +2,6 @@
 import errno
 import unittest
 from sys import stderr
-
 from abc import ABCMeta
 from abc import abstractmethod
 from os import getcwd
@@ -11,7 +10,6 @@ from os import path
 from os import walk
 from os.path import isdir, basename
 from re import search
-
 from cluster_commands import existing_jobs
 from cluster_commands import submit_job
 from module_loader import module
@@ -107,7 +105,7 @@ class ParallelCommand:
                                                  partition="normal",
                                                  job_name="ParallelCommand_",
                                                  depends_on=None,
-                                                 email_user=None,
+                                                 email_address=None,
                                                  email_options=None,
                                                  time=None,
                                                  bash="#!/usr/bin/env bash"
@@ -251,7 +249,6 @@ class ParallelCommand:
 
         for regex in list(set(exclusions)):
             self.remove_regex_from_input(regex)
-
 
     def get_files(self):
         """
