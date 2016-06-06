@@ -76,10 +76,6 @@ class PairedEndCommand(ParallelCommand):
             mate_match = sub("1", "2", read_match)
             return (sub(read_match, mate_match, read))
         except AttributeError as err:
-            if self.verbose:
-                print("Could not find and replace using read_regex: {}".format(
-                    err),
-                      file=stderr)
             raise (err)
 
     def __replace_regex(self, regex, replacement, string):
@@ -87,10 +83,6 @@ class PairedEndCommand(ParallelCommand):
             match = search(regex, string).group(0)
             return (sub(match, replacement, string))
         except AttributeError as err:
-            if self.verbose:
-                print("Could not find and replace using read_regex: {}".format(
-                    err),
-                      file=stderr)
             raise (err)
 
 
@@ -101,19 +93,11 @@ class PairedEndCommand(ParallelCommand):
         if self.extension:
             try:
                 return (read.replace(self.extension, extension))
-            except Exception as err:
-                if self.verbose:
-                    print(
-                        "Cannot find and replace by extension: {}".format(err),
-                        file=stderr)
+            except Exception as err: 
                 raise (err)
         try:
             return (read.rsplit(".", 1)[0] + extension)
         except Exception as err:
-            if self.verbose:
-                print(
-                    "Could not automatically replace extension: {}".format(err),
-                    file=stderr)
             raise (err)
 
     def remove_files_below(self, root):
