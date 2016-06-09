@@ -1,29 +1,12 @@
 #!/usr/bin/env python
 from FastqcAll import FastqcAll
-import sys
+from simple_argparse import run_parallel_command_with_args
 
 
-def main(input_, output_):
-    fqc = FastqcAll(input_, output_)
-    fqc.slurm_options = {
-        'mem': '10G',
-        'tasks': '1',
-        'cpus': '1',
-        'job-name': '',
-        'time': '0',
-        'mail-user': 'cacampbell@ucdavis.edu',
-        'mail-type': 'END,FAIL',
-        'partition': 'bigmemh'
-    }
-    fqc.input_suffix = ".fq.gz"
-    fqc.job_prefix = "fqc_"
-    fqc.read_marker = "_R1"
-    fqc.mate_marker = "_R2"
-    fqc.modules = ['java']
-    fqc.verbose = False
-    fqc.dry_run = False
-    fqc.run()
-
+def main(*args, **kwargs):
+    fqc = FastqcAll(*args, **kwargs)
+    return (fqc.run())
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    jobs = run_parallel_command_with_args(main)
+    print(jobs)

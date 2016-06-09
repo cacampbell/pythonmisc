@@ -107,35 +107,37 @@ class ParallelCommand:
         could specify these by adding --reference="reference.fa" to the input
         and then invoking "self.reference" in the make_command method.
         """
+        self.input_root = None
+        self.output_root = None
+        self.input_regex = None
+        self.modules = None
+        self.extension = "\.fq\.gz"
+        self.exclusions = None
+        self.exclusions_paths = None
+        self.dry_run = False
+        self.verbose = False
+        self.cluster_options = dict(memory="2G",
+                                    nodes="1",
+                                    cpus="1",
+                                    partition="normal",
+                                    job_name="ParallelCommand_",
+                                    depends_on=None,
+                                    email_address=None,
+                                    email_options=None,
+                                    time=None,
+                                    bash="#!/usr/bin/env bash"
+                                    )  # End dict
+        # Set defualts for some required keywords:
+        self.set_default("input_root", getcwd())
+        self.set_default("output_root", getcwd())
+        self.set_default("input_regex", ".*")
+
         for key, value in kwargs.items():
             try:
                 setattr(self, key, value)  # Try to set each new attribute
             except Exception as err:
                 print("Could not set attribute: {}".format(key), file=stderr)
                 raise (err)
-
-        # Set some defaults for expected keywords
-        self.set_default("input_root", getcwd())
-        self.set_default("output_root", getcwd())
-        self.set_default("input_regex", ".*")
-        self.set_default("modules", None)
-        self.set_default("extension", "\.fq\.gz")
-        self.set_default("exclusions", None)
-        self.set_default("exclusions_paths", None)
-        self.set_default("dry_run", False)
-        self.set_default("verbose", False)
-        self.set_default("cluster_options", dict(memory="2G",
-                                                 nodes="1",
-                                                 cpus="1",
-                                                 partition="normal",
-                                                 job_name="ParallelCommand_",
-                                                 depends_on=None,
-                                                 email_address=None,
-                                                 email_options=None,
-                                                 time=None,
-                                                 bash="#!/usr/bin/env bash"
-                                                 )  # End dict
-                         )  # End set_default
 
         self.files = []
         self.commands = {}

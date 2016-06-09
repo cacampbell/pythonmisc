@@ -84,7 +84,7 @@ class PairedEndCommand(ParallelCommand):
         and then invoking "self.reference" in the make_command method.
         """
         super(PairedEndCommand, self).__init__(*args, **kwargs)
-        self.set_default("read_regex", "_R1\.fq.*")
+        self.read_regex = "_R1\.fq.*"
 
 
     def mate(self, read):

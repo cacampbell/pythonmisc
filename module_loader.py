@@ -9,8 +9,8 @@ __all__ = ['module']
 
 
 if 'MODULE_VERSION' not in os.environ:
-    os.environ['MODULE_VERSION_STACK'] = '3.2.10'
-    os.environ['MODULE_VERSION'] = '3.2.10'
+    os.environ['MODULE_VERSION_STACK'] = '3.2.10'  # Just a guess
+    os.environ['MODULE_VERSION'] = '3.2.10'  # Most recent when writing this
 else:
     os.environ['MODULE_VERSION_STACK'] = os.environ['MODULE_VERSION']
 
