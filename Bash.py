@@ -16,6 +16,8 @@ def bash(command, *args):
     :param command: str: a command / script to be sent to bash shell
     :param args: str | list<str>: string of command args or list of strings
     :return: tuple<str,str>: the decoded (output, error) of the command, script
+    :raises: OSError: running the command failed
+    :raises: CalledProcessError: the called command failed
     """
 
     def __decode(out_err):

@@ -25,42 +25,63 @@ class PairedEndCommand(ParallelCommand):
 
     def __init__(self, *args, **kwargs):
         """
-        Initialize this class using arguments passed to it
+        __init__ Initialize this class with arguments passed to it.
+
+        PairedEndCommand proceeds as follows:
+        1) Load environment modules
+        2) Gather input files
+        3) Remove exclusions from input files
+        4) Make output directories
+        5) Format commands based on make_command method
+        6) Send commands to wrapper for cluster scheduler using options
+        7) Unload environment modules
 
         Expected positional args:
             None
 
         Expcected kwargs:
             Unique to PairedEndCommand
-                :param: read_regex: str: regex for paired end files 1/2
-                :param: reference: str: optional: the reference genome
+                :param: read_regex: str: regex for first of the paired end files
 
-        :param: input_root: str: the input root for this series of commands
-        :param: output_root: str: the output root for this series of commands
-        :param: input_regex: str: regex specifying all input files
-        :param: extension: str: regex for extension on files
-        :param: exclusions: str: regex, comma separated list of regex, or python
-        list that specifies which files are to be excluded from the given run
-        :param: exlcusions_path: str: a directory conaining files with basenames
-        that should be excluded from the given run
-        :param: dry_run: bool: Toggles whether or not commands are actually run
-        :param: verbose: bool: Toggles print statements throughout
-        :param: cluster_options: dict: dictionary of cluster options
-            memory - The memory to be allocated to this job
-            nodes - The nodes to be allocated
-            cpus - The cpus **per node** to request
-            partition -  The queue name or partition name for the submitted job
-            job_name - The name of the job
-            depends_on - The dependencies (as comma separated list of job numbers)
-            email_address -  The email address to use for notifications
-            email_options - Email options: START|BEGIN,END|FINISH,FAIL|ABORT
-            time - time to request from the scheduler
-            bash -  The bash shebang line to use in the script
+            :param: input_root: str: the input root
+            :param: output_root: str: the output root
+            :param: input_regex: str: regex specifying all input files
+            :param: extension: str: regex for extension on files
+            :param: exclusions: str: regex or python list that specifies which
+                    files are to be excluded from the input files of this run
+            :param: exlcusions_paths: str: directory path or comma-separated
+                    list of directory names that each contain files with a
+                    basename that you wish for this class to skip during run()
+                    that should be excluded from the given run
+            :param: dry_run: bool: Toggles whether or not commands are actually
+                    run
+            :param: verbose: bool: Toggles print statements throughout class
+            :param: cluster_options: dict<str>: dictionary of cluster options
+                memory - The memory to be allocated to this job
+                nodes - The nodes to be allocated
+                cpus - The cpus **per node** to request
+                partition -  The queue name or partition name for the submitted
+                job
+                job_name - common prefix for all jobs created by this instance
+                depends_on - The dependencies (as comma separated list of job
+                numbers)
+                email_address -  The email address to use for notifications
+                email_options - Email options: BEGIN|END|FAIL|ABORT|ALL
+                time - time to request from the scheduler
+                bash -  The bash shebang line to use in the script
+
 
         Any other keyword arguments will be added as an attribute with that name
         to the instance of this class. So, if additional parameters are needed
         for formatting commands or any other overriden methods, then they
-        can be specified as a keyword agument to init for convenience
+        can be specified as a keyword agument to init for convenience.
+
+        For example, bbtools_map.py uses a --stats flag to determine whether or
+        not the user wants to output mapping statistics alongside the mapping.
+
+        Many commands use a reference genome or some additional data files, you
+        could specify these by adding --reference="reference.fa" to the input
+        and then invoking "self.reference" in the make_command method.
         """
         super(PairedEndCommand, self).__init__(*args, **kwargs)
         self.set_default("read_regex", "_R1\.fq.*")
@@ -68,80 +89,110 @@ class PairedEndCommand(ParallelCommand):
 
     def mate(self, read):
         """
-        Return the filename of the mate for this read
+        Return the filename of the mate for this read, based on read_regex
         :param: read: str: the read filename
+        :return: str: substituted string
+        :raises: AttributeError: thrown by not finding a match ro the rege
         """
         try:
             read_match = search(self.read_regex, read).group(0)
-            mate_match = sub("1", "2", read_match)
-            return (sub(read_match, mate_match, read))
-        except AttributeError as err:
+            mate_match = sub("1", "2", read_match)  # Ex: _R1_ --> _R2_
+            return (sub(read_match, mate_match, read))  # whole read name
+        except AttributeError as err:  # Nonetype has no attribute group
             raise (err)
 
     def __replace_regex(self, regex, replacement, string):
+        """
+        Replace regex in a string with a replacement string
+        :param: regex: str: the regular expression to replace
+        :param: replacement: str: replacement string
+        :param: string: str: the string in which to make the replacement
+        :return: str: string with replacement substituted
+        :raises: AttributeError: when a match is not found for regex in string
+        """
         try:
             match = search(regex, string).group(0)
             return (sub(match, replacement, string))
-        except AttributeError as err:
+        except AttributeError as err:  # Nonetype object has no attribute group
             raise (err)
 
-
     def replace_read_marker_with(self, replacement, read):
+        """
+        Replace the read_regex wtih some replacement. Calls __replace_regex,
+        using regex=self.read_regex to make the replacement
+        :param replacement: str: replacement string
+        :param read: str: the string to make replacements in
+        :return: str: read with replacement in the place of read_regex matches
+        :raises: AttributeError: from __replace_regex, if match not found
+        """
         return self.__replace_regex(self.read_regex, replacement, read)
 
     def replace_extension(self, extension, read):
-        if self.extension:
-            try:
-                return (read.replace(self.extension, extension))
-            except Exception as err: 
-                raise (err)
+        """
+        Replace the extention of "read" with the new "extension"
+        :param extension: str: new file extension
+        :param read: str: putattive file name to replace extension in
+        :return: read with its last extension replaced with the new extension
+        """
         try:
+            return (self.__replace_regex(self.extension, extension, read))
+        except AttributeError as err:  # Did not find a match for self.extension
+            # Replace last extension with new one, if no previous extensions,
+            # then just adds the new one to the end of the basename
             return (read.rsplit(".", 1)[0] + extension)
-        except Exception as err:
-            raise (err)
 
     def remove_files_below(self, root):
-        if type(root) is list:
-            for directory in root:
-                self.remove_files_below(directory)
+        """
+        Remove files that are below the directory named by root
+        :param root: str: assumed to be a directory containing files to remove
+                from the input of this particular run
+        """
+        if type(root) is list:  # Assume python list of filenames
+            for directory in root:  # for each assumed string in list
+                self.remove_files_below(directory)  # recall this method
 
-        if "," in root:
-            for directory in root.split(","):
-                self.remove_files_below(directory)
+        if "," in root:  # Okay, so everything here is not a python list, but
+            for directory in root.split(","):  # may contain ',', so for each
+                self.remove_files_below(directory)  # recall this method
 
-        exclusions = []
+        exclusions = []  # will hold final list of exclusions
 
-        if path.isdir(root):
+        if path.isdir(root):  # If string is a accessible directory
             if self.verbose:
                 print("Removing files form {}".format(root), file=stderr)
 
-            for root, dir, files in walk(root):
-                for filename in files:
-                    base = basename(filename)
-                    base_no_ext = path.splitext(base)[0]
-                    exclusions += [base_no_ext]
+            for root, dir, files in walk(root):  # Walk this directory
+                for filename in files:  # for each filename found
+                    base = basename(filename)  # get its basename
+                    base_no_ext = path.splitext(base)[0]  # strip extensions
+                    exclusions += [base_no_ext]  # add basename to exclusions
                     try:
+                        # Since this might be the output directory of a
+                        # previous run for this command, search for any files
+                        # that have a "_pe" in their name, and replace with
+                        # the default read marker, then add this to the list
                         possible_input = self.__replace_regex("_pe", "_R1",
                                                               base_no_ext)
                         exclusions += [possible_input]
-                    except AttributeError:
+                    except AttributeError:  # Did not match, but that's alright
                         pass
 
                     try:
+                        # Try this process again with another common read marker
                         possible_input = self.__replace_regex("_pe", "_1",
                                                               base_no_ext)
                         exclusions += [possible_input]
-                    except AttributeError:
+                    except AttributeError:  # No match
                         pass
 
-        for regex in list(set(exclusions)):
-            self.remove_regex_from_input(regex)
+        for regex in list(set(exclusions)):  # For each unique basename
+            self.remove_regex_from_input(regex)  # remove it from the input
 
     def get_files(self):
         """
-            Gather all files that match the input_regex that are below the input
-            directory
-            :return:
+        Gather all files that match the input_regex that are below the input
+        directory
+        :return:
         """
         for root, _, files in walk(self.input_root):
             for filename in files:  # for all files
@@ -168,6 +219,7 @@ class PairedEndCommand(ParallelCommand):
 
 
 class TestPairedEndCommand(unittest.TestCase):
+    # Some day, I will write these unit tests
     def setUp(self):
         pass
 

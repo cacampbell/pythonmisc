@@ -61,7 +61,8 @@ def __slurm_e_opts(string):
             new_chunk = chunk.upper().strip()
 
             if new_chunk == "END" or new_chunk == "FAIL" or \
-                    new_chunk == "BEGIN" or new_chunk == "ALL":
+                            new_chunk == "BEGIN" or new_chunk == "ALL" or \
+                            new_chunk == "ABORT":
                     options = options + new_chunk + ","
 
     else:
@@ -116,17 +117,17 @@ def __submit_slurm(**kwargs):
     return (submit_cmd)
 
 
-def __torque_e_opts(str):
+def __torque_e_opts(string):
     options = ""
-
-    for opt in str.split(","):
-        opt = opt.upper().strip()
-        if opt == "BEGIN" or opt == "START":
-            options += "b"
-        if opt == "END":
-            options += "e"
-        if opt == "FAIL" or opt == "ABORT":
-            options += "a"
+    if "," in string:
+        for option in string.split(","):
+            opt = option.strip().upper()
+            if opt == "BEGIN" or opt == "START":
+                options = options + "b"
+            if opt == "END":
+                options = options + "e"
+            if opt == "FAIL" or opt == "ABORT":
+                options = options + "a"
 
     return (options)
 
