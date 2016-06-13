@@ -215,7 +215,7 @@ class TestArgParse(unittest.TestCase):
                "--partition=bigmem",
                "--job-name=JOBNAME",
                "--depends-on='1,2,3,4,5,6'",  # Important! NOT A LIST
-               "--email-user=user@example.com",
+               "--email-address=user@example.com",
                "--email-options=START,END,FAIL",
                "--time=24:00:00",
                "--bash=#!/bin/bash"]
@@ -250,7 +250,7 @@ class TestArgParse(unittest.TestCase):
                "--partition=bigmem",
                "--job-name=JOBNAME",
                "--depends-on='1,2,3,4,5,6'",  # Important! NOT A LIST
-               "--email-user=user@example.com",
+               "--email-address=user@example.com",
                "--email-options=START,END,FAIL",
                "--time=24:00:00",
                "--bash=#!/bin/bash"
@@ -288,7 +288,7 @@ class TestArgParse(unittest.TestCase):
                "--partition=bigmem",
                "--job-name=JOBNAME",
                "--depends-on='1,2,3,4,5,6'",  # Important! NOT A LIST
-               "--email-user=user@example.com",
+               "--email-address=user@example.com",
                "--email-options=START,END,FAIL",
                "--time=24:00:00",
                "--bash=#!/bin/bash"
@@ -331,7 +331,7 @@ class TestArgParse(unittest.TestCase):
                "--partition=bigmem",
                "--job-name=JOBNAME",
                "--depends-on='1,2,3,4,5,6'",  # Important! NOT A LIST
-               "--email-user=user@example.com",
+               "--email-address=user@example.com",
                "--email-options=START,END,FAIL",
                "--time=24:00:00",
                "--bash=#!/bin/bash"
@@ -533,7 +533,7 @@ class TestArgParse(unittest.TestCase):
                "--cpus=30",
                "--partition=bigmem",
                "--job-name=JOBNAME",
-               "--email-user=user@example.com",
+               "--email-address=user@example.com",
                "--email-options=FAIL",
                "--time=0",
                """--cluster-options={
@@ -577,7 +577,7 @@ class TestArgParse(unittest.TestCase):
                "--cpus=30",
                "--partition=BIGMEM",
                "--job-name=JOBNAME",
-               "--email-user=user@example.com",
+               "--email-address=user@example.com",
                "--email-options=FAIL",
                "--time=0",
                """--cluster-options={
@@ -622,7 +622,7 @@ class TestArgParse(unittest.TestCase):
                "--cpus=30",
                "--partition=BIGMEM",
                "--job-name=JOBNAME",
-               "--email-user=user@example.com",
+               "--email-address=user@example.com",
                "--email-options=FAIL",
                "--time=0",
                """--cluster-options={
@@ -671,7 +671,7 @@ class TestArgParse(unittest.TestCase):
                "--cpus=30",
                "--partition=BIGMEM",
                "--job-name=JOBNAME",
-               "--email-user=user@example.com",
+               "--email-address=user@example.com",
                "--email-options=FAIL",
                "--time=0",
                """--cluster-options={
