@@ -6,6 +6,8 @@ from ast import literal_eval
 from sys import argv
 from sys import stderr
 
+from copy import deepcopy
+
 CLUSTER_OPTIONS = ("memory",
                    "nodes",
                    "cpus",
@@ -46,7 +48,7 @@ def run_parallel_command_with_args(func, args=None):
             cluster_options[key] = __str(value)
 
     # Remove keys in cluster options that are not supposed to be there
-    cluster_options_copy = cluster_options.copy()
+    cluster_options_copy = deepcopy(cluster_options)
     for (key, value) in cluster_options_copy.items():
         if key not in CLUSTER_OPTIONS:
             cluster_options.pop(key)

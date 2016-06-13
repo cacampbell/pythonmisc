@@ -5,6 +5,7 @@ from sys import stderr
 
 from abc import ABCMeta
 from abc import abstractmethod
+from copy import deepcopy
 from os import getcwd
 from os import makedirs
 from os import path
@@ -135,7 +136,7 @@ class ParallelCommand:
         for key, value in kwargs.items():
             try:
                 if key == "cluster_options":  # Set cluster options
-                    tmp = self.cluster_options.copy()
+                    tmp = deepcopy(self.cluster_options)
                     tmp.update(value)
                     self.cluster_options = tmp
                 else:
