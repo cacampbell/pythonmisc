@@ -39,7 +39,7 @@ def run_parallel_command_with_args(func, args=None):
 
     # If a cluster_options dict was supplied
     if "cluster_options" in kwargs.keys():
-        cluster_options = kwargs["cluster_options"]
+        cluster_options = deepcopy(kwargs["cluster_options"])
 
     # Find standalone cluster options provided by command line
     for (key, value) in kwargs.items():
@@ -48,8 +48,7 @@ def run_parallel_command_with_args(func, args=None):
             cluster_options[key] = __str(value)
 
     # Remove keys in cluster options that are not supposed to be there
-    cluster_options_copy = deepcopy(cluster_options)
-    for (key, value) in cluster_options_copy.items():
+    for (key, value) in cluster_options.items():
         if key not in CLUSTER_OPTIONS:
             cluster_options.pop(key)
             print("Removing Unexpected cluster option: {}".format(key),
