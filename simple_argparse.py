@@ -27,7 +27,9 @@ def run_parallel_command_with_args(func, args=None):
     def __str(val):
         if type(val) is list:
             return (
-            ",".join(map(str, val)))  # Cluster options take lists as csv
+                ",".join(map(str, val)))  # Cluster options take lists as csv
+        elif type(val) is dict:
+            return val
         else:
             return (str(val))
 
@@ -61,7 +63,6 @@ def run_parallel_command_with_args(func, args=None):
             new_kwargs[key] = kwargs[key]
 
     return func(*args, **new_kwargs)
-
 
 
 def run_with_args(func, args=None):
