@@ -28,9 +28,7 @@ def run_parallel_command_with_args(func, args=None):
         if type(val) is list:
             return (
                 ",".join(map(str, val)))  # Cluster options take lists as csv
-        elif type(val) is dict:
-            return val
-        else:
+        elif type(val) is int or type(val) is float:
             return (str(val))
 
     (args, kwargs) = parse_args(args)
