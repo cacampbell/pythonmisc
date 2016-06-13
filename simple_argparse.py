@@ -32,9 +32,11 @@ def run_parallel_command_with_args(func, args=None):
                 ",".join(map(str, val)))  # Cluster options take lists as csv
         elif type(val) is int or type(val) is float:
             return (str(val))
+        else:
+            return val
 
     (args, kwargs) = parse_args(args)
-    new_kwargs = dict()
+    new_kwargs = {}
     cluster_options = {}
 
     # If a cluster_options dict was supplied
@@ -48,17 +50,18 @@ def run_parallel_command_with_args(func, args=None):
             cluster_options[key] = __str(value)
 
     # Remove keys in cluster options that are not supposed to be there
-    for (key, value) in cluster_options.items():
+    cluster_options_copy = deepcopy(cluster_options)
+    for (key, value) in cluster_options_copy.items():
         if key not in CLUSTER_OPTIONS:
             cluster_options.pop(key)
             print("Removing Unexpected cluster option: {}".format(key),
                   file=stderr)
 
-    if cluster_options != {}:
+    if cluster_options:  # empty dictionary is False in python
         new_kwargs["cluster_options"] = cluster_options
 
     for key in kwargs.keys():
-        if key not in CLUSTER_OPTIONS and key is not "cluster_options":
+        if key not in CLUSTER_OPTIONS and key != "cluster_options":
             new_kwargs[key] = kwargs[key]
 
     return func(*args, **new_kwargs)
@@ -110,7 +113,23 @@ def parse_literal(string):
 
 
 class TestArgParse(unittest.TestCase):
+
     def setUp(self):
+        def dict_diff(first, second):
+            KEYNOTFOUND = '<KEYNOTFOUND>'
+            diff = {}
+            # Check all keys in first dict
+            for key in first.keys():
+                if not key in second.keys():
+                    diff[key] = (first[key], KEYNOTFOUND)
+                elif (first[key] != second[key]):
+                    diff[key] = (first[key], second[key])
+            # Check all keys in second dict to find missing
+            for key in second.keys():
+                if key in first.keys():
+                    diff[key] = (KEYNOTFOUND, second[key])
+            return diff
+
         def test_func(*args, **kwargs):
             for arg in args:
                 print("Arg: {}".format(arg))
@@ -128,6 +147,7 @@ class TestArgParse(unittest.TestCase):
 
             # Assert that the actual arguments list does not contain extras
             for arg in args:
+                print("Is {} expected?".format(arg))
                 assert (arg in expected_args)
 
         def evaluate_keywords(kwargs, expected_dict):
@@ -135,7 +155,14 @@ class TestArgParse(unittest.TestCase):
             # Assert that each value for each expected key is correct
             for (key, val) in expected_dict.items():
                 assert (key in kwargs)
-                assert (val == kwargs[key])
+                try:
+                    assert (val == kwargs[key])
+                except AssertionError as err:
+                    if type(val) is dict:
+                        print("Actual: {}".format(kwargs[key]))
+                        print("Expected: {}".format(val))
+                        print("Diff: {}".format(dict_diff(kwargs[key], val)))
+                    raise err
 
             # Assert that each key in the actual arguments is expected
             # This insures there are no extra keys
