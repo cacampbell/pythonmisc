@@ -13,8 +13,8 @@ class QualityControl(PairedEndCommand):
         output1 = self.rebase_file(read)
         output2 = self.rebase_file(mate)
         command = ("bbduk2.sh -Xmx{maxheap} threads={t} in1={i1} in2={i2} "
-                   "out1={o1} out2={o2} ref={adpt} ktrim=r "
-                   "k=25 mink=11 hdist=2 tpe tbo qtrim=rl trimq=10 ").format(
+                   "out1={o1} out2={o2} ref={adpt} ktrim=r ftm=5 "
+                   "k=25 mink=11 hdist=2 tpe tbo qtrim=rl trimq=1").format(
             maxheap=self.get_mem(fraction=0.95), i1=read, i2=mate, o1=output1,
             o2=output2, adpt=self.reference, t=self.get_threads())
         return command

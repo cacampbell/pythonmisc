@@ -1,11 +1,11 @@
-#!/usr/bin/env python
-from QualityControl import QualityControl
+#!/usr/bin/env python3
+from Decontaminate import Decontaminate
 from simple_argparse import run_parallel_command_with_args
 
 
 def main(*args, **kwargs):
-    qc = QualityControl(*args, **kwargs)
-    return(qc.run())
+    decontaminator = Decontaminate(*args, **kwargs)
+    return(decontaminator.run())
 
 
 if __name__ == "__main__":
