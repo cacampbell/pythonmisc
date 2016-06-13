@@ -132,7 +132,7 @@ class TestArgParse(unittest.TestCase):
 
         def evaluate_keywords(kwargs, expected_dict):
             # Assert that each expected key appears in the actual kwargs
-            # Assert hat each value for each expected key is correct
+            # Assert that each value for each expected key is correct
             for (key, val) in expected_dict.items():
                 assert (key in kwargs)
                 assert (val == kwargs[key])
