@@ -8,7 +8,7 @@ class MarkDuplicates(PairedEndCommand):
         self.picard = "~/.prog/picard-tools-2.4.1/picard.jar"
 
     def make_command(self, bam):
-        output = self.replace_extension(".dedupe.bam", bam)
+        output = self.replace_extension_with(".dedupe.bam", bam)
         output = self.rebase_file(output)
         command = ("java -Xms{xms} -Xmx{xmx} -jar {picard} MarkDuplicates"
                    "INPUT={i} OUTPUT={o} REMOVE_DUPLICATES=true "

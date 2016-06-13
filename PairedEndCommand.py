@@ -127,7 +127,7 @@ class PairedEndCommand(ParallelCommand):
         """
         return self.__replace_regex(self.read_regex, replacement, read)
 
-    def replace_extension(self, extension, read):
+    def replace_extension_with(self, extension, read):
         """
         Replace the extention of "read" with the new "extension"
         :param extension: str: new file extension
@@ -141,19 +141,18 @@ class PairedEndCommand(ParallelCommand):
             # then just adds the new one to the end of the basename
             return (read.rsplit(".", 1)[0] + extension)
 
-    def remove_files_below(self, root):
+    def exclude_files_below(self, root):
         """
-        Remove files that are below the directory named by root
+        Remove files that are below the directory named by root from input
         :param root: str: assumed to be a directory containing files to remove
-                from the input of this particular run
         """
         if type(root) is list:  # Assume python list of filenames
             for directory in root:  # for each assumed string in list
-                self.remove_files_below(directory)  # recall this method
+                self.exclude_files_below(directory)  # recall this method
 
         if "," in root:  # Okay, so everything here is not a python list, but
             for directory in root.split(","):  # may contain ',', so for each
-                self.remove_files_below(directory)  # recall this method
+                self.exclude_files_below(directory)  # recall this method
 
         exclusions = []  # will hold final list of exclusions
 

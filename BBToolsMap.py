@@ -16,32 +16,32 @@ class BBMapper(PairedEndCommand):
 
         # Mapped Sam file
         map_sam = self.replace_read_marker_with("_pe", read)
-        map_sam = self.replace_extension(".sam", map_sam)
+        map_sam = self.replace_extension_with(".sam", map_sam)
         map_sam = self.rebase_file(map_sam)
 
         # Unmapped Sam file
         unmap_sam = self.replace_read_marker_with("_pe", read)
-        unmap_sam = self.replace_extension(".unmapped.sam", unmap_sam)
+        unmap_sam = self.replace_extension_with(".unmapped.sam", unmap_sam)
         unmap_sam = self.rebase_file(unmap_sam)
 
         # Coverage Statistics
         covstat = self.replace_read_marker_with("_covstats", read)
-        covstat = self.replace_extension(".txt", covstat)
+        covstat = self.replace_extension_with(".txt", covstat)
         covstat = self.rebase_file(covstat)
 
         # Coverage Hist
         covhist = self.replace_read_marker_with("_covhist", read)
-        covhist = self.replace_extension(".txt", covhist)
+        covhist = self.replace_extension_with(".txt", covhist)
         covhist = self.rebase_file(covhist)
 
         # Base Coverage
         basecov = self.replace_read_marker_with("_basecov", read)
-        basecov = self.replace_extension(".txt", basecov)
+        basecov = self.replace_extension_with(".txt", basecov)
         basecov = self.rebase_file(basecov)
 
         # Bin Coverage
         bincov = self.replace_read_marker_with("_bincov", read)
-        bincov = self.replace_extension(".txt", bincov)
+        bincov = self.replace_extension_with(".txt", bincov)
         bincov = self.rebase_file(bincov)
 
         # Full Command

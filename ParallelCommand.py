@@ -258,14 +258,14 @@ class ParallelCommand:
                 if self.verbose:
                     print("Removed: {}".format(filename), file=stderr)
 
-    def remove_files_below(self, root):
+    def exclude_files_below(self, root):
         if type(root) is list:
             for directory in root:
-                self.remove_files_below(directory)
+                self.exclude_files_below(directory)
 
         if "," in root:
             for directory in root.split(","):
-                self.remove_files_below(directory)
+                self.exclude_files_below(directory)
 
         exclusions = []
 
@@ -364,9 +364,9 @@ class ParallelCommand:
             print('Removing exclusions...', file=stderr)
 
         if self.exclusions_paths:
-            self.remove_files_below(self.exclusions_paths)
+            self.exclude_files_below(self.exclusions_paths)
 
-        self.remove_files_below(self.output_root)
+        self.exclude_files_below(self.output_root)
 
         if self.exclusions:
             self.remove_regex_from_input(self.exclusions)
