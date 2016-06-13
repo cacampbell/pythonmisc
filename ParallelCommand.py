@@ -135,7 +135,9 @@ class ParallelCommand:
         for key, value in kwargs.items():
             try:
                 if key == "cluster_options":  # Set cluster options
-                    self.cluster_options = {**self.cluster_options, **value}
+                    tmp = self.cluster_options.copy()
+                    tmp.update(value)
+                    self.cluster_options = tmp
                 else:
                     setattr(self, key, value)  # Try to set each new attribute
             except Exception as err:
