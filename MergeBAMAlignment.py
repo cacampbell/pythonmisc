@@ -8,5 +8,3 @@ class MergeBamAlignment(ParallelCommand):
 
     def make_command(self, read):
         pass
-
-
