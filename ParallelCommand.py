@@ -359,6 +359,10 @@ class ParallelCommand:
         if self.verbose:
             print('Removing exclusions...', file=stderr)
 
+        if self.verbose:
+            print("Making output directories...", file=stderr)
+        self.make_directories()
+
         if self.exclusions_paths:
             self.exclude_files_below(self.exclusions_paths)
 
@@ -366,10 +370,6 @@ class ParallelCommand:
 
         if self.exclusions:
             self.remove_regex_from_input(self.exclusions)
-
-        if self.verbose:
-            print("Making output directories...", file=stderr)
-        self.make_directories()
 
         if self.verbose:
             print('Formatting commands...', file=stderr)
