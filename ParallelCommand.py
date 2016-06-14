@@ -108,11 +108,11 @@ class ParallelCommand:
         could specify these by adding --reference="reference.fa" to the input
         and then invoking "self.reference" in the make_command method.
         """
-        self.input_root = None
-        self.output_root = None
-        self.input_regex = None
+        self.input_root = getcwd()
+        self.output_root = getcwd()
+        self.input_regex = '.*'
         self.modules = None
-        self.extension = "\.fq\.gz"
+        self.extension = r'.fq.gz'
         self.exclusions = None
         self.exclusions_paths = None
         self.dry_run = False
@@ -128,10 +128,6 @@ class ParallelCommand:
                                     time=None,
                                     bash="#!/usr/bin/env bash"
                                     )  # End dict
-        # Set defualts for some required keywords:
-        self.set_default("input_root", getcwd())
-        self.set_default("output_root", getcwd())
-        self.set_default("input_regex", ".*")
 
         for key, value in kwargs.items():
             try:

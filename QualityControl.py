@@ -36,10 +36,10 @@ class QualityControl(PairedEndCommand):
         # trim quality from both ends, using quality score 5 to filter
         # TODO: Pipe paired files from first pass to second pass with stdout
         # TODO: test piping from stdout
-        command = ("bbduk.sh -Xmx{xmx} threads={t} "
+        command = ("bbduk.sh -Xmx{xmx} threads={t} usejni=t "
                    "in1={i1} in2={i2} out1=stdout1.fq out2=stdout2.fq "
                    "stats={s1} ref={a} ktrim=r k=27 mink=11 hdist=2 tpe tbo | "
-                   "bbduk.sh -Xmx{xmx} threads={t} "
+                   "bbduk.sh -Xmx{xmx} threads={t} usejni=t "
                    "in1=stdin1.fq in2=stdin2.fq out1={o1} out2={o2} stats={s2} "
                    "ref={a} ktrim=r k=23 mink=11 hdist=0 tpe tbo "
                    "qtrim=rl trimq=5").format(

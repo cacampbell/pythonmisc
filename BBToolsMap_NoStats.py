@@ -1,13 +1,11 @@
-#!/usr/bin/env python
-from __future__ import print_function
-
+#!/usr/bin/env python3
 from PairedEndCommand import PairedEndCommand
 
 
 class BBMapperNoStats(PairedEndCommand):
     def __init__(self, *args, **kwargs):
         super(BBMapperNoStats, self).__init__(*args, **kwargs)
-        self.reference = "reference.fa"
+        self.set_default("reference", "reference.fa")
         # Set read_regex here if necessary
 
     def make_command(self, read):
