@@ -40,7 +40,7 @@ class QualityControl(PairedEndCommand):
         # trim quality from both ends, using quality score 5 to filter
         command = ("bbduk.sh -Xmx{xmx} threads={t} usejni=t "
                    "in1={i1} in2={i2} out1={o1} out2={o2} ftm=5 "
-                   "stats={s1} ref={a} ktrim=r k=27 mink=11 hdist=2 tpe tbo | "
+                   "stats={s1} ref={a} ktrim=r k=27 mink=11 hdist=2 tpe tbo; "
                    "bbduk.sh -Xmx{xmx} threads={t} usejni=t "
                    "in1={o1} in2={o2} out1={o3} out2={o4} stats={s2} "
                    "ref={a} ktrim=r k=23 mink=11 hdist=0 tpe tbo "

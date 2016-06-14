@@ -5,6 +5,7 @@ from simple_argparse import run_parallel_command_with_args
 
 def main(*args, **kwargs):
     qc = QualityControl(*args, **kwargs)
+    qc.modules = ['java', 'slurm']
     return (qc.run())
 
 
