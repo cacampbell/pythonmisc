@@ -7,7 +7,7 @@ from simple_argparse import run_parallel_command_with_args
 def main(*args, **kwargs):
     mapper = BBMapperNoStats(*args, **kwargs)
 
-    if 'stats' in kwargs:
+    if 'stats' in kwargs:  # --stats will output mapping stats alongside
         if kwargs['stats'] is True:
             mapper = BBMapper(*args, **kwargs)
 

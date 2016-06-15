@@ -12,9 +12,10 @@ class AdapterFinder(PairedEndCommand):
         adapter = self.replace_extension_with(".fa", adapter)
         adapter = self.rebase_file(adapter)
         command = ("bbmerge.sh -Xmx{xmx} threads={t} in1={i1} in2={i2} "
-                   "outa={o}").format(xmx=self.get_mem(fraction=0.95),
-                                      t=self.get_threads(),
-                                      i1=filename,
-                                      i2=mate,
-                                      o=adapter)
+                   "outa={o} monitor=600,0.01").format(
+            xmx=self.get_mem(fraction=0.95),
+            t=self.get_threads(),
+            i1=filename,
+            i2=mate,
+            o=adapter)
         return (command)

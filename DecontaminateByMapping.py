@@ -21,7 +21,7 @@ class DecontaminateByMapping(PairedEndCommand):
         command = ("bbmap.sh -Xmx{maxh} threads={t} minid=0.95 maxindel=3 "
                    "bwr=0.16 bw=12 quickmatch fast minhits=2 ref={r} nodisk "
                    "in1={i1} in2={i2} outu1={o1} outu2={o2} outm1={h1} "
-                   "outm2={h2} statsfile={s} usejni=t").format(
+                   "outm2={h2} statsfile={s} usejni=t monitor=600,0.01").format(
             maxh=self.get_mem(fraction=0.95),
             r=self.reference,
             i1=read,

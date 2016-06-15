@@ -38,13 +38,13 @@ class QualityControl(PairedEndCommand):
         # Trim adapters by pair overlap detection (tbo)
         # Trim adapters from the right (3' adapters)
         # trim quality from both ends, using quality score 5 to filter
-        command = ("bbduk.sh -Xmx{xmx} threads={t} usejni=t "
+        command = ("bbduk.sh -Xmx{xmx} threads={t} usejni=t monitor=600,0.01 "
                    "in1={i1} in2={i2} out1={o1} out2={o2} ftm=5 "
                    "stats={s1} ref={a} ktrim=r k=27 mink=11 hdist=2 tpe tbo; "
                    "bbduk.sh -Xmx{xmx} threads={t} usejni=t "
                    "in1={o1} in2={o2} out1={o3} out2={o4} stats={s2} "
                    "ref={a} ktrim=r k=23 mink=11 hdist=0 tpe tbo "
-                   "qtrim=rl trimq=5").format(
+                   "qtrim=rl trimq=5 monitor=600,0.01").format(
             xmx=self.get_mem(fraction=0.95),
             t=self.get_threads(),
             i1=read,
