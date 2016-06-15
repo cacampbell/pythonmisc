@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from DecontaminateByMapping import DecontaminateByMapping
 from simple_argparse import run_parallel_command_with_args
 
@@ -6,8 +6,10 @@ from simple_argparse import run_parallel_command_with_args
 def main(*args, **kwargs):
     rh = DecontaminateByMapping(*args, **kwargs)
     rh.modules = ['java', 'slurm']
-    rh.run()
+    jobs = rh.run()
+    return(jobs)
 
 
 if __name__ == "__main__":
-    run_parallel_command_with_args(main)
+    jobs = run_parallel_command_with_args(main)
+    print(jobs)

@@ -120,7 +120,7 @@ class ParallelCommand:
         self.cluster_options = dict(memory="2G",
                                     nodes="1",
                                     cpus="1",
-                                    partition="normal",
+                                    partition="bigmemh",
                                     job_name="ParallelCommand_",
                                     depends_on=None,
                                     email_address=None,

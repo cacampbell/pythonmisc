@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from FastqcAll import FastqcAll
 from simple_argparse import run_parallel_command_with_args
 
