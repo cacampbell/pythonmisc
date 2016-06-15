@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-from ParallelCommand import ParallelCommand
+from PairedEndCommand import PairedEndCommand
 
 
-class MergeBamAlignment(ParallelCommand):
-    def __init__(self, input_root, output_root):
-        super(MergeBamAlignment, self).__init__(input_root, output_root)
+class MergeBamAlignment(PairedEndCommand):
+    def __init__(self, *args, **kwargs):
+        super(MergeBamAlignment, self).__init__(*args, **kwargs)
 
     def make_command(self, read):
         pass
