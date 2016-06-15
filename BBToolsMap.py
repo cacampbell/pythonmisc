@@ -14,12 +14,12 @@ class BBMapper(PairedEndCommand):
 
         # Mapped Sam file
         map_sam = self.replace_read_marker_with("_pe", read)
-        map_sam = self.replace_extension_with(".sam", map_sam)
+        map_sam = self.replace_extension_with(".bam", map_sam)
         map_sam = self.rebase_file(map_sam)
 
         # Unmapped Sam file
         unmap_sam = self.replace_read_marker_with("_pe", read)
-        unmap_sam = self.replace_extension_with(".unmapped.sam", unmap_sam)
+        unmap_sam = self.replace_extension_with(".unmapped.bam", unmap_sam)
         unmap_sam = self.rebase_file(unmap_sam)
 
         # Coverage Statistics

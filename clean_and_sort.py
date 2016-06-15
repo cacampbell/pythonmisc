@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-from MergeBAMAlignment import MergeBamAlignment
+from CleanSort import CleanSort
 from simple_argparse import run_parallel_command_with_args
 
 
 def main(*args, **kwargs):
-    merger = MergeBamAlignment(*args, **kwargs)
+    merger = CleanSort(*args, **kwargs)
     merger.modules = ['java', 'slurm']
     return (merger.run())
 
