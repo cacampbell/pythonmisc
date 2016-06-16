@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from BBToolsMap import BBMapper
 from BBToolsMap_NoStats import BBMapperNoStats
 from simple_argparse import run_parallel_command_with_args
