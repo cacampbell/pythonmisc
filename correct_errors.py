@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-from CleanSort import CleanSort
+from ErrorCorrect import ErrorCorrect
 from simple_argparse import run_parallel_command_with_args
 
 
 def main(*args, **kwargs):
-    merger = CleanSort(*args, **kwargs)
-    merger.modules = ['java', 'slurm']
-    merger.exclusions = "unmapped,unmap"
-    return (merger.run())
+    ec = ErrorCorrect(*args, **kwargs)
+    # Also takes --stats, --normalize, --min_depth=, --target_depth=
+    # Defaults: False, False, 6, 40
+    return (ec.run())
 
 
 if __name__ == "__main__":

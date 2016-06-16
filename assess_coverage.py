@@ -17,4 +17,5 @@ def main(*args, **kwargs):
 
 
 if __name__ == "__main__":
-    run_parallel_command_with_args(main)
+    jobs = run_parallel_command_with_args(main)
+    print(jobs)
