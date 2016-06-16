@@ -8,7 +8,7 @@ class ValidateMapped(PairedEndCommand):
     """
 
     def __init__(self, *args, **kwargs):
-        super(self, ValidateMapped).__init__(*args, **kwargs)
+        super(ValidateMapped, self).__init__(*args, **kwargs)
 
     def make_command(self, filename):
         output = self.rebase_file(filename)
