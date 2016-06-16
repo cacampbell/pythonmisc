@@ -157,7 +157,7 @@ class PairedEndCommand(ParallelCommand):
 
         if path.isdir(root):  # If string is a accessible directory
             if self.verbose:
-                print("Removing files form {}".format(root), file=stderr)
+                print("Removing files from {}".format(root), file=stderr)
 
             for root, dir, files in walk(root):  # Walk this directory
                 for filename in files:  # for each filename found

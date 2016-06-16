@@ -1,19 +1,18 @@
 #!/usr/bin/env python3
-from ValidateMapped import ValidateMapped
-
+from Coverage import Coverage
 from simple_argparse import run_parallel_command_with_args
 
 
 def main(*args, **kwargs):
-    validator = ValidateMapped(*args, **kwargs)
+    cover = Coverage(*args, **kwargs)
 
     if "extension" not in kwargs.keys():
-        validator.extension = r".sam"
+        cover.extension = r".bam"
 
     if "read_regex" not in kwargs.keys():
-        validator.read_regex = r"_pe"
+        cover.read_regex = r"_pe"
 
-    jobs = validator.run()
+    jobs = cover.run()
     return (jobs)
 
 
