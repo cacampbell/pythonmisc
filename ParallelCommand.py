@@ -206,7 +206,7 @@ class ParallelCommand:
 
         return (job_numbers)
 
-    @abstractmethod
+    @abstractm ethod
     def make_command(self, filename):
         """
         Ovveride this method to format command for each file
@@ -219,7 +219,7 @@ class ParallelCommand:
         """
         pass
 
-    def format_commands(self):
+    def format_command s(self):
         """
         Generate format_commands for each file gathered
         :return:

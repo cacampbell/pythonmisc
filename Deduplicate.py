@@ -38,7 +38,7 @@ class Deduplicate(PairedEndCommand):
                 return (command)
         else:  # Ignoring picard, deduplicating reads without mapping (BBMap)
             read = bam  # For clarity, does nothing
-            mate = self.mate(bam)
+            mate = self.mate(read)
             out1 = self.rebase_file(read)
             out2 = self.rebase_file(mate)
             command = ("dedupe.sh in={i1} out={o1} "
