@@ -219,7 +219,7 @@ class ParallelCommand:
         """
         pass
 
-    def format_command s(self):
+    def format_commands(self):
         """
         Generate format_commands for each file gathered
         :return:
