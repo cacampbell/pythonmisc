@@ -29,27 +29,22 @@ class Deduplicate(PairedEndCommand):
                 output = self.replace_extension_with(".dedupe.bam", bam)
                 output = self.rebase_file(output)
                 command = ("dedupebymapping.sh -Xmx{xmx} threads={t} "
-                           "in={i} out={o} monitor=600,0.01").format(
+                           "in={i} out={o} monitor=600,0.01 usejni=t").format(
                     xmx=self.get_mem(fraction=0.95),
                     t=self.get_threads(),
                     i=bam,
                     o=output
                 )
                 return (command)
-        else:  # Ignoring picard, deduplicating reads without mapping (BBMap)
+        else:  # Ignoring picard, deduplicating reads without mapping (FastUniq)
             read = bam  # For clarity, does nothing
             mate = self.mate(read)
             out1 = self.rebase_file(read)
             out2 = self.rebase_file(mate)
-            command = ("dedupe.sh in={i1} out={o1} usejni=t "
-                       "-Xmx{xmx} threads={t} monitor=600,0.01 && "
-                       "dedupe.sh in={i2} out={o2} usejni=t "
-                       "-Xmx{xmx} threads={t} monitor=600,0.01").format(
+            command = ("fastuniq -i {i1} {i2} -o {o1} -p {o2} -t q").format(
                 i1=read,
                 i2=mate,
                 o1=out1,
                 o2=out2,
-                xmx=self.get_mem(fraction=0.95),
-                t=self.get_threads()
             )
             return (command)
