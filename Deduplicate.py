@@ -42,7 +42,7 @@ class Deduplicate(PairedEndCommand):
             out1 = self.rebase_file(read)
             out2 = self.rebase_file(mate)
             command = ("dedupe.sh in={i1} out={o1} "
-                       "-Xmx{xmx} threads={t} monitor=600,0.01; "
+                       "-Xmx{xmx} threads={t} monitor=600,0.01 && "
                        "dedupe.sh in={i2} out={o2} "
                        "-Xmx{xmx} threads={t} monitor=600,0.01").format(
                 i1=read,
