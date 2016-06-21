@@ -14,7 +14,7 @@ from ParallelCommand import ParallelCommand
 
 __all__ = ["PairedEndCommand"]
 
-class PairedEndComman d(ParallelCommand):
+class PairedEndCommand(ParallelCommand):
     """
     Extension of ParallelCommand to run parallel commands with paired end
     sequencing files, mainly for Illumina data
