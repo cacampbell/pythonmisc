@@ -6,20 +6,20 @@ from simple_argparse import run_parallel_command_with_args
 
 
 class BBTools_factory:
-    def __init__(*args, **kwargs):
+    def __init__(self, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs
 
-    def get_mapper():
+    def get_mapper(self):
         # Stats takes precedence over wrap
         if 'stats' in self.kwargs:  # --stats : desired mapping statistics
-            if kwargs['stats']:
+            if self.kwargs['stats']:
                 return(BBMapper(*self.args, **self.kwargs))
 
         # Stats and Wrap are mutually exclusive -- cannot get mapping stats
         # if using the bbwrap.sh script
-        if 'wrap' in kwargs:  # --wrap : use index one time only
-            if kwargs['wrap']:
+        if 'wrap' in self.kwargs:  # --wrap : use index one time only
+            if self.kwargs['wrap']:
                 return(BBWrapper(*self.args, **self.kwargs))
         else:
             return(BBMapperNoStats(*self.args, **self.kwargs))
@@ -32,5 +32,5 @@ def main(*args, **kwargs):
 
 
 if __name__ == "__main__":
-    run_parallel_command_with_args(main)
+    jobs = run_parallel_command_with_args(main)
     print(jobs)
