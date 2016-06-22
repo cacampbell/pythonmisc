@@ -6,6 +6,7 @@ class ErrorCorrect(PairedEndCommand):
     def __init__(self, *args, **kwargs):
         super(ErrorCorrect, self).__init__(*args, **kwargs)
         self.set_default("normalize", False)
+        self.set_default("stats", False)
         self.set_default("min_depth", "6")
         self.set_default("target_depth", "40")
 
