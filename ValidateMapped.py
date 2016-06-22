@@ -13,6 +13,6 @@ class ValidateMapped(PairedEndCommand):
     def make_command(self, filename):
         output = self.rebase_file(filename)
         output = self.replace_extension_with(".txt", output)
-        command = ("bam validate --in {i} --verbose > {o}").format(i=filename,
-                                                                   o=output)
+        command = ("bam validate --in {i} > {o}").format(i=filename,
+                                                         o=output)
         return (command)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from PairedEndCommand import PairedEndCommand
+from sys import stderr
 
 
 class Deduplicate(PairedEndCommand):
@@ -39,12 +40,27 @@ class Deduplicate(PairedEndCommand):
         else:  # Ignoring picard, deduplicating reads without mapping (FastUniq)
             read = bam  # For clarity, does nothing
             mate = self.mate(read)
+            pipe1 = self.replace_extension_with(".pipe", read)
+            pipe2 = self.replace_extension_with(".pipe", mate)
+            file_list = self.replace_read_marker_with("_filelist", read)
             out1 = self.rebase_file(read)
             out2 = self.rebase_file(mate)
-            command = ("fastuniq -i {i1} {i2} -o {o1} -p {o2} -t q").format(
-                i1=read,
-                i2=mate,
-                o1=out1,
-                o2=out2,
-            )
+            command = ("mkfifo {p1} && mkfifo {p2} && gunzip -c {i1} > {p1} && "
+                       "gunzip -c {i2} > {p2} && fastuniq -i {fl} -o {o1} -p "
+                       "{o2} -t q").format(i1=read, i2=mate, p1=pipe1, p2=pipe2,
+                                           fl=file_list, o1=out1, o2=out2)
+
+            if not self.dry_run:
+                with open(file_list, "w+") as fh:
+                    print(pipe1, file=fh)
+                    print(pipe2, file=fh)
+
+                if self.verbose:
+                    print("Wrote {} for FastUniq".format(file_list),
+                          file=stderr)
+            else:
+                if self.verbose:
+                    print("Would have made {} if not dry_run".format(file_list),
+                        file=stderr)
+
             return (command)
