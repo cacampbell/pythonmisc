@@ -6,7 +6,6 @@ class ErrorCorrect(PairedEndCommand):
     def __init__(self, *args, **kwargs):
         super(ErrorCorrect, self).__init__(*args, **kwargs)
         self.set_default("normalize", False)
-        self.set_default("stats", False)
         self.set_default("min_depth", "6")
         self.set_default("target_depth", "40")
 
@@ -30,10 +29,10 @@ class ErrorCorrect(PairedEndCommand):
             )
 
             if self.stats:
-                stats = self.replace_read_marker_with("_stats", read)
-                stats = self.replace_extension_with(".txt", stats)
-                stats = self.rebase_file(stats)
-                command = ("{cmd} stats={s}").format(cmd=command, s=stats)
+                hist = self.replace_extension_with(".txt", read)
+                hist = self.replace_read_marker_with("_pe", hist)
+                hist = self.rebase_file(hist)
+                command = ("{cmd} hist={h}").format(cmd=command, h=hist)
 
             return (command)
         else:
