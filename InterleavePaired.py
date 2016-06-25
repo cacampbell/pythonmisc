@@ -10,7 +10,7 @@ class InterleavePaired(PairedEndCommand):
         mate = self.mate(read)
         output = self.replace_read_marker_with("_interleaves", read)
         output = self.rebase_file(output)
-        command = ("reformat.sh in1={r} in2={m} out={o} monitor=600,0.01 "
+        command = ("reformat.sh in1={r} in2={m} out={o}  "
                    "-Xmx{xmx} t={t}").format(r=read,
                                              m=mate,
                                              o=output,

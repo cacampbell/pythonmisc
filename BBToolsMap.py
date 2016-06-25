@@ -46,7 +46,7 @@ class BBMapper(PairedEndCommand):
         command = ("bbmap.sh in1={i1} in2={i2} outm={om} outu={ou} nodisk "
                    "covstats={covstat} covhist={covhist} threads={t} ref={r} "
                    "slow k=12 -Xmx{xmx} basecov={basecov} usejni=t"
-                   " bincov={bincov} monitor=600,0.01").format(
+                   " bincov={bincov} ").format(
             i1=read,
             i2=mate,
             om=map_sam,

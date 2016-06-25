@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-from PairedEndCommand import PairedEndCommand
 from sys import stderr
+
+from PairedEndCommand import PairedEndCommand
 
 
 class BBWrapper(PairedEndCommand):
@@ -25,7 +26,7 @@ class BBWrapper(PairedEndCommand):
         outm = ",".join(mapped)
         outu = ",".join(unmapped)
         command = ("bbwrap.sh in1={i1} in2={i2} outm={om} outu={ou} nodisk "
-                   "threads={t} ref={r} slow k=12 -Xmx{xmx} monitor=600,0.01 "
+                   "threads={t} ref={r} slow k=12 -Xmx{xmx}  "
                    "usejni=t").format(i1=in1,
                                       i2=in2,
                                       om=outm,

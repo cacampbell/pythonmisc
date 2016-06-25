@@ -17,7 +17,7 @@ class BBMapperNoStats(PairedEndCommand):
         unmap_sam = self.replace_extension_with(".unmapped.sam", unmap_sam)
         unmap_sam = self.rebase_file(unmap_sam)
         command = ("bbmap.sh in1={i1} in2={i2} outm={om} outu={ou} nodisk "
-                   "threads={t} ref={r} slow k=12 -Xmx{xmx} monitor=600,0.01 "
+                   "threads={t} ref={r} slow k=12 -Xmx{xmx}  "
                    "usejni=t").format(i1=read,
                                       i2=mate,
                                       om=map_sam,

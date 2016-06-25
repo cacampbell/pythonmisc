@@ -31,7 +31,7 @@ class Deduplicate(PairedEndCommand):
         output = self.replace_extension_with(".dedupe.bam", bam)
         output = self.rebase_file(output)
         command = ("dedupebymapping.sh -Xmx{xmx} threads={t} "
-                   "in={i} out={o} monitor=600,0.01 usejni=t").format(
+                   "in={i} out={o} usejni=t").format(
             xmx=self.get_mem(fraction=0.95),
             t=self.get_threads(),
             i=bam,
