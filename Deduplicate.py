@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from sys import stderr
-
+from cluster_commands import get_backend
 from PairedEndCommand import PairedEndCommand
 
 
@@ -71,17 +71,23 @@ class Deduplicate(PairedEndCommand):
         out = self.rebase_file(read)
         mate = self.mate(read)
         out2 = self.rebase_file(mate)
-        command = ("dedupe.sh in={i} out={o} -Xmx{xmx} threads={t} "
-                   "usejni=t").format(i=read,
-                                      o=out,
-                                      xmx=self.get_mem(fraction=0.95),
-                                      t=self.get_threads())
-        command += (" && dedupe.sh in={i} out={o} -Xmx{xmx} threads={t} "
-                    "usejni=t").format(i=mate,
-                                       o=out2,
-                                       xmx=self.get_mem(fraction=0.95),
-                                       t=self.get_threads())
-        return (command)
+        if get_backend() == 'slurm':
+            command = ("srun --ntasks=1 --cpus-per-task={t} --mem={xmx} "
+                       "dedupe.sh in={i} out={o} -Xmx{xmx} threads={t} "
+                       "usejni=t\n").format(i=read,
+                                            o=out,
+                                            xmx=self.get_mem(fraction=0.5),
+                                            t=self.get_threads(fraction=0.5))
+            command += ("srun --ntasks=1 --cpus-per-task={t} --mem={xmx} "
+                        "dedupe.sh in={i} out={o} -Xmx{xmx} threads={t} "
+                        "usejni=t").format(i=mate,
+                                           o=out2,
+                                           xmx=self.get_mem(fraction=0.5),
+                                           t=self.get_threads(fraction=0.5))
+            return (command)
+        else:
+            print("Torque not yet implemented: running with FastUniq")
+            return(self.__dedupe_fastuniq(read))
 
     def make_command(self, bam):
         if self.by_mapping:

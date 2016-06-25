@@ -157,12 +157,12 @@ class ParallelCommand:
         except (AssertionError, AttributeError) as err:
             setattr(self, attribute, default_value)
 
-    def get_threads(self):
+    def get_threads(self, fraction=1):
         """
         Calculates the number of threads based on the specified number of cores
         :return: str: number of available worker threads
         """
-        return str(int(self.cluster_options["cpus"]) - 1)
+        return str(int(float(self.cluster_options["cpus"]) * float(fraction)))
 
     def get_mem(self, fraction=1):
         """

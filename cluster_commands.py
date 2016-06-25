@@ -30,7 +30,7 @@ def __check(key, dictionary):
     return False
 
 
-def __get_backend():
+def get_backend():
     print(which("scontrol"))
     if which("scontrol"):
         return ("slurm")
@@ -46,7 +46,7 @@ __BACKEND__ = None
 if "CLUSTER_BACKGROUND" in environ:
     __BACKEND__ = environ["CLUSTER_BACKEND"]
 else:
-    __BACKEND__ = __get_backend()
+    __BACKEND__ = get_backend()
 
 
 def __slurm_e_opts(string):
@@ -270,7 +270,6 @@ def __cancel_suspended_jobs_slurm():
     scancel(" ".join(job_list))
 
 
-
 def __cancel_suspended_jobs_torque():
     (out, err) = qstat(" -f")
     job_ids = []
@@ -297,6 +296,7 @@ def __cancel_running_jobs_slurm():
     (out, err) = squeue(" -u {} -l -h -t {} -o %i".format(get_username(), "R"))
     job_list = [out.splitlines()]
     scancel(" ".join(job_list))
+
 
 def __cancel_running_jobs_torque():
     (out, err) = qstat(" -f")

@@ -11,11 +11,7 @@ class QualityControl(PairedEndCommand):
     def make_command(self, read):
         mate = self.mate(read)
         output1 = self.rebase_file(read)
-        output1 = self.replace_extension_with(".tmp.fq.gz", output1)
         output2 = self.rebase_file(mate)
-        output2 = self.replace_extension_with(".tmp.fq.gz", output2)
-        output3 = self.rebase_file(read)
-        output4 = self.rebase_file(mate)
         stats1 = self.replace_read_marker_with("_stats1", read)
         stats1 = self.replace_extension_with(".txt", stats1)
         stats1 = self.rebase_file(stats1)
@@ -38,21 +34,19 @@ class QualityControl(PairedEndCommand):
         # Trim adapters by pair overlap detection (tbo)
         # Trim adapters from the right (3' adapters)
         # trim quality from both ends, using quality score 5 to filter
-        command = ("bbduk.sh -Xmx{xmx} threads={t} usejni=t  "
-                   "in1={i1} in2={i2} out1={o1} out2={o2} ftm=5 "
-                   "stats={s1} ref={a} ktrim=r k=27 mink=11 hdist=2 tpe tbo && "
+        command = ("bbduk.sh "
+                   "-Xmx{xmx} threads={t} usejni=t "
+                   "in1={i1} in2={i2} out=stdout.fq stats={s1} ref={a} "
+                   "ftm=5 ktrim=r k=27 mink=11 hdist=2 tpe tbo | "
                    "bbduk.sh -Xmx{xmx} threads={t} usejni=t "
-                   "in1={o1} in2={o2} out1={o3} out2={o4} stats={s2} "
-                   "ref={a} ktrim=r k=23 mink=11 hdist=0 tpe tbo "
-                   "qtrim=rl trimq=5 ").format(
+                   "in=stdin.fq out1={o1} out2={o2} int=t stats={s2} ref={a} "
+                   "ktrim=r k=23 mink=11 hdist=0 tpe tbo").format(
             xmx=self.get_mem(fraction=0.95),
             t=self.get_threads(),
             i1=read,
             i2=mate,
             o1=output1,
             o2=output2,
-            o3=output3,
-            o4=output4,
             s1=stats1,
             s2=stats2,
             a=self.reference)
