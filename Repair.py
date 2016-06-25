@@ -8,10 +8,8 @@ class Repair(PairedEndCommand):
 
     def make_command(self, read):
         mate = self.mate(read)
-        output1 = self.replace_read_marker_with("_interleaves", read)
-        output1 = self.rebase_file(output1)
-        output2 = self.replace_read_marker_with("_interleaves", mate)
-        output2 = self.rebase_file(output2)
+        output1 = self.rebase_file(read)
+        output2 = self.rebase_file(mate)
         command = ("repair.sh in1={r} in2={m} out1={o1} out2={o2} "
                    "-Xmx{xmx} t={t}").format(r=read,
                                              m=mate,
