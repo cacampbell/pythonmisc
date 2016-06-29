@@ -7,8 +7,8 @@ class ErrorCorrect(PairedEndCommand):
         super(ErrorCorrect, self).__init__(*args, **kwargs)
         self.set_default("normalize", False)
         self.set_default("stats", False)
-        self.set_default("min_depth", "6")
-        self.set_default("target_depth", "40")
+        self.set_default("min_depth", "6")  # 2
+        self.set_default("target_depth", "40")  # 10
 
     def make_command(self, read):
         mate = self.mate(read)
