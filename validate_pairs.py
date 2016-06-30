@@ -5,6 +5,7 @@ from simple_argparse import run_parallel_command_with_args
 
 def main(*args, **kwargs):
     repair = Repair(*args, **kwargs)
+    repair.modules = ['slurm', 'java/1.8']
     return (repair.run())
 
 

@@ -1,25 +1,38 @@
 #!/usr/bin/env python3
-from subprocess import call
 from sys import argv
-from sys import stderr
+from os.path import isfile
+import gzip
+from io import BufferedReader
+from io import TextIOWrapper
+from os import remove
 
 
-def combine_files(file_list, output="all_reads.fq.gz"):
+def combine_files(file_list, output="all_reads.fq"):
     """
     Add either fastq (.fq) or fastq gzip (.fq.gz) files to a file using gzip
     and cat in subprocess. By default,
     """
-    if not output.endswith(".fq.gz"):
-        output += ".fq.gz"
+    if not output.endswith(".fq"):
+        output += ".fq"
 
-    for filename in file_list:
-        if filename.endswith(".fq"):  # If ends in fq, compress and add it
-            call("gzip -c {} >> {}".format(filename, output), shell=True)
-        elif filename.endswith(".fq.gz"):  # If ends in fq.gz, just add it
-            call("cat {} >> {}".format(filename, output), shell=True)
-        else:
-            print("Not adding: {}, files should be fq or fq.gz".format(
-                filename), file=stderr)
+    if isfile(output):
+        return
+
+    fq_files = [f for f in file_list if f.endswith(".fq")]
+    fqgz_files = [f for f in file_list if f.endswith(".fq.gz")]
+    try:
+        with open(output, 'w+') as o_h:
+            for filename in fq_files:
+                with open(filename, 'r+') as fh:
+                    for line in fh:
+                        o_h.write(line)
+            for filename in fqgz_files:  # java-like boilerplate for iteration
+                with TextIOWrapper(BufferedReader(gzip.open(filename, 'r+'))) as gh:
+                    for line in gh:
+                        o_h.write(line)
+    except (IOError, OSError) as err:
+       remove(output)
+       raise(err)
 
 
 if __name__ == "__main__":

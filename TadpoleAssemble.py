@@ -3,7 +3,7 @@ from sys import stderr
 
 from os.path import basename
 from os.path import join
-
+from sys import stderr
 from PairedEndCommand import PairedEndCommand
 from ParallelCommand import mkdir_p
 from combiner import combine_files
@@ -12,7 +12,7 @@ from combiner import combine_files
 class TadpoleAssemble(PairedEndCommand):
     def __init__(self, *args, **kwargs):
         super(TadpoleAssemble, self).__init__(*args, **kwargs)
-        self.set_default("all_reads_name", "all_reads.fq.gz")
+        self.set_default("all_reads_name", "all_reads.fq")
         self.set_default("assembly_name", "contigs.fa")
         self.set_default("mincontig", "250")
         self.set_default("mincov", "3")
@@ -21,13 +21,21 @@ class TadpoleAssemble(PairedEndCommand):
         pass
 
     def format_commands(self):
-        input = join(self.input_root, self.all_reads_name)
+        input_f = join(self.input_root, self.all_reads_name)
         output = join(self.output_root, self.assembly_name)
-        combine_files(self.files, input)
+
+        if self.verbose:
+            print("Combining input files...", file=stderr)
+
+        if not self.dry_run:
+            combine_files(self.files, input_f)
+        else:
+            print("Would have combined files if not dry_run...", file=stderr)
+
         job_name = "{}{}".format(self.cluster_options["job_name"],
                                  basename(self.all_reads_name))
-        command = ("tadpole.sh in={} out={} careful prealloc=t prefilter=2 "
-                   "mincontig={} mincov={}").format(input,
+        command = ("tadpole.sh in={} out={} prealloc=t prefilter=2 "
+                   "mincontig={} mincov={}").format(input_f,
                                                     output,
                                                     self.mincontig,
                                                     self.mincov)
