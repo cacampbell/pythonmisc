@@ -1,12 +1,12 @@
-"""
-From Perlence/simple_argparse.py
-"""
 import unittest
 from ast import literal_eval
 from sys import argv
 from sys import stderr
 
 from copy import deepcopy
+
+# From Perlence/simple_argparse.py
+
 
 CLUSTER_OPTIONS = ("memory",
                    "nodes",

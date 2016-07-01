@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from BBToolsMap import BBMapper
-from BBWrapper import BBWrapper
 from BBToolsMap_NoStats import BBMapperNoStats
-from simple_argparse import run_parallel_command_with_args
+from BBWrapper import BBWrapper
+from parallel_command_parse import run_parallel_command_with_args
 
 
 class BBTools_factory:

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 from AdapterSearch import AdapterFinder
-from simple_argparse import run_parallel_command_with_args
+from parallel_command_parse import run_parallel_command_with_args
 
 
 def main(*args, **kwargs):
