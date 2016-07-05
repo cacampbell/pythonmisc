@@ -98,8 +98,8 @@ class BBMapper(PairedEndCommand):
         # Full Command
         command = ("bbmap.sh in1={i1} in2={i2} outm={om} outu={ou} nodisk "
                    "covstats={covstat} covhist={covhist} threads={t} ref={r} "
-                   "slow k=12 -Xmx{xmx} basecov={basecov} usejni=t"
-                   " bincov={bincov} intronlen=10 ambig=random "
+                   "slow k=12 -Xmx{xmx} basecov={basecov} usejni=t "
+                   "bincov={bincov} intronlen=10 ambig=random "
                    "xstag=firststrand maxindel=100000").format(
             i1=read,
             i2=mate,
@@ -115,6 +115,7 @@ class BBMapper(PairedEndCommand):
         return (command)
 
     def make_command(self, read):
+        print(self.mode)
         if self.mode.upper().strip() == "DNA":
             return (self.__dna_command(read))
         elif self.mode.upper().strip() == "RNA":
