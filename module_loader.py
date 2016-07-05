@@ -41,7 +41,7 @@ def module(*args):
         # Thus, passing 'load', 'modulename', becomes /usr/bin/modulecmd python
         # load modulename. This loads the module
         # Note that loading modules results in output printed to stderr
-        if not environ['PYMODULECMD']:
+        if not "PYMODULECMD" in environ:
             environ["PYMODULECMD"] = __find_module_cmd()
 
         module_cmd = environ["PYMODULECMD"]
