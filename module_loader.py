@@ -61,7 +61,7 @@ class test_module_loader(unittest.TestCase):
     def test_module(self):
         # test module format_commands as they might be called in a bash shell, using
         # the module function from this python module
-        with unittest.TestCase.assertRaises(Exception):
+        with self.assertRaises(Exception):
             module({'wrong': "bad"})
         module('load', 'python')
         module('unload', 'python')
