@@ -31,7 +31,6 @@ def __check(key, dictionary):
 
 
 def get_backend():
-    print(which("scontrol"))
     if which("scontrol"):
         return ("slurm")
     elif which("qstat"):

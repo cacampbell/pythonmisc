@@ -3,33 +3,28 @@ import subprocess
 import sys
 import unittest
 
-import os
+from os import environ
+from re import findall
+
+from Bash import which
 
 __all__ = ['module']
 
 
-if 'MODULE_VERSION' not in os.environ:
-    os.environ['MODULE_VERSION_STACK'] = '3.2.10'  # Just a guess
-    os.environ['MODULE_VERSION'] = '3.2.10'  # Most recent when writing this
-else:
-    os.environ['MODULE_VERSION_STACK'] = os.environ['MODULE_VERSION']
-
-if 'LOADEDMODULES' not in os.environ:
-    os.environ['LOADEDMODULES'] = ''
-
-os.environ['MODULESHOME'] = '/usr/share/modules'
-
-if 'MODULEPATH' not in os.environ:
-    with open(os.path.join(os.environ['MODULESHOME'],
-                           'init/.modulespath'), "r") as modulespath_handle:
-        path = []
-
-        for line in modulespath_handle.readlines():
-            if not line.startswith("#"):
-                path.append(line)
-
-        os.environ['MODULEPATH'] = ':'.join(path)
-
+def __find_module_cmd():
+    """
+    Return first path that leads to a module command, or exit with no module
+    loader found in the current environment.
+    """
+    module_cmd = which("modulecmd")
+    if module_cmd:
+        lines = module_cmd.splitlines()
+        if lines[0].startswith("alias"):
+            return (findall("([^']*)", lines[0]))
+        else:
+            return (lines[0])
+    else:
+        raise (RuntimeError("No 'modulecmd' found in current environment"))
 
 def module(*args):
     if type(args[0]) is list:
@@ -46,7 +41,12 @@ def module(*args):
         # Thus, passing 'load', 'modulename', becomes /usr/bin/modulecmd python
         # load modulename. This loads the module
         # Note that loading modules results in output printed to stderr
-        process = subprocess.Popen(['/usr/bin/modulecmd', 'python'] + args,
+        if not environ['PYMODULECMD']:
+            environ["PYMODULECMD"] = __find_module_cmd()
+
+        module_cmd = environ["PYMODULECMD"]
+
+        process = subprocess.Popen([module_cmd, 'python'] + args,
                                    stdin=subprocess.PIPE,
                                    stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
@@ -70,5 +70,6 @@ class test_module_loader(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    module_cmd = __find_module_cmd()
     suite = unittest.TestLoader().loadTestsFromTestCase(test_module_loader)
     unittest.TextTestRunner(verbosity=3).run(suite)
