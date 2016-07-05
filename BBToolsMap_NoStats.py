@@ -28,7 +28,7 @@ class BBMapperNoStats(PairedEndCommand):
                                       r=self.reference)
 
         if self.mode.upper.strip() == "RNA":
-            command = command + (" maxindel = 50000 xstag=firststrand "
-                                 "intronlen=10 ambig=random")
+            command += (" maxindel=50000 xstag=firststrand "
+                        "intronlen=10 ambig=random")
 
         return (command)

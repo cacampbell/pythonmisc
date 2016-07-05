@@ -36,7 +36,7 @@ class BBWrapper(PairedEndCommand):
                                       r=self.reference)
 
         if self.mode.upper().strip() == "RNA":
-            command = command + (" intronlen = 10 ambig = random "
+            command = command + (" intronlen=10 ambig=random "
                                  "xstag=firststrand maxindel=50000")
 
         self.commands[job_name] = command

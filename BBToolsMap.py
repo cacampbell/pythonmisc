@@ -9,7 +9,7 @@ class BBMapper(PairedEndCommand):
         self.set_default("mode", "DNA")
         # Set read_regex here if necessary
 
-    def __dna_command(self, read):
+    def make_command(self, read):
         # Mate File
         mate = self.mate(read)
 
@@ -47,7 +47,7 @@ class BBMapper(PairedEndCommand):
         command = ("bbmap.sh in1={i1} in2={i2} outm={om} outu={ou} nodisk "
                    "covstats={covstat} covhist={covhist} threads={t} ref={r} "
                    "slow k=12 -Xmx{xmx} basecov={basecov} usejni=t"
-                   " bincov={bincov} ").format(
+                   " bincov={bincov}").format(
             i1=read,
             i2=mate,
             om=map_sam,
@@ -59,13 +59,9 @@ class BBMapper(PairedEndCommand):
             xmx=self.get_mem(),
             t=self.get_threads(),
             r=self.reference)
-        return (command)
-
-
-    def make_command(self, read):
 
         if self.mode.upper().strip() == "RNA":
-            command = command + (" intronlen = 10 ambig = random "
-                                 "xstag=firststrand maxindel=50000")
+            command += (" intronlen=10 ambig=random "
+                        "xstag=firststrand maxindel=50000")
 
         return (command)
