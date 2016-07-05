@@ -50,6 +50,8 @@ class BBMapperNoStats(PairedEndCommand):
 
     def make_command(self, read):
         if self.mode.upper().strip() == "DNA":
-            return (self.__dna_command(read))
+            return self.__dna_command(read)
         elif self.mode.upper().strip == "RNA":
-            return (self.__rna_command(read))
+            return self.__rna_command(read)
+        else:
+            raise (RuntimeError("Invalid mapping mode: Use 'DNA' or 'RNA'"))

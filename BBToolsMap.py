@@ -119,3 +119,5 @@ class BBMapper(PairedEndCommand):
             return (self.__dna_command(read))
         elif self.mode.upper().strip() == "RNA":
             return (self.__rna_command(read))
+        else:
+            raise (RuntimeError("Invalid mapping mode: Use 'DNA' or 'RNA'"))
