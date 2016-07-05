@@ -3,7 +3,7 @@ import subprocess
 import sys
 import unittest
 
-from os import environ
+import os  # Whole module needed due to 'exec(out)' from env module system
 from re import findall
 
 from Bash import which
@@ -41,10 +41,10 @@ def module(*args):
         # Thus, passing 'load', 'modulename', becomes /usr/bin/modulecmd python
         # load modulename. This loads the module
         # Note that loading modules results in output printed to stderr
-        if not "PYMODULECMD" in environ:
-            environ["PYMODULECMD"] = __find_module_cmd()
+        if not "PYMODULECMD" in os.environ:
+            os.environ["PYMODULECMD"] = __find_module_cmd()
 
-        module_cmd = environ["PYMODULECMD"]
+        module_cmd = os.environ["PYMODULECMD"]
 
         process = subprocess.Popen([module_cmd, 'python'] + args,
                                    stdin=subprocess.PIPE,
