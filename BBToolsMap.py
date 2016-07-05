@@ -115,7 +115,6 @@ class BBMapper(PairedEndCommand):
         return (command)
 
     def make_command(self, read):
-        print(self.mode)
         if self.mode.upper().strip() == "DNA":
             return (self.__dna_command(read))
         elif self.mode.upper().strip() == "RNA":
