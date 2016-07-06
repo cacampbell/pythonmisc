@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-from bzip import BZ2File as BZ2
-from gzip import GzipFile as GZ
-from zipfile import ZipFile as Zip
-from sys import stderr
-from abc import abstractmethod
-import BufferedReader
-import TextIOWrapper
 import unittest
+from bz2 import BZ2File as BZ2
+from gzip import GzipFile as GZ
+from sys import stderr
+from zipfile import ZipFile as Zip
+
+from abc import abstractmethod
 
 
 class CompressedFile(object):
@@ -50,7 +49,7 @@ class ZIPFile(CompressedFile):
     proper_extension = "zip"
 
     def open(self):
-        self.accessor = TextIOWrapper(BufferedReader(Zip(self.handle, 'r')))
+        self.accessor = Zip(self.handle, 'r')
         return self.accessor
 
     def close(self):
@@ -67,7 +66,7 @@ class BZ2File(CompressedFile):
     proper_extension = 'bz2'
 
     def open(self):
-        self.accessor = TextIOWrapper(BufferedReader(BZ2(self.handle, 'r')))
+        self.accessor = BZ2(self.handle, 'r')
         return self.accessor
 
     def close(self):
@@ -84,7 +83,7 @@ class GZFile(CompressedFile):
     proper_extension = 'gz'
 
     def open(self):
-        self.accessor = TextIOWrapper(BufferedReader(GZ(self.handle, 'r')))
+        self.accessor = GZ(self.handle, 'r')
         return self.accessor
 
     def close(self):
