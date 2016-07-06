@@ -8,6 +8,7 @@ class BBWrapper(PairedEndCommand):
     def __init__(self, *args, **kwargs):
         super(BBWrapper, self).__init__(*args, **kwargs)
         self.set_default("reference", "reference.fa")
+        self.set_default("mode", "DNA")
 
     def make_command(self, read):
         pass

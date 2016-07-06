@@ -18,7 +18,7 @@ class BBMapperNoStats(PairedEndCommand):
         unmap_sam = self.replace_extension_with(".unmapped.sam", unmap_sam)
         unmap_sam = self.rebase_file(unmap_sam)
         command = ("bbmap.sh in1={i1} in2={i2} outm={om} outu={ou} nodisk "
-                   "threads={t} ref={r} slow k=12 -Xmx{xmx}  "
+                   "threads={t} ref={r} slow k=12 -Xmx{xmx} "
                    "usejni=t").format(i1=read,
                                       i2=mate,
                                       om=map_sam,
@@ -27,7 +27,7 @@ class BBMapperNoStats(PairedEndCommand):
                                       t=self.get_threads(),
                                       r=self.reference)
 
-        if self.mode.upper.strip() == "RNA":
+        if self.mode.upper().strip() == "RNA":
             command += (" maxindel=50000 xstag=firststrand "
                         "intronlen=10 ambig=random")
 

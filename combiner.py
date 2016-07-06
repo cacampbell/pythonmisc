@@ -1,11 +1,8 @@
 #!/usr/bin/env python3
 from sys import argv
 from os.path import isfile
-import gzip
-from io import BufferedReader
-from io import TextIOWrapper
 from os import remove
-
+from Decompress import decompress
 
 def combine_files(file_list, output="all_reads.fq"):
     """
@@ -27,7 +24,7 @@ def combine_files(file_list, output="all_reads.fq"):
                     for line in fh:
                         o_h.write(line)
             for filename in fqgz_files:  # java-like boilerplate for iteration
-                with TextIOWrapper(BufferedReader(gzip.open(filename, 'r+'))) as gh:
+                with decompress(filename) as gh:
                     for line in gh:
                         o_h.write(line)
     except (IOError, OSError) as err:

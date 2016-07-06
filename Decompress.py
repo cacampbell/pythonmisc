@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-import bz2
-import gzip
-import unittest
-import zipfile
+from bzip import BZ2File as BZ2
+from gzip import GzipFile as GZ
+from zipfile import ZipFile as Zip
 from sys import stderr
-
 from abc import abstractmethod
+import BufferedReader
+import TextIOWrapper
+import unittest
 
 
 class CompressedFile(object):
@@ -49,7 +50,7 @@ class ZIPFile(CompressedFile):
     proper_extension = "zip"
 
     def open(self):
-        self.accessor = zipfile.ZipFile(self.handle, 'r')
+        self.accessor = TextIOWrapper(BufferedReader(Zip(self.handle, 'r')))
         return self.accessor
 
     def close(self):
@@ -66,7 +67,7 @@ class BZ2File(CompressedFile):
     proper_extension = 'bz2'
 
     def open(self):
-        self.accessor = bz2.BZ2File(self.handle, 'r')
+        self.accessor = TextIOWrapper(BufferedReader(BZ2(self.handle, 'r')))
         return self.accessor
 
     def close(self):
@@ -83,7 +84,7 @@ class GZFile(CompressedFile):
     proper_extension = 'gz'
 
     def open(self):
-        self.accessor = gzip.GzipFile(self.handle, 'r')
+        self.accessor = TextIOWrapper(BufferedReader(GZ(self.handle, 'r')))
         return self.accessor
 
     def close(self):
@@ -93,7 +94,7 @@ class GZFile(CompressedFile):
             pass
 
 
-def get_compressed(filename):
+def decompress(filename):
     with open(filename, 'rb') as f:
         start_of_file = f.read(1024)
 
@@ -108,7 +109,7 @@ class TestCompression(unittest.TestCase):
     def setUp(self):
         def test(filename):
             try:
-                with get_compressed(filename) as handle:
+                with decompress(filename) as handle:
                     print("Context Managed by class {}".format(type(handle)))
             except TypeError as err:
                 print("Not a supported zip filetype", file=stderr)
@@ -119,10 +120,10 @@ class TestCompression(unittest.TestCase):
         self.tester('testdata/test.zip')
 
     def test_bz2(self):
-        pass
+        self.tester('testdata/test.bz2')
 
     def test_gz(self):
-        pass
+        self.tester('testdata/test.gz')
 
 
 if __name__ == "__main__":

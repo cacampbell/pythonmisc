@@ -3,7 +3,7 @@ from pwd import getpwuid
 
 from os import environ
 from os import getuid
-
+from sys import stderr
 from Bash import bash
 from Bash import which
 from slurm_commands import scancel
@@ -70,6 +70,20 @@ def __slurm_e_opts(string):
     return(options.rstrip(","))
 
 
+
+def __slurm_dep(jobs_obj):
+    job_str = ""
+    # Either Tuple<int> or List<str> by parsing cmdline with commas
+    if type(jobs_obj) is tuple or type(jobs_obj) is list:
+        for job in jobs_obj:
+            job_str += "{}:".format(str(job))
+
+        return(job_str.rstrip(":"))
+    # Or, parsed as a str or int
+    if type(jobs_obj) is str or type(jobs_obj) is int:
+        return str(jobs_obj)
+
+
 def __submit_slurm(**kwargs):
     """
     Anticipated Keyword Arguments:
@@ -100,7 +114,8 @@ def __submit_slurm(**kwargs):
     if __check("job_name", kwargs):
         submit_cmd += (" --job-name={}").format(kwargs["job_name"])
     if __check("depends_on", kwargs):
-        submit_cmd += (" --dependency=after_ok:{}").format(kwargs["depends_on"])
+        submit_cmd += (" --dependency=after_ok:{}").format(__slurm_dep(
+            kwargs["depends_on"]))
     if __check("email_address", kwargs):
         submit_cmd += (" --mail-user={}").format(kwargs["email_address"])
     if __check("email_options", kwargs):
@@ -233,12 +248,20 @@ def submit_job(command_str, **kwargs):
     (stdout, stderr) = bash(sub_script)  # Actaully call the script using bash
 
     try:  # To parse the output based on expected successful submission result
-        if __BACKEND__ == "slurm":
+        chunks = stdout.rstrip(".").split(" ")
+        for chunk in chunks:
+            if chunk.strip().isdigit():
+                return(chunk.strip())  # First try to grab IDs from sentences
+
+        if __BACKEND__ == "slurm": # If still here, try common output formats
             # Successfully submitted job <Job ID>
             return (stdout.split(" ")[-1].strip("\n"))
         if __BACKEND__ == "torque":
             # <Job ID>.hostname.etc.etc
             return (stdout.split(".")[0])
+
+        if stderr:
+            print(stderr, file=stderr)
 
     except (ValueError, IndexError) as err:
         print("Could not capture Job ID! Dependency checks may fail!")
