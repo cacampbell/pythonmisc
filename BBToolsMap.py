@@ -7,6 +7,7 @@ class BBMapper(PairedEndCommand):
         super(BBMapper, self).__init__(*args, **kwargs)
         self.set_default("reference", "reference.fa")
         self.set_default("mode", "DNA")
+        self.set_default("max_intron", "50000")
         # Set read_regex here if necessary
 
     def make_command(self, read):
@@ -62,6 +63,6 @@ class BBMapper(PairedEndCommand):
 
         if self.mode.upper().strip() == "RNA":
             command += (" intronlen=10 ambig=random "
-                        "xstag=firststrand maxindel=50000")
+                        "xstag=firststrand maxindel={}").format(self.max_intron)
 
         return (command)

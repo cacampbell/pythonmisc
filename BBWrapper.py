@@ -9,6 +9,7 @@ class BBWrapper(PairedEndCommand):
         super(BBWrapper, self).__init__(*args, **kwargs)
         self.set_default("reference", "reference.fa")
         self.set_default("mode", "DNA")
+        self.set_default("max_intron", "50000")
 
     def make_command(self, read):
         pass
@@ -38,7 +39,8 @@ class BBWrapper(PairedEndCommand):
 
         if self.mode.upper().strip() == "RNA":
             command = command + (" intronlen=10 ambig=random "
-                                 "xstag=firststrand maxindel=50000")
+                                 "xstag=firststrand maxindel={}").format(
+                self.max_intron)
 
         self.commands[job_name] = command
 

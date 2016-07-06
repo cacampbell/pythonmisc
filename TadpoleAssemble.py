@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
+
 from sys import stderr
 
 from os.path import basename
 from os.path import join
-from sys import stderr
+
 from PairedEndCommand import PairedEndCommand
 from ParallelCommand import mkdir_p
 from combiner import combine_files
@@ -79,6 +80,8 @@ class TadpoleAssemble(PairedEndCommand):
 
         if self.exclusions:
             self.remove_regex_from_input(self.exclusions)
+
+        self.remove_regex_from_input(self.all_reads_name)
 
         if self.verbose:
             print('Formatting commands...', file=stderr)
