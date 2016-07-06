@@ -20,15 +20,19 @@ def combine_files(file_list, output="all_reads.fq"):
     if isfile(output):
         return
 
+    def zipped(f):
+        return (f.endswith(".gz") or f.endswith(".bz2") or f.endswith(".zip"))
+
     fq_files = [f for f in file_list if f.endswith(".fq")]
-    fqgz_files = [f for f in file_list if f.endswith(".fq.gz")]
+    fqz_files = [f for f in file_list if not zipped(f)]
+
     try:
         with open(output, 'w+') as o_h:
             for filename in fq_files:
                 with open(filename, 'r+') as fh:
                     for line in fh:
                         o_h.write(line)
-            for filename in fqgz_files:  # java-like boilerplate for iteration
+            for filename in fqz_files:  # java-like boilerplate for iteration
                 with TextIOWrapper(BufferedReader(decompress(filename))) as gh:
                     for line in gh:
                         o_h.write(line)

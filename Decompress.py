@@ -83,7 +83,7 @@ class GZFile(CompressedFile):
     proper_extension = 'gz'
 
     def open(self):
-        self.accessor = GZ(self.handle, 'r')
+        self.accessor = GZ(self.handle, 'rb')
         return self.accessor
 
     def close(self):
