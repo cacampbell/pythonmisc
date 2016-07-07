@@ -2,7 +2,6 @@
 from sys import stderr
 
 from PairedEndCommand import PairedEndCommand
-from cluster_commands import get_backend
 
 
 class Deduplicate(PairedEndCommand):
@@ -68,21 +67,17 @@ class Deduplicate(PairedEndCommand):
         out = self.rebase_file(read)
         mate = self.mate(read)
         out2 = self.rebase_file(mate)
-        if get_backend() == 'slurm':
-            command1 = ("dedupe.sh in={i} out={o} -Xmx{xmx} threads={t} "
-                        "usejni=t").format(i=read,
-                                           o=out,
-                                           xmx=self.get_mem(fraction=0.95),
-                                           t=self.get_threads())
-            command2 = ("dedupe.sh in={i} out={o} -Xmx{xmx} threads={t} "
-                        "usejni=t").format(i=mate,
-                                           o=out2,
-                                           xmx=self.get_mem(fraction=0.95),
-                                           t=self.get_threads())
-            return ([command1, command2])
-        else:
-            print("Torque not yet implemented: running with FastUniq")
-            return(self.__dedupe_fastuniq(read))
+        command1 = ("dedupe.sh in={i} out={o} -Xmx{xmx} threads={t} "
+                    "usejni=t").format(i=read,
+                                       o=out,
+                                       xmx=self.get_mem(fraction=0.95),
+                                       t=self.get_threads())
+        command2 = ("dedupe.sh in={i} out={o} -Xmx{xmx} threads={t} "
+                    "usejni=t").format(i=mate,
+                                       o=out2,
+                                       xmx=self.get_mem(fraction=0.95),
+                                       t=self.get_threads())
+        return ([command1, command2])
 
     def make_command(self, bam):
         if self.by_mapping:
