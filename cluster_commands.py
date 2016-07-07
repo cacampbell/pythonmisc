@@ -243,9 +243,9 @@ def submit_job(command_str, **kwargs):
     (stdout, stderr) = bash(sub_script)  # Actaully call the script using bash
 
     try:  # To parse the output based on expected successful submission result
-        chunks = stdout.rstrip(".").split(" ")
+        chunks = stdout.split(" ")
         for chunk in chunks:
-            if chunk.strip().isdigit():
+            if any([x.isdigit() for x in chunk.strip()]):
                 return(chunk.strip())  # First try to grab IDs from sentences
 
         if get_backend() == "slurm":  # If still here, try common output formats
