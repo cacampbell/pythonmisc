@@ -154,8 +154,12 @@ class ParallelCommand:
         """
         try:
             assert (getattr(self, attribute) is not None)
-        except (AssertionError, AttributeError) as err:
+        except (AssertionError, AttributeError):
             setattr(self, attribute, default_value)
+
+            if self.verbose:
+                print("Set attribute: {} to default value: {}".format(
+                    attribute, default_value))
 
     def get_threads(self, fraction=1):
         """

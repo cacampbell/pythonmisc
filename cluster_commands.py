@@ -33,10 +33,10 @@ def get_backend():
     if "CLUSTER_BACKEND" in environ:
         return environ["CLUSTER_BACKEND"]
 
-    if which("scontrol"):
+    if which("scontrol") is not None:
         environ["CLUSTER_BACKEND"] = "slurm"
         return ("slurm")
-    elif which("qstat"):
+    elif which("qstat") is not None:
         environ["CLUSTER_BACKEND"] = "torque"
         return ("torque")
     else:
