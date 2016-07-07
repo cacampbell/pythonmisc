@@ -236,8 +236,11 @@ class ParallelCommand:
                     print("Command formatting failed: {}".format(ex),
                           file=stderr)
 
-            assert (type(command) is str)  # at least, it has to be a str
-            self.commands[job_name] = command
+            if type(command) is list:
+                for i, cmd in enumerate(command):
+                    self.commands[job_name + "_{}".format(i)] = cmd
+            else:
+                self.commands[job_name] = command
 
             if self.verbose:
                 print(command, file=stderr)

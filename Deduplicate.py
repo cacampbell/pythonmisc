@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 from sys import stderr
-from cluster_commands import get_backend
+
 from PairedEndCommand import PairedEndCommand
+from cluster_commands import get_backend
 
 
 class Deduplicate(PairedEndCommand):
@@ -41,21 +42,17 @@ class Deduplicate(PairedEndCommand):
 
     def __dedupe_fastuniq(self, read):
         mate = self.mate(read)
-        pipe1 = self.replace_extension_with(".pipe", read)
-        pipe2 = self.replace_extension_with(".pipe", mate)
         file_list = self.replace_read_marker_with("_filelist", read)
         file_list = self.replace_extension_with(".txt", file_list)
         out1 = self.rebase_file(read)
         out2 = self.rebase_file(mate)
-        command = ("mkfifo {p1} && mkfifo {p2} && gunzip -c {i1} > {p1} && "
-                   "gunzip -c {i2} > {p2} && fastuniq -i {fl} -o {o1} -p "
-                   "{o2} -t q").format(i1=read, i2=mate, p1=pipe1, p2=pipe2,
-                                       fl=file_list, o1=out1, o2=out2)
+        command = ("fastuniq -i {fl} -o {o1} -p "
+                   "{o2} -t q").format(fl=file_list, o1=out1, o2=out2)
 
         if not self.dry_run:
             with open(file_list, "w+") as fh:
-                print(pipe1, file=fh)
-                print(pipe2, file=fh)
+                print(read, file=fh)
+                print(mate, file=fh)
 
             if self.verbose:
                 print("Wrote {} for FastUniq".format(file_list),
@@ -72,19 +69,17 @@ class Deduplicate(PairedEndCommand):
         mate = self.mate(read)
         out2 = self.rebase_file(mate)
         if get_backend() == 'slurm':
-            command = ("srun --ntasks=1 --cpus-per-task={t} --mem={xmx} "
-                       "dedupe.sh in={i} out={o} -Xmx{xmx} threads={t} "
-                       "usejni=t\n").format(i=read,
-                                            o=out,
-                                            xmx=self.get_mem(fraction=0.5),
-                                            t=self.get_threads(fraction=0.5))
-            command += ("srun --ntasks=1 --cpus-per-task={t} --mem={xmx} "
-                        "dedupe.sh in={i} out={o} -Xmx{xmx} threads={t} "
+            command1 = ("dedupe.sh in={i} out={o} -Xmx{xmx} threads={t} "
+                        "usejni=t").format(i=read,
+                                           o=out,
+                                           xmx=self.get_mem(fraction=0.95),
+                                           t=self.get_threads())
+            command2 = ("dedupe.sh in={i} out={o} -Xmx{xmx} threads={t} "
                         "usejni=t").format(i=mate,
                                            o=out2,
-                                           xmx=self.get_mem(fraction=0.5),
-                                           t=self.get_threads(fraction=0.5))
-            return (command)
+                                           xmx=self.get_mem(fraction=0.95),
+                                           t=self.get_threads())
+            return ([command1, command2])
         else:
             print("Torque not yet implemented: running with FastUniq")
             return(self.__dedupe_fastuniq(read))
