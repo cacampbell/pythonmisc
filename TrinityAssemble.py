@@ -16,7 +16,6 @@ class TrinityAssemble(PairedEndCommand):
         self.set_default("max_intron", "50000")
         self.set_default("genome_guided", False)
         self.set_default("conting_len", "250")
-        self.set_default("all_reads_name", "all_reads.bam")
         self.modules = ['java']
 
     def make_command(self, filename):
@@ -174,7 +173,7 @@ class TrinityAssemble(PairedEndCommand):
         if self.exclusions:
             self.remove_regex_from_input(self.exclusions)
 
-        self.remove_regex_from_input(self.all_reads_name)
+        self.remove_regex_from_input(r".combine.{}".format(self.extension))
 
         if self.verbose:
             print('Formatting commands...', file=stderr)
