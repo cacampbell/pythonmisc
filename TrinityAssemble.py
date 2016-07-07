@@ -29,6 +29,11 @@ class TrinityAssemble(PairedEndCommand):
         def __samtools_threads():
             return (str(min(self.get_threads(), 8)))
 
+
+        if isfile(output_bam):
+            print("Output BAM already exists, using it...", file=stderr)
+            return(output_bam)
+
         try:
             (out, err) = bash("samtools -@ {t} -m {mem_p_t} "
                               "{o_bam} {i_bams}").format(t=__samtools_threads(),
@@ -55,7 +60,7 @@ class TrinityAssemble(PairedEndCommand):
 
         job_name = "{}".format(self.cluster_options["job_name"])
 
-        command = ("trinity --genome_guided_bam {mb} --genome_guided_max_intron"
+        command = ("Trinity --genome_guided_bam {mb} --genome_guided_max_intron"
                    " {mi} --max_memory {mem} --CPU {t} --output {o} "
                    "--min_contig_length {contiglen} --full_cleanup").format(
             mb=merged_bam,
@@ -72,27 +77,31 @@ class TrinityAssemble(PairedEndCommand):
             print(command, file=stderr)
 
     def __merge_files(self):
-        merged = [f for f in self.files if "unmerged" not in f]
+        files = [f for f in self.files if "unmerged" not in f]
 
         if self.verbose:
             print("Merging single and paired end reads...", file=stderr)
 
         merged_files = []
 
-        for filename in merged:
+        for merged in files:
             unmerged = self.replace_extension_with(".unmerged{}".format(
-                self.extension), filename)
+                self.extension), merged)
             combined = self.replace_extension_with(".combined{}".format(
-                self.extension), filename)
+                self.extension), merged)
             merged_files += [combined]
 
             try:
-                with open(combined, 'wb') as combined:
-                    with open(merged, 'rb') as merge:
-                        copyfileobj(merge, combined, 1024 * 1024 * 10)
-                    if isfile(unmerged):
-                        with open(unmerged, 'rb') as unmerge:
-                            copyfileobj(unmerge, combined, 1024 * 1024 * 10)
+                if not isfile(combined):
+                    with open(combined, 'wb') as combined:
+                        with open(merged, 'rb') as merge:
+                            copyfileobj(merge, combined, 1024 * 1024 * 10)
+                        if isfile(unmerged):
+                            with open(unmerged, 'rb') as unmerge:
+                                copyfileobj(unmerge, combined, 1024 * 1024 * 10)
+                else:
+                    print("{} already exists, using it...".format(combined),
+                          file=stderr)
             except (IOError, OSError) as err:
                 print("Error while combining files: {}".format(err),
                       file=stderr)
@@ -107,7 +116,7 @@ class TrinityAssemble(PairedEndCommand):
             merged_files = self.__merge_files()
 
         job_name = "{}".format(self.cluster_options["job_name"])
-        command = ("trinity --seqType {type} --single {filelist} "
+        command = ("Trinity --seqType {type} --single {filelist} "
                    "--run_as_paired --max_memory {mem} --CPU {t} --output {o}"
                    " --min_conting_length {contiglen} --full_cleanup").format(
             type=self.extension.lstrip("."),
@@ -115,7 +124,7 @@ class TrinityAssemble(PairedEndCommand):
             mem=self.get_mem(fraction=0.95),
             t=self.get_threads(),
             o=self.output_root,
-            continglen=self.conting_len
+            contiglen=self.conting_len
         )
 
         self.commands[job_name] = command

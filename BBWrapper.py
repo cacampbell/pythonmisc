@@ -23,7 +23,7 @@ class BBWrapper(PairedEndCommand):
         mapped = [self.replace_extension_with(".sam", x) for x in mapped]
         mapped = [self.replace_read_marker_with("_pe", x) for x in mapped]
         unmapped = [self.rebase_file(x) for x in self.files]
-        unmapped = [self.replace_extension_with(".sam", x) for x in unmapped]
+        unmapped = [self.replace_extension_with(".unmapped.sam", x) for x in unmapped]
         unmapped = [self.replace_read_marker_with("_pe", x) for x in unmapped]
         outm = ",".join(mapped)
         outu = ",".join(unmapped)
