@@ -154,8 +154,12 @@ class ParallelCommand:
         """
         try:
             assert (getattr(self, attribute) is not None)
-        except (AssertionError, AttributeError) as err:
+        except (AssertionError, AttributeError):
             setattr(self, attribute, default_value)
+
+            if self.verbose:
+                print("Set attribute: {} to default value: {}".format(
+                    attribute, default_value))
 
     def get_threads(self, fraction=1):
         """
@@ -313,6 +317,9 @@ class ParallelCommand:
             # first argument is always 'load'
             args.extend(self.modules)  # add specified modules to arguments
             module(args)  # call module system, using arguments ['load', '...']
+            
+            if self.verbose:
+                print("Called modulecmd with args: {}".format(args))
         except (OSError, ValueError) as err:
             if self.verbose:
                 print("Could not load: {}, {}".format(self.modules,
@@ -381,11 +388,6 @@ class ParallelCommand:
         if self.verbose:
             print('Dispatching to cluster...', file=stderr)
         jobs = self.dispatch()  # Return the job IDs from the dispatched cmds
-
-        if self.verbose:
-            print("Unloading environment modules....", file=stderr)
-            if self.modules is not None:
-                self.module_cmd(['unload'])
 
         return (jobs)
 

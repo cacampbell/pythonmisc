@@ -17,6 +17,7 @@ class TrinityAssemble(PairedEndCommand):
         self.set_default("genome_guided", False)
         self.set_default("contig_len", "250")
         self.modules = ['java']
+        self.set_default("all_reads_name", "all_reads.bam")
 
     def make_command(self, filename):
         pass
@@ -174,6 +175,7 @@ class TrinityAssemble(PairedEndCommand):
             self.remove_regex_from_input(self.exclusions)
 
         self.remove_regex_from_input(r".combine.{}".format(self.extension))
+        self.remove_regex_from_input(r"{}".format(self.all_reads_name))
 
         if self.verbose:
             print('Formatting commands...', file=stderr)
@@ -182,10 +184,5 @@ class TrinityAssemble(PairedEndCommand):
         if self.verbose:
             print('Dispatching to cluster...', file=stderr)
         jobs = self.dispatch()  # Return the job IDs from the dispatched cmds
-
-        if self.verbose:
-            print("Unloading environment modules....", file=stderr)
-            if self.modules is not None:
-                self.module_cmd(['unload'])
 
         return (jobs)

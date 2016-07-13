@@ -91,9 +91,4 @@ class TadpoleAssemble(PairedEndCommand):
             print('Dispatching to cluster...', file=stderr)
         jobs = self.dispatch()  # Return the job IDs from the dispatched cmds
 
-        if self.verbose:
-            print("Unloading environment modules....", file=stderr)
-            if self.modules is not None:
-                self.module_cmd(['unload'])
-
         return (jobs)

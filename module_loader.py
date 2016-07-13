@@ -45,7 +45,6 @@ def module(*args):
             os.environ["PYMODULECMD"] = __find_module_cmd()
 
         module_cmd = os.environ["PYMODULECMD"]
-
         process = subprocess.Popen([module_cmd, 'python'] + args,
                                    stdin=subprocess.PIPE,
                                    stdout=subprocess.PIPE,

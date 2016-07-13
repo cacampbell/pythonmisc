@@ -3,14 +3,13 @@ from pwd import getpwuid
 
 from os import environ
 from os import getuid
-from sys import stderr
+
 from Bash import bash
 from Bash import which
 from slurm_commands import scancel
 from slurm_commands import scontrol
 from slurm_commands import squeue
 from torque_commands import qdel, qstat
-
 
 def get_username():
     return getpwuid(getuid())[0]
@@ -31,21 +30,17 @@ def __check(key, dictionary):
 
 
 def get_backend():
-    if which("scontrol"):
+    if "CLUSTER_BACKEND" in environ:
+        return environ["CLUSTER_BACKEND"]
+
+    if which("scontrol") is not None:
+        environ["CLUSTER_BACKEND"] = "slurm"
         return ("slurm")
-    elif which("qstat"):
+    elif which("qstat") is not None:
+        environ["CLUSTER_BACKEND"] = "torque"
         return ("torque")
     else:
         raise(RuntimeError("No suitable cluster backend found."))
-
-
-# Simple way to determine the backend for the cluster -- using API for commands
-__BACKEND__ = None
-
-if "CLUSTER_BACKGROUND" in environ:
-    __BACKEND__ = environ["CLUSTER_BACKEND"]
-else:
-    __BACKEND__ = get_backend()
 
 
 def __slurm_e_opts(string):
@@ -114,7 +109,7 @@ def __submit_slurm(**kwargs):
     if __check("job_name", kwargs):
         submit_cmd += (" --job-name={}").format(kwargs["job_name"])
     if __check("depends_on", kwargs):
-        submit_cmd += (" --dependency=after_ok:{}").format(__slurm_dep(
+        submit_cmd += (" --dependency=afterok:{}").format(__slurm_dep(
             kwargs["depends_on"]))
     if __check("email_address", kwargs):
         submit_cmd += (" --mail-user={}").format(kwargs["email_address"])
@@ -240,23 +235,23 @@ def submit_job(command_str, **kwargs):
     sub_command = ("echo '{}' | {}")
     sub_script = ""  # Will hold entire string that will be send to bash shell
 
-    if __BACKEND__ == "slurm":  # Format with slurm options
+    if get_backend() == "slurm":  # Format with slurm options
         sub_script = sub_command.format(script, __submit_slurm(**kwargs))
-    elif __BACKEND__ == "torque":  # Format with torque options
+    elif get_backend() == "torque":  # Format with torque options
         sub_script = sub_command.format(script, __submit_torque(**kwargs))
 
     (stdout, stderr) = bash(sub_script)  # Actaully call the script using bash
 
     try:  # To parse the output based on expected successful submission result
-        chunks = stdout.rstrip(".").split(" ")
+        chunks = stdout.split(" ")
         for chunk in chunks:
-            if chunk.strip().isdigit():
+            if any([x.isdigit() for x in chunk.strip()]):
                 return(chunk.strip())  # First try to grab IDs from sentences
 
-        if __BACKEND__ == "slurm": # If still here, try common output formats
+        if get_backend() == "slurm":  # If still here, try common output formats
             # Successfully submitted job <Job ID>
             return (stdout.split(" ")[-1].strip("\n"))
-        if __BACKEND__ == "torque":
+        if get_backend() == "torque":
             # <Job ID>.hostname.etc.etc
             return (stdout.split(".")[0])
 
@@ -280,9 +275,9 @@ def __cancel_jobs_torque(*args):
 
 
 def cancel_jobs(*args):
-    if __BACKEND__ == "slurm":
+    if get_backend() == "slurm":
         __cancel_jobs_slurm(*args)
-    elif __BACKEND__ == "torque":
+    elif get_backend() == "torque":
         __cancel_jobs_torque(*args)
 
 
@@ -308,9 +303,9 @@ def __cancel_suspended_jobs_torque():
 
 
 def cancel_suspended_jobs():
-    if __BACKEND__ == "slurm":
+    if get_backend() == "slurm":
         __cancel_suspended_jobs_slurm()
-    elif __BACKEND__ == "torque":
+    elif get_backend() == "torque":
         __cancel_suspended_jobs_torque()
 
 
@@ -336,9 +331,9 @@ def __cancel_running_jobs_torque():
 
 
 def cancel_running_jobs():
-    if __BACKEND__ == "slurm":
+    if get_backend() == "slurm":
         __cancel_running_jobs_slurm()
-    elif __BACKEND__ == "torque":
+    elif get_backend() == "torque":
         __cancel_running_jobs_torque()
 
 
@@ -353,9 +348,9 @@ def __requeue_suspended_jobs_torque():
 
 
 def requeue_suspended_jobs():
-    if __BACKEND__ == "slurm":
+    if get_backend() == "slurm":
         __requeue_suspended_jobs_slurm()
-    elif __BACKEND__ == "torque":
+    elif get_backend() == "torque":
         __requeue_suspended_jobs_torque()
 
 
@@ -380,7 +375,7 @@ def __existing_jobs_torque():
 
 
 def existing_jobs():
-    if __BACKEND__ == "slurm":
+    if get_backend() == "slurm":
         return __existing_jobs_slurm()
-    elif __BACKEND__ == "torque":
+    elif get_backend() == "torque":
         return __existing_jobs_torque()
