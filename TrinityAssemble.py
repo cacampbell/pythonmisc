@@ -15,7 +15,7 @@ class TrinityAssemble(PairedEndCommand):
         super(TrinityAssemble, self).__init__(*args, **kwargs)
         self.set_default("max_intron", "50000")
         self.set_default("genome_guided", False)
-        self.set_default("conting_len", "250")
+        self.set_default("contig_len", "250")
         self.modules = ['java']
 
     def make_command(self, filename):
@@ -117,13 +117,13 @@ class TrinityAssemble(PairedEndCommand):
         job_name = "{}".format(self.cluster_options["job_name"])
         command = ("Trinity --seqType {type} --single {filelist} "
                    "--run_as_paired --max_memory {mem} --CPU {t} --output {o}"
-                   " --min_conting_length {contiglen} --full_cleanup").format(
+                   " --min_contig_length {contiglen} --full_cleanup").format(
             type=self.extension.lstrip("."),
             filelist=",".join(merged_files),
             mem=self.get_mem(fraction=0.95),
             t=self.get_threads(),
             o=self.output_root,
-            contiglen=self.conting_len
+            contiglen=self.contig_len
         )
 
         self.commands[job_name] = command

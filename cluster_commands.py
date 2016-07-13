@@ -164,7 +164,7 @@ def __submit_torque(**kwargs):
         error - The error filename for the job
     """
 
-    submit_cmd = ("qsub")
+    submit_cmd = ("qsub -V")  # Inherit environment modules
     if __check("memory", kwargs) and __check("cpus", kwargs) and __check(
             "nodes", kwargs):
         submit_cmd += " -l mem={m},nodes={n}:ppn={c}".format(

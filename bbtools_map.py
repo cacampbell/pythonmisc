@@ -28,6 +28,7 @@ class BBTools_factory:
 def main(*args, **kwargs):
     bb = BBTools_factory(*args, **kwargs)
     mapper = bb.get_mapper()
+    mapper.modules = ['java', 'samtools']
     return(mapper.run())
 
 
