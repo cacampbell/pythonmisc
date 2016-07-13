@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-# from TadpoleAssemble import TadpoleAssemble
+from sys import stderr
+from TadpoleAssemble import TadpoleAssemble
 from TrinityAssemble import TrinityAssemble
 from parallel_command_parse import run_parallel_command_with_args
 
@@ -29,6 +30,8 @@ def main(*args, **kwargs):
                 assembler.modules = ["java", "trinity"]
                 jobs = assembler.run()
                 return (jobs)
+    else:
+        print("Please specify an assembler", file=stderr)
 
 
 if __name__ == "__main__":

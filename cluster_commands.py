@@ -109,7 +109,7 @@ def __submit_slurm(**kwargs):
     if __check("job_name", kwargs):
         submit_cmd += (" --job-name={}").format(kwargs["job_name"])
     if __check("depends_on", kwargs):
-        submit_cmd += (" --dependency=after_ok:{}").format(__slurm_dep(
+        submit_cmd += (" --dependency=afterok:{}").format(__slurm_dep(
             kwargs["depends_on"]))
     if __check("email_address", kwargs):
         submit_cmd += (" --mail-user={}").format(kwargs["email_address"])
