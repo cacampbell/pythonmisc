@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from collections import OrderedDict
 from copy import deepcopy
 
 from parallel_command_parse import run_with_args
@@ -18,9 +19,26 @@ default_options = {'memory': '2G',
                    'email_address': 'cacampbell@ucdavis.edu',
                    'email_options': 'BEGIN,END,FAIL'}
 
-cluster_options = {}  # options for each step (keys)
-commands = {}  # commands, with keys = step
-steps = []  # Deterministic list of keys to insure things are run in order
+cluster_options = OrderedDict()  # options for each step (keys)
+commands = OrderedDict()  # commands, with keys = step
+
+
+def update_cluster_options(memory,
+                           cpus,
+                           job_name,
+                           partition,
+                           email_address,
+                           email_options):
+    options = {}
+    cluster_options = deepcopy(default_options)
+    cluster_options["job_name"] = job_name
+    cluster_options["memory"] = memory
+    cluster_options["cpus"] = cpus
+    cluster_options["partition"] = partition
+    cluster_options["email_address"] = email_address
+    cluster_options["email_options"] = email_options
+    options["cluster_options"] = cluster_options
+    return options
 
 
 def make_commands(mode="DNA",
@@ -31,27 +49,22 @@ def make_commands(mode="DNA",
                   partition="bigmemm",
                   email_address="cacampbell@ucdavis.edu",
                   email_options="BEGIN,END,FAIL"):
-    # TODO move this to function
-    reformat_options = {}
-    reformat_cluster_options = deepcopy(default_options)
-    reformat_cluster_options["memory"] = "180G"
-    reformat_cluster_options["cpus"] = "18"
-    reformat_cluster_options["partition"] = partition
-    reformat_cluster_options["email_address"] = email_address
-    reformat_cluster_options["email_options"] = email_options
-    reformat_options["cluster_options"] = reformat_cluster_options
-
-    reformat_options["input_root"] = input_root
-    reformat_options["output_root"] = "Cleaner"
-    cluster_options["reformat"] = reformat_options
+    qualitycontrol_options = update_cluster_options("200G", "18", job_name,
+                                                    partition,
+                                                    email_address,
+                                                    email_options)
+    qualitycontrol_options["input_root"] = input_root
+    qualitycontrol_options["output_root"] = "Cleaner"
+    qualitycontrol_options["ref"] = "~/.prog/bbmap/resources/adapters.fa"
+    cluster_options["reformat"] = qualitycontrol_options
 
     # TODO: each option expected needs to be in string with key name
-    commands["reformat"] = ("quality_control.py "
+    commands["quality_control"] = ("quality_control.py "
+                                   "--cluster_options={cluster_options}"
                             "--input_root={input_root} "
-                            "--output_root={output_root}").format(
-        **cluster_options["reformat"])
-
-    steps += ["reformat"]
+                                   "--output_root={output_root} "
+                                   "--reference={ref}").format(
+        **cluster_options["quality_control"])
 
     if mode.upper().strip() == "RNA":
         commands["syntehtic_molecule_removal"] = ("")
@@ -72,7 +85,7 @@ def main(*args, **kwargs):
     make_commands(*args, **kwargs)
     jobs = ""
 
-    for step in steps:
+    for step in commands.keys():
         # This should cycle through each 'step' in the process, collect the jobs
         # from each step submission and the output of the submitted jobs of that
         # step, then use those as dependies for the next step in the process,
