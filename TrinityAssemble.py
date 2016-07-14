@@ -118,7 +118,7 @@ class TrinityAssemble(PairedEndCommand):
         job_name = "{}".format(self.cluster_options["job_name"])
         command = ("Trinity --seqType {type} --single {filelist} "
                    "--run_as_paired --max_memory {mem} --CPU {t} --output {o}"
-                   " --min_contig_length {contiglen} --full_cleanup").format(
+                   " --min_contig_length {contiglen}").format(
             type=self.extension.lstrip("."),
             filelist=",".join(merged_files),
             mem=self.get_mem(fraction=0.95),

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from sys import stderr
-from TadpoleAssemble import TadpoleAssemble
+# from TadpoleAssemble import TadpoleAssemble
 from TrinityAssemble import TrinityAssemble
 from parallel_command_parse import run_parallel_command_with_args
 
