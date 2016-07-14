@@ -1,10 +1,23 @@
 #!/usr/bin/env python3
 from PairedEndCommand import PairedEndCommand
+from sys import stderr
+from Bash import which
 
 
 class CleanSort(PairedEndCommand):
     def __init__(self, *args, **kwargs):
         super(CleanSort, self).__init__(*args, **kwargs)
+        self.input_regex = ".*"
+        self.read_regex = ".*"
+        self.extension = ".sam"
+        self.modules = ['java', 'samtools', 'picard']
+        self.set_default("picard", "picard.jar")
+        
+        if self.exclusions:
+            self.exclusions = list(self.exclusions)
+            self.exclusions += ["unmapped"]
+        else:
+            self.exclusions = "unmapped"
 
     def make_command(self, sam):
         # input unsorted, mapped sam file
@@ -12,7 +25,7 @@ class CleanSort(PairedEndCommand):
         output = self.rebase_file(sam)
         output = self.replace_extension_with(".clean.sam", output)
         output_f = self.rebase_file(sam)
-        output_f = self.replace_extension_with(".sorted.sam", output_f)
+        output_f = self.replace_extension_with(".clean.sort.sam", output_f)
         bam = self.rebase_file(sam)
         bam = self.replace_extension_with(".clean.sort.bam", bam)
         command = ("java -Xms{xms} -Xmx{xmx} -jar {picard} CleanSam INPUT={i} "
@@ -26,7 +39,7 @@ class CleanSort(PairedEndCommand):
             o=output,
             o_f=output_f,
             stt=self.get_threads(),
-            stm=self.get_mem(fraction=(1 / self.get_threads())),
+            stm=self.get_mem(fraction=(1 / int(self.get_threads()))),
             bam=bam
         )
         return (command)
