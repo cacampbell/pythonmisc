@@ -18,7 +18,7 @@ class Deduplicate(PairedEndCommand):
 
         command = (
             "java -Xms{xms} -Xmx{xmx} -jar {picard} MarkDuplicates "
-            "INPUT={i} OUTPUT={o} REMOVE_DUPLICATES=true "
+            "INPUT={i} OUTPUT={o} REMOVE_DUPLICATES=true CREATE_INDEX=true "
             "MAX_RECORDS_IN_RAM=50000 ASSUME_SORTED=true").format(
             xms=self.get_mem(0.90),
             xmx=self.get_mem(0.95),

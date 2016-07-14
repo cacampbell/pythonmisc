@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 from PairedEndCommand import PairedEndCommand
-from sys import stderr
-from Bash import which
 
 
 class CleanSort(PairedEndCommand):
@@ -30,7 +28,7 @@ class CleanSort(PairedEndCommand):
         bam = self.replace_extension_with(".clean.sort.bam", bam)
         command = ("java -Xms{xms} -Xmx{xmx} -jar {picard} CleanSam INPUT={i} "
                    "OUTPUT={o} && java -Xms{xms} -Xmx{xmx} -jar {picard} "
-                   "FixmateInformation I={o} O={o_f} SO=coordinate && "
+                   "FixMateInformation I={o} O={o_f} SO=coordinate && "
                    "samtools -@ {stt} -m {stm} view -bS {o_f} > {bam}").format(
             xms=self.get_mem(fraction=0.90),
             xmx=self.get_mem(fraction=0.95),
