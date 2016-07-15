@@ -8,7 +8,7 @@ class CleanSort(PairedEndCommand):
         self.input_regex = ".*"
         self.read_regex = ".*"
         self.extension = ".sam"
-        self.modules = ['java', 'samtools', 'picard']
+        self.modules = ['java']
         self.set_default("picard", "picard.jar")
         
         if self.exclusions:
@@ -29,7 +29,7 @@ class CleanSort(PairedEndCommand):
         command = ("java -Xms{xms} -Xmx{xmx} -jar {picard} CleanSam INPUT={i} "
                    "OUTPUT={o} && java -Xms{xms} -Xmx{xmx} -jar {picard} "
                    "FixMateInformation I={o} O={o_f} SO=coordinate && "
-                   "samtools -@ {stt} -m {stm} view -bS {o_f} > {bam}").format(
+                   "samtools view -@ {stt} -m {stm} -bS {o_f} > {bam}").format(
             xms=self.get_mem(fraction=0.90),
             xmx=self.get_mem(fraction=0.95),
             picard=self.picard,

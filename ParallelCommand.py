@@ -166,7 +166,7 @@ class ParallelCommand:
         Calculates the number of threads based on the specified number of cores
         :return: str: number of available worker threads
         """
-        return str(int(float(self.cluster_options["cpus"]) * float(fraction)))
+        return str(int((float(self.cluster_options["cpus"]) * 2.0) * float(fraction)))
 
     def get_mem(self, fraction=1):
         """
