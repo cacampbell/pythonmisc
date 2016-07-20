@@ -8,7 +8,6 @@ class CleanSort(PairedEndCommand):
         self.input_regex = ".*"
         self.read_regex = ".*"
         self.extension = ".sam"
-        self.modules = ['java', 'samtools']
         self.set_default("picard", "picard.jar")
         self.set_default("tmp_dir", "~/tmp")
         
