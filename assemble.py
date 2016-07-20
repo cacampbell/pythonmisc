@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 from AbySSAssemble import AbySSAssemble
+from OasesAssemble import OasesAssemble
 from SOAPdenovoAssemble import SOAPdenovoAssemble
 from TadpoleAssemble import TadpoleAssemble
 from TrinityAssemble import TrinityAssemble
-from VelvetOasesAssemble import VelvetOasesAssemble
+from VelvetAssemble import VelvetAssemble
 from parallel_command_parse import run_parallel_command_with_args
+
+
+# TODO: Allow list of kmer lengths, and create a command for each length, or a
+# combined command using the different kmer lengths (OASES)
 
 
 class AssemblyFactory:
@@ -14,9 +19,8 @@ class AssemblyFactory:
         self.ASSEMBLER = {
             'tadpole': self.tadpole_assemble,
             'trinity': self.trinity_assemble,
-            'velvet': self.velvet_oases_assemble,
-            'oases': self.velvet_oases_assemble,
-            'velvet_oases': self.velvet_oases_assemble,
+            'velvet': self.velvet_assemble,
+            'oases': self.oases_assemble,
             'soapdenovo': self.soap_denovo_assemble,
             'abyss': self.abyss_assemble
         }
@@ -45,8 +49,20 @@ class AssemblyFactory:
 
         return (assembler)
 
-    def velvet_oases_assemble(self):
-        assembler = VelvetOasesAssemble(*self.args, **self.kwargs)
+    def velvet_assemble(self):
+        if "mode" in self.kwargs.keys():
+            if not self.kwargs["mode"] == "DNA":
+                raise (RuntimeError("Wrong mode for Velvet, use --mode=DNA"))
+
+        assembler = VelvetAssemble(*self.args, **self.kwargs)
+        return (assembler)
+
+    def oases_assemble(self):
+        if "mode" in self.kwargs.keys():
+            if not self.kwargs["mode"] == "RNA":
+                raise (RuntimeError("Wrong mode for Oases, use --mode=RNA"))
+
+        assembler = OasesAssemble(*self.args, **self.kwargs)
         return (assembler)
 
     def soap_denovo_assemble(self):

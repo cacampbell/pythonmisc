@@ -2,9 +2,9 @@
 from PairedEndCommand import PairedEndCommand
 
 
-class VelvetOasesAssemble(PairedEndCommand):
+class OasesAssemble(PairedEndCommand):
     def __init__(self, *args, **kwargs):
-        super(VelvetOasesAssemble, self).__init__(*args, **kwargs)
+        super(OasesAssemble, self).__init__(*args, **kwargs)
 
     def make_commands(self):
         pass
