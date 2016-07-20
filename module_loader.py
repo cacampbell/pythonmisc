@@ -53,7 +53,7 @@ def module(*args):
         exec(out)
 
     except (OSError, ValueError) as e:
-        sys.stdout.write("Module load execution: {0:s}\n".format(e))
+        sys.stdout.write("Module load execution: {}\n".format(e))
 
 
 class test_module_loader(unittest.TestCase):

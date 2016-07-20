@@ -8,8 +8,9 @@ class CleanSort(PairedEndCommand):
         self.input_regex = ".*"
         self.read_regex = ".*"
         self.extension = ".sam"
-        self.modules = ['java']
+        self.modules = ['java', 'samtools']
         self.set_default("picard", "picard.jar")
+        self.set_default("tmp_dir", "~/tmp")
         
         if self.exclusions:
             self.exclusions = list(self.exclusions)
@@ -26,10 +27,12 @@ class CleanSort(PairedEndCommand):
         output_f = self.replace_extension_with(".clean.sort.sam", output_f)
         bam = self.rebase_file(sam)
         bam = self.replace_extension_with(".clean.sort.bam", bam)
-        command = ("java -Xms{xms} -Xmx{xmx} -jar {picard} CleanSam INPUT={i} "
-                   "OUTPUT={o} && java -Xms{xms} -Xmx{xmx} -jar {picard} "
-                   "FixMateInformation I={o} O={o_f} SO=coordinate && "
-                   "samtools view -@ {stt} -m {stm} -bS {o_f} > {bam}").format(
+        command = ("java -Xms{xms} -Xmx{xmx} -Djava.io.tmpdir={tmpdir} -jar {picard} "
+                   "CleanSam INPUT={i} TMP_DIR={tmpdir} OUTPUT={o} && java "
+                   "-Djava.io.tmpdir={tmpdir} -Xms{xms} -Xmx{xmx} "
+                   "-jar {picard} FixMateInformation I={o} O={o_f} TMP_DIR={tmpdir} "
+                   "SO=coordinate && samtools view -@ {stt} -m {stm} -bS {o_f} "
+                   "> {bam}").format(
             xms=self.get_mem(fraction=0.90),
             xmx=self.get_mem(fraction=0.95),
             picard=self.picard,
@@ -38,6 +41,7 @@ class CleanSort(PairedEndCommand):
             o_f=output_f,
             stt=self.get_threads(),
             stm=self.get_mem(fraction=(1 / int(self.get_threads()))),
-            bam=bam
+            bam=bam,
+            tmpdir=self.tmp_dir
         )
         return (command)
