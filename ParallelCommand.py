@@ -101,7 +101,7 @@ class ParallelCommand:
         for formatting commands or any other overriden methods, then they
         can be specified as a keyword agument to init for convenience.
 
-        For example, bbtools_map.py uses a --stats flag to determine whether or
+        For example, map.py uses a --stats flag to determine whether or
         not the user wants to output mapping statistics alongside the mapping.
 
         Many commands use a reference genome or some additional data files, you

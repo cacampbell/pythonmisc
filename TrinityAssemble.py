@@ -18,6 +18,7 @@ class TrinityAssemble(PairedEndCommand):
         self.set_default("contig_len", "250")
         self.modules = ['java']
         self.set_default("all_reads_name", "all_reads.bam")
+        self.set_default("kmer_len", "25")
 
     def make_command(self, filename):
         pass
@@ -62,13 +63,15 @@ class TrinityAssemble(PairedEndCommand):
 
         command = ("Trinity --genome_guided_bam {mb} --genome_guided_max_intron"
                    " {mi} --max_memory {mem} --CPU {t} --output {o} "
-                   "--min_contig_length {contiglen} --full_cleanup").format(
+                   "--KMER_SIZE={kmer_len} --min_contig_length {contiglen} "
+                   "--full_cleanup").format(
             mb=merged_bam,
             mi=self.max_intron,
             mem=self.get_mem(fraction=0.95),
             t=self.get_threads(),
             o=self.output_root,
-            contiglen=self.contig_len
+            contiglen=self.contig_len,
+            kmer_len=self.kmer_len
         )
 
         self.commands[job_name] = command
@@ -117,14 +120,16 @@ class TrinityAssemble(PairedEndCommand):
 
         job_name = "{}".format(self.cluster_options["job_name"])
         command = ("Trinity --seqType {type} --single {filelist} "
-                   "--run_as_paired --max_memory {mem} --CPU {t} --output {o}"
-                   " --min_contig_length {contiglen}").format(
+                   "--KMER_SIZE={kmer_len} --run_as_paired --max_memory {mem} "
+                   "--CPU {t} --output {o} --min_contig_length "
+                   "{contiglen}").format(
             type=self.extension.lstrip("."),
             filelist=",".join(merged_files),
             mem=self.get_mem(fraction=0.95),
             t=self.get_threads(),
             o=self.output_root,
-            contiglen=self.contig_len
+            contiglen=self.contig_len,
+            kmer_len=self.kmer_len
         )
 
         self.commands[job_name] = command

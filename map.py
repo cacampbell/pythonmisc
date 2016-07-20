@@ -2,15 +2,19 @@
 from BBToolsMap import BBMapper
 from BBToolsMap_NoStats import BBMapperNoStats
 from BBWrapper import BBWrapper
+from BwaMemMap import BWAMEM
 from parallel_command_parse import run_parallel_command_with_args
 
 
-class BBTools_factory:
+class MapperFactory:
     def __init__(self, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs
 
     def get_mapper(self):
+        if 'bwamem' in self.kwargs:
+            return (BWAMEM(*self.args, **self.kwargs))
+
         # Stats takes precedence over wrap
         if 'stats' in self.kwargs:  # --stats : desired mapping statistics
             if self.kwargs['stats']:
@@ -26,9 +30,9 @@ class BBTools_factory:
 
 
 def main(*args, **kwargs):
-    bb = BBTools_factory(*args, **kwargs)
+    bb = MapperFactory(*args, **kwargs)
     mapper = bb.get_mapper()
-    mapper.modules = ['java', 'samtools']
+    mapper.modules = ['java', 'samtools', 'bwa']
     return(mapper.run())
 
 

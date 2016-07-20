@@ -17,6 +17,7 @@ class TadpoleAssemble(PairedEndCommand):
         self.set_default("assembly_name", "contigs.fa")
         self.set_default("mincontig", "250")
         self.set_default("mincov", "3")
+        self.set_default("kmer_len", "31")
 
     def make_command(self, read):
         pass
@@ -36,10 +37,11 @@ class TadpoleAssemble(PairedEndCommand):
         job_name = "{}{}".format(self.cluster_options["job_name"],
                                  basename(self.all_reads_name))
         command = ("tadpole.sh in={} out={} prealloc=t prefilter=2 "
-                   "mincontig={} mincov={}").format(input_f,
-                                                    output,
-                                                    self.mincontig,
-                                                    self.mincov)
+                   "mincontig={} mincov={} k={}").format(input_f,
+                                                         output,
+                                                         self.mincontig,
+                                                         self.mincov,
+                                                         self.kmer_len)
         self.commands[job_name] = command
 
         if self.verbose:
