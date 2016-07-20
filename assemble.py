@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 from AbySSAssemble import AbySSAssemble
-from MaSuRCAAssemble import MaSuRCAAssemble
 from SOAPdenovoAssemble import SOAPdenovoAssemble
 from TadpoleAssemble import TadpoleAssemble
 from TrinityAssemble import TrinityAssemble
@@ -15,7 +14,6 @@ class AssemblyFactory:
         self.ASSEMBLER = {
             'tadpole': self.tadpole_assemble,
             'trinity': self.trinity_assemble,
-            'masurca': self.masurca_assemble,
             'velvet': self.velvet_oases_assemble,
             'oases': self.velvet_oases_assemble,
             'velvet_oases': self.velvet_oases_assemble,
@@ -45,16 +43,6 @@ class AssemblyFactory:
         if "genome_guided" in self.kwargs.keys():
             assembler.modules = ["java", "samtools", "trinity"]
 
-        return (assembler)
-
-    def masurca_assemble(self):
-        if "mode" in self.kwargs.keys():
-            if not self.kwargs["mode"] == "DNA":
-                raise (RuntimeError("Wrong mode for MaSuRCA, use --mode=DNA"))
-        else:
-            print("Assuming input sequences are genomic data")
-
-        assembler = MaSuRCAAssemble(*self.args, **self.kwargs)
         return (assembler)
 
     def velvet_oases_assemble(self):
