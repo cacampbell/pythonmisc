@@ -7,7 +7,7 @@ from PairedEndCommand import PairedEndCommand
 class Deduplicate(PairedEndCommand):
     def __init__(self, *args, **kwargs):
         super(Deduplicate, self).__init__(*args, **kwargs)
-        self.set_default("picard", "~/.prog/picard-tools-2.4.1/picard.jar")
+        self.set_default("picard", "~/.prog/picard-tools-2.5.0/picard.jar")
         self.set_default("use_picard", False)
         self.set_default("by_mapping", False)
         self.set_default("fastuniq", False)

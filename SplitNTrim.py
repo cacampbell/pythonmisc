@@ -4,7 +4,7 @@ from PairedEndCommand import PairedEndCommand
 
 class SplitNTrim(PairedEndCommand):
     def __init__(self, *args, **kwargs):
-        super(self, SplitNTrim).__init__(*args, **kwargs)
+        super(SplitNTrim, self).__init__(*args, **kwargs)
         self.input_regex = ".*"
         self.read_regex = ".*"
         self.extension = ".bam"
