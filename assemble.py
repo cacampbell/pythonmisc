@@ -11,6 +11,10 @@ from parallel_command_parse import run_parallel_command_with_args
 # TODO: Allow list of kmer lengths, and create a command for each length, or a
 # combined command using the different kmer lengths (OASES)
 
+# TODO: multi_assemble, metassembler -- can metaseembler combine de novo and ref
+# guided assemblies? Or do I need to use tr2aacds to combine ref guided and
+# de novo assemblies? Different software for transcriptome vs genome assemblies?
+
 
 class AssemblyFactory:
     def __init__(self, *args, **kwargs):
