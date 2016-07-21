@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import errno
 import unittest
 from sys import stderr
 
@@ -7,12 +6,12 @@ from abc import ABCMeta
 from abc import abstractmethod
 from copy import deepcopy
 from os import getcwd
-from os import makedirs
 from os import path
 from os import walk
-from os.path import isdir, basename
+from os.path import basename
 from re import search
 
+from Bash import mkdir_p
 from cluster_commands import existing_jobs
 from cluster_commands import submit_job
 from module_loader import module
@@ -390,25 +389,6 @@ class ParallelCommand:
         jobs = self.dispatch()  # Return the job IDs from the dispatched cmds
 
         return (jobs)
-
-
-def mkdir_p(p):
-    """
-    Emulates UNIX `mkdir -p` functionality
-    Attempts to make a directory, if it fails, error unless the failure was
-    due to the directory already existing
-    :param: p: str: the path to make
-    :return:
-    :raises: OSError: If not "directory already exists"
-    """
-    try:
-        makedirs(p)
-    except OSError as err:
-        if err.errno == errno.EEXIST and isdir(p):
-            print("{} already exists".format(p),
-                  file=stderr)
-        else:
-            raise (err)
 
 
 class TestParallelCommand(unittest.TestCase):

@@ -33,18 +33,10 @@ class AssemblyFactory:
         assembler = TadpoleAssemble(*self.args, **self.kwargs)
         assembler.input_regex = ".*"
         assembler.read_regex = ".*"
-        # assembler.extension = r".fq.gz"
-        assembler.modules = ['java/1.8', 'slurm']
+        assembler.modules = ['java', 'slurm']
         return (assembler)
 
     def trinity_assemble(self):
-        if "mode" in self.kwargs.keys():
-            if not self.kwargs["mode"] == "RNA":
-                raise (RuntimeError("Wrong mode for Trinity, use --mode=RNA"))
-
-        else:
-            print("Assuming input sequences are transcriptomic data")
-
         assembler = TrinityAssemble(*self.args, **self.kwargs)
         assembler.modules = ["java", "trinity"]
 
@@ -54,18 +46,10 @@ class AssemblyFactory:
         return (assembler)
 
     def velvet_assemble(self):
-        if "mode" in self.kwargs.keys():
-            if not self.kwargs["mode"] == "DNA":
-                raise (RuntimeError("Wrong mode for Velvet, use --mode=DNA"))
-
         assembler = VelvetAssemble(*self.args, **self.kwargs)
         return (assembler)
 
     def oases_assemble(self):
-        if "mode" in self.kwargs.keys():
-            if not self.kwargs["mode"] == "RNA":
-                raise (RuntimeError("Wrong mode for Oases, use --mode=RNA"))
-
         assembler = OasesAssemble(*self.args, **self.kwargs)
         return (assembler)
 
@@ -78,15 +62,6 @@ class AssemblyFactory:
         return (assembler)
 
     def get_assembler(self):
-        if not "assembler" in self.kwargs.keys():
-            raise RuntimeError("No Assembler specified: use --assembler=")
-
-        if not "mode" in self.kwargs.keys():
-            if not self.kwargs["assembler"].lower().strip() in ["trinity",
-                                                                "tadpole",
-                                                                "masurca"]:
-                raise RuntimeError("Please Specify Mode: --mode=DNA|RNA")
-
         # self.ASSEMBLER is a dictionary, with keys = the different possible
         # assemblers that can be invoked from this script. So, we access
         # the key of ASSEMBLER that matches the given assembler argument
@@ -95,15 +70,25 @@ class AssemblyFactory:
         return (self.ASSEMBLER[self.kwargs["assembler"].lower().strip()]())
 
 
+def check_arguments(*args, **kwargs):
+    assert ("mode" in kwargs.keys())
+    assert ("assembler" in kwargs.keys())
+
+    if kwargs["mode"].upper().strip() == "RNA":
+        assert (kwargs["assembler"].lower().strip() not in ["velvet"])
+
+    if kwargs["mode"].upper().strip() == "DNA":
+        assert (kwargs["assembler"].lower().strip() not in ["trinity", "oases"])
+
+    if "genome_guided" in kwargs.keys():
+        assert (kwargs["assembler"].lower().strip() != "tadpole")
+
+
 def main(*args, **kwargs):
     assembler = AssemblyFactory(*args, **kwargs).get_assembler()
     assembler.input_regex = ".*"
     assembler.read_regex = ".*"
-    assembler.extension = ".fq"
-
-    if "genome_guided" in kwargs.keys():
-        assembler.extension = ".bam"
-
+    check_arguments(args, kwargs)
     return (assembler.run())
 
 

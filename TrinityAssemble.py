@@ -6,8 +6,8 @@ from os.path import join
 from shutil import copyfileobj
 
 from Bash import bash
+from Bash import mkdir_p
 from PairedEndCommand import PairedEndCommand
-from ParallelCommand import mkdir_p
 
 
 class TrinityAssemble(PairedEndCommand):

@@ -9,6 +9,25 @@ from subprocess import Popen
 import os
 
 
+def mkdir_p(p):
+    """
+    Emulates UNIX `mkdir -p` functionality
+    Attempts to make a directory, if it fails, error unless the failure was
+    due to the directory already existing
+    :param: p: str: the path to make
+    :return:
+    :raises: OSError: If not "directory already exists"
+    """
+    try:
+        os.makedirs(p)
+    except OSError as err:
+        if err.errno == errno.EEXIST and os.path.isdir(p):
+            print("{} already exists".format(p),
+                  file=sys.stderr)
+        else:
+            raise (err)
+
+
 def bash(command, *args):
     """
     Dispatches the command / script <command> to the bash shell with the
