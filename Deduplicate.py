@@ -11,20 +11,24 @@ class Deduplicate(PairedEndCommand):
         self.set_default("use_picard", False)
         self.set_default("by_mapping", False)
         self.set_default("fastuniq", False)
+        self.set_default("tmp_dir", "~/tmp")
 
     def __picard_dedup(self, bam):
         output = self.replace_extension_with(".dedupe.bam", bam)
         output = self.rebase_file(output)
 
         command = (
-            "java -Xms{xms} -Xmx{xmx} -jar {picard} MarkDuplicates "
-            "INPUT={i} OUTPUT={o} REMOVE_DUPLICATES=true CREATE_INDEX=true "
-            "MAX_RECORDS_IN_RAM=50000 ASSUME_SORTED=true").format(
-            xms=self.get_mem(0.90),
+            "java -Djava.io.tmpdir={tmp} -Xms{xms} -Xmx{xmx} -jar {picard} "
+            "MarkDuplicates INPUT={i} OUTPUT={o} REMOVE_DUPLICATES=true "
+            "CREATE_INDEX=true MAX_RECORDS_IN_RAM=50000 "
+            "ASSUME_SORTED=true").format(
+            xms=self.get_mem(0.94),
             xmx=self.get_mem(0.95),
             picard=self.picard,
             i=bam,
-            o=output)
+            o=output,
+            tmp=self.tmp_dir
+        )  # Command
         return (command)
 
     def __dedupe_by_mapping(self, bam):
@@ -67,17 +71,14 @@ class Deduplicate(PairedEndCommand):
         out = self.rebase_file(read)
         mate = self.mate(read)
         out2 = self.rebase_file(mate)
-        command1 = ("dedupe.sh in={i} out={o} -Xmx{xmx} threads={t} "
-                    "usejni=t").format(i=read,
-                                       o=out,
+        command = ("dedupe.sh in={i} out=STDOUT.fq -Xmx{xmx} threads={t} "
+                   "usejni=t | reformat.sh -Xmx{xmx} in=STDIN.fq out1={o1} "
+                   "out2={o2}").format(i=read,
+                                       o1=out,
+                                       o2=out2,
                                        xmx=self.get_mem(fraction=0.95),
                                        t=self.get_threads())
-        command2 = ("dedupe.sh in={i} out={o} -Xmx{xmx} threads={t} "
-                    "usejni=t").format(i=mate,
-                                       o=out2,
-                                       xmx=self.get_mem(fraction=0.95),
-                                       t=self.get_threads())
-        return ([command1, command2])
+        return (command)
 
     def make_command(self, bam):
         if self.by_mapping:
