@@ -50,7 +50,7 @@ class VelvetAssemble(PairedEndCommand):
             self.__merge_files(merged_reads, self.merged)
             self.__merge_files(unmerged_reads, self.unmerged)
 
-        command = ("velvetoptimizer.pl --hashs={startk} "
+        command = ("velvetoptimiser.pl --hashs={startk} "
                    "--hashe={endk} -f '-shortPaired "
                    "-fastq {unmerged} -long -fastq "
                    "{merged}' -t {threads} --optFuncKmer "
