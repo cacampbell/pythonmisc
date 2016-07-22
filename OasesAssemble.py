@@ -1,71 +1,44 @@
 #!/usr/bin/env python3
 from sys import stderr
 
-from os.path import isfile
-from shutil import copyfileobj
-
 from Bash import mkdir_p
-from PairedEndCommand import PairedEndCommand
+from VelvetAssemble import VelvetAssemble
 
 
-class OasesAssemble(PairedEndCommand):
+class OasesAssemble(VelvetAssemble):
     def __init__(self, *args, **kwargs):
         super(OasesAssemble, self).__init__(*args, **kwargs)
+        self.set_default("startk", "21")
+        self.set_default("endk", "37")
+        self.set_default("contig_len", "250")
+        self.set_default("reference_guided", False)
+        self.set_default("reference", "reference.fa")
+        self.set_default("all_merged", "{}/all_merged".format(self.input_root))
 
     def make_command(self, filename):
         pass
 
-    def __merge_files(self, files, merged_name):
-        try:
-            if not isfile(merged_name):
-                with open(merged_name, 'wb') as combined:
-                    for filename in files:
-                        with open(filename, 'rb') as merge:
-                            copyfileobj(merge, combined, 1024 * 1024 * 10)
-            else:
-                print("{} already exists, using it...".format(merged_name),
-                      file=stderr)
-        except (IOError, OSError) as err:
-            print("Error while combining files: {}".format(err),
-                  file=stderr)
-            raise (err)
-
     def format_commands(self):
-        merged_reads = [x for x in self.files if not "unmerged" in x]
-        unmerged_reads = [x for x in self.files if "unmerged" in x]
         job_name = "{}".format(self.cluster_options["job_name"])
 
-        self.set_default("unmerged", "{}/oases_combined_pairs.fq".format(
-            self.input_root))
-        self.set_default("merged", "{}/oases_combined_singles.fq".format(
-            self.input_root))
-
-        if not self.dry_run:
-            if self.verbose:
-                print("Merging input files...", file=stderr)
-
-            self.__merge_files(merged_reads, self.merged)
-            self.__merge_files(unmerged_reads, self.unmerged)
-
         command = ("oases_pipeline.py -m {startk} "
-                   "-M {endk} -d '-shortPaired "
-                   "-fastq {unmerged} -long -fastq "
-                   "{merged}' --optFuncKmer -p "
+                   "-M {endk} --optFuncKmer -p "
                    "'-min_contig_lgth {contig_len}' "
-                   "-o {out}").format(
+                   "-o {out} -d '{libraries}").format(
             startk=self.startk,
             endk=self.endk,
-            unmerged=self.unmerged,
-            merged=self.merged,
             threads=self.get_threads(),
             contig_len=self.contig_len,
-            out=self.output_root
+            out=self.output_root,
+            libraries=self.__format_libraries(guided=self.reference_guided)
         )  # Command
 
-        self.commands[job_name] = command
+        if self.reference_guided:
+            command += " -reference={}'".format(self.reference)
+        else:
+            command += "'"
 
-        if self.verbose:
-            print(command, file=stderr)
+        return command
 
     def run(self):
         """
