@@ -18,12 +18,16 @@ class VelvetAssemble(PairedEndCommand):
         self.set_default("contig_len", "250")
         self.set_default("reference_guided", False)
         self.set_default("reference", "reference.fa")
-        self.set_default("all_merged", "{}/all_merged".format(self.input_root))
+        self.set_default("all_merged", "{}/velvet.all_merged".format(
+            self.input_root))
 
     def make_command(self, filename):
         pass
 
     def __merge_fastq(self, files, combined_name):
+        if self.dry_run:
+            return
+
         try:
             if not isfile(combined_name):
                 with open(combined_name, 'wb') as combined:
@@ -31,20 +35,25 @@ class VelvetAssemble(PairedEndCommand):
                         with open(filename, 'rb') as merge:
                             copyfileobj(merge, combined, 1024 * 1024 * 10)
             else:
-                print("{} already exists, using it...".format(combined_name),
-                      file=stderr)
+                if self.verbose:
+                    print("{} already exists, using it...".format(
+                        combined_name), file=stderr)
         except (IOError, OSError) as err:
             print("Error while combining files: {}".format(err), file=stderr)
             raise (err)
 
     def __merge_bam(self, files, combined_name):
+        if self.dry_run:
+            return
+
         try:
             if not isfile(combined_name):
                 bash("samtools merge {} {}".format(combined_name,
                                                    " ".join(files)))
             else:
-                print("{} already exists, using it...".format(combined_name),
-                      file=stderr)
+                if self.verbose:
+                    print("{} already exists, using it...".format(
+                        combined_name), file=stderr)
         except (IOError, OSError) as err:
             print("Error while combining files: {}".format(err), file=stderr)
             raise (err)
@@ -54,6 +63,8 @@ class VelvetAssemble(PairedEndCommand):
             self.__merge_fastq(files, combined_name)
         elif all(x.endswith(".bam") for x in files):
             self.__merge_bam(files, combined_name)
+        else:
+            raise(RuntimeError("Cannot merge files: {}").format(files))
 
     def __str_lib(self, merged_libraries, guided=False):
         lib_str = ""
@@ -62,33 +73,35 @@ class VelvetAssemble(PairedEndCommand):
         # make files into velvet formatted library string
         # order of library specification does not matter
         if not guided:
-            # Reference Guided, assume bam format
+            # Not reference guided assembly, use fq
+            all_merged = "{}.fq".format(self.all_merged)
             for (i, key) in enumerate(merged_libraries.keys()):
                 unmerged_f = merged_libraries[key][0]
                 single_end_files += [merged_libraries[key][1]]
-                lib_str += '-shortPair{} -fastq {}'.format(i + 1, unmerged_f)
+                lib_str += ' -shortPair{} -fastq {}'.format(i + 1, unmerged_f)
 
-            self.__merge_files(single_end_files, self.all_merged)
-            lib_str += ' -short -fastq {}'.format(self.all_merged)
+            self.__merge_files(single_end_files, all_merged)
+            lib_str += ' -short -fastq {}'.format(all_merged)
         else:
-            # Not Reference Guided, assume fastq format
+            # reference guided assembly, use bam
+            # all_merged = "{}.bam".format(self.all_merged)
             for (i, key) in enumerate(merged_libraries.keys()):
                 unmerged_f = merged_libraries[key][0]
                 single_end_files += [merged_libraries[key][1]]
-                lib_str += '-shortPair{} -bam {}'.format(i + 1, unmerged_f)
+                lib_str += ' -shortPair{} -bam {}'.format(i + 1, unmerged_f)
 
-            self.__merge_files(single_end_files, self.all_merged)
-            lib_str += ' -short -bam {}'.format(self.all_merged)
+            # self.__merge_files(single_end_files, all_merged)
+            # lib_str += ' -short -bam {}'.format(all_merged)
         return (lib_str)
 
-    def __format_libraries(self, guided=False):
+    def format_libraries(self, guided=False):
         # self.files --> {"library name":[[unmerged_files], [merged_files]]}
         # TODO: This can definitely be refactored...
         libraries = {}
         merged_libraries = {}
         libnames = [x for x, dirs, files in walk(self.input_root) if not dirs]
         unmerged = [x for x in self.files if "unmerged" in x]
-        merged = [x for x in self.files if not "unmerged" in x]
+        merged = [x for x in self.files if "unmerged" not in x]
 
         for name in libnames:
             libraries[name] = [
@@ -96,15 +109,30 @@ class VelvetAssemble(PairedEndCommand):
                 [x for x in merged if name in x]
             ]  # for each library, add unmerged files and merged files
 
+        if self.verbose:
+            print("Library Structure: {}".format(libraries))
+
         # {"name":[[unmerged], [merged]} --> {"name":[unmerged_f, merged_f]}
         # From a list of files per library to merged files for each library
         for name in libraries.keys():
-            prefix = name.replace("/", "_")
-            unmerged_f = "{}_unmerged.fq".format(prefix)
-            merged_f = "{}_merged.fq".format(prefix)
-            self.__merge_files(libraries[name][0], unmerged_f)
-            self.__merge_files(libraries[name][1], merged_f)
-            merged_libraries[name] = [unmerged_f, merged_f]
+            prefix = name
+            unmerged_f = "{}.velvet.unmerged".format(prefix)
+            merged_f = "{}.velvet.merged".format(prefix)
+
+            if not self.reference_guided:
+                # Not a Reference Guided assembly
+                unmerged_f = "{}.fq".format(unmerged_f)
+                merged_f = "{}.fq".format(merged_f)
+                self.__merge_files(libraries[name][0], unmerged_f)
+                self.__merge_files(libraries[name][1], merged_f)
+                merged_libraries[name] = [unmerged_f, merged_f]
+            else:
+                # Reference guided assembly
+                unmerged_f = "{}.bam".format(unmerged_f)
+                merged_f = "{}.bam".format(merged_f)
+                self.__merge_files(libraries[name][0], unmerged_f)
+                self.__merge_files(libraries[name][1], merged_f)
+                merged_libraries[name] = [unmerged_f, merged_f]
 
         return (self.__str_lib(merged_libraries, guided=guided))
 
@@ -120,7 +148,7 @@ class VelvetAssemble(PairedEndCommand):
             threads=self.get_threads(),
             contig_len=self.contig_len,
             out=self.output_root,
-            libraries=self.__format_libraries(guided=self.reference_guided)
+            libraries=self.format_libraries(guided=self.reference_guided)
         )  # Command
 
         if self.reference_guided:

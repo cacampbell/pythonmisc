@@ -8,9 +8,6 @@ from VelvetAssemble import VelvetAssemble
 from parallel_command_parse import run_parallel_command_with_args
 
 
-# TODO: Allow list of kmer lengths, and create a command for each length, or a
-# combined command using the different kmer lengths (OASES)
-
 # TODO: multi_assemble, metassembler -- can metaseembler combine de novo and ref
 # guided assemblies? Or do I need to use tr2aacds to combine ref guided and
 # de novo assemblies? Different software for transcriptome vs genome assemblies?
@@ -85,10 +82,10 @@ def check_arguments(*args, **kwargs):
 
 
 def main(*args, **kwargs):
+    check_arguments(*args, **kwargs)
     assembler = AssemblyFactory(*args, **kwargs).get_assembler()
     assembler.input_regex = ".*"
     assembler.read_regex = ".*"
-    check_arguments(args, kwargs)
     return (assembler.run())
 
 
