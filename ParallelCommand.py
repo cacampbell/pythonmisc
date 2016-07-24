@@ -165,7 +165,7 @@ class ParallelCommand:
         Calculates the number of threads based on the specified number of cores
         :return: str: number of available worker threads
         """
-        return str(int((float(self.cluster_options["cpus"]) * 2.0) * float(fraction)))
+        return str(int((float(self.cluster_options["cpus"]) + 2.0) * float(fraction)))
 
     def get_mem(self, fraction=1):
         """
@@ -316,7 +316,7 @@ class ParallelCommand:
             # first argument is always 'load'
             args.extend(self.modules)  # add specified modules to arguments
             module(args)  # call module system, using arguments ['load', '...']
-            
+
             if self.verbose:
                 print("Called modulecmd with args: {}".format(args))
         except (OSError, ValueError) as err:
