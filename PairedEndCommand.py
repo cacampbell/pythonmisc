@@ -14,6 +14,7 @@ from ParallelCommand import ParallelCommand
 
 __all__ = ["PairedEndCommand"]
 
+
 class PairedEndCommand(ParallelCommand):
     """
     Extension of ParallelCommand to run parallel commands with paired end
@@ -135,7 +136,7 @@ class PairedEndCommand(ParallelCommand):
         """
         try:
             return (self.__replace_regex(self.extension, extension, read))
-        except AttributeError as err:  # Did not find a match for self.extension
+        except AttributeError:  # Did not find a match for self.extension
             # Replace last extension with new one, if no previous extensions,
             # then just adds the new one to the end of the basename
             return (read.rsplit(".", 1)[0] + extension)

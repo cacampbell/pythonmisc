@@ -20,6 +20,9 @@ class VelvetAssemble(PairedEndCommand):
         self.set_default("reference", "reference.fa")
         self.set_default("all_merged", "{}/velvet.all_merged".format(
             self.input_root))
+        self.set_default("input_regex", ".*")
+        self.set_default("read_regex", ".*")
+        self.set_default("extension", ".fq")
 
     def make_command(self, filename):
         pass
@@ -64,7 +67,7 @@ class VelvetAssemble(PairedEndCommand):
         elif all(x.endswith(".bam") for x in files):
             self.__merge_bam(files, combined_name)
         else:
-            raise(RuntimeError("Cannot merge files: {}").format(files))
+            raise(RuntimeError("Cannot merge files: {}".format(files)))
 
     def __str_lib(self, merged_libraries, guided=False):
         lib_str = ""
@@ -78,7 +81,7 @@ class VelvetAssemble(PairedEndCommand):
             for (i, key) in enumerate(merged_libraries.keys()):
                 unmerged_f = merged_libraries[key][0]
                 single_end_files += [merged_libraries[key][1]]
-                lib_str += ' -shortPair{} -fastq {}'.format(i + 1, unmerged_f)
+                lib_str += ' -shortPaired{} -fastq {}'.format(i + 1, unmerged_f)
 
             self.__merge_files(single_end_files, all_merged)
             lib_str += ' -short -fastq {}'.format(all_merged)
@@ -88,7 +91,7 @@ class VelvetAssemble(PairedEndCommand):
             for (i, key) in enumerate(merged_libraries.keys()):
                 unmerged_f = merged_libraries[key][0]
                 single_end_files += [merged_libraries[key][1]]
-                lib_str += ' -shortPair{} -bam {}'.format(i + 1, unmerged_f)
+                lib_str += ' -shortPaired{} -bam {}'.format(i + 1, unmerged_f)
 
             # self.__merge_files(single_end_files, all_merged)
             # lib_str += ' -short -bam {}'.format(all_merged)

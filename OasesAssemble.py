@@ -20,16 +20,16 @@ class OasesAssemble(VelvetAssemble):
 
     def format_commands(self):
         job_name = "{}".format(self.cluster_options["job_name"])
-        command = ("oases_pipeline.py -m {startk} "
-                   "-M {endk} -p "
-                   "'-min_contig_lgth {contig_len}' "
+        command = ("export OMP_NUM_THREADS={omp} oases_pipeline.py -m {startk} "
+                   "-M {endk} -p '-min_contig_lgth {contig_len}' "
                    "-o {out} --data '{libraries}").format(
             startk=self.startk,
             endk=self.endk,
             threads=self.get_threads(),
             contig_len=self.contig_len,
             out=self.output_root,
-            libraries=self.format_libraries(guided=self.reference_guided)
+            libraries=self.format_libraries(guided=self.reference_guided),
+            omp=self.get_threads(0.95)
         )  # Command
 
         if self.reference_guided:
