@@ -13,7 +13,7 @@ class Deduplicate(PairedEndCommand):
         self.set_default("fastuniq", False)
         self.set_default("tmp_dir", "~/tmp")
 
-    def __picard_dedup(self, bam):
+    def __picard_dedupe(self, bam):
         output = self.replace_extension_with(".dedupe.bam", bam)
         output = self.rebase_file(output)
 
@@ -71,19 +71,20 @@ class Deduplicate(PairedEndCommand):
         out = self.rebase_file(read)
         mate = self.mate(read)
         out2 = self.rebase_file(mate)
-        command = ("dedupe.sh in={i} out=STDOUT.fq -Xmx{xmx} threads={t} "
-                   "usejni=t | reformat.sh -Xmx{xmx} in=STDIN.fq out1={o1} "
-                   "out2={o2}").format(i=read,
-                                       o1=out,
-                                       o2=out2,
-                                       xmx=self.get_mem(fraction=0.95),
-                                       t=self.get_threads())
+        command = ("dedupe.sh in={i} in2={m} out=STDOUT.fq -Xmx{xmx} "
+                   "threads={t} usejni=t | reformat.sh -Xmx{xmx} in=STDIN.fq "
+                   "out1={o1} out2={o2}").format(i=read,
+                                                 m=mate,
+                                                 o1=out,
+                                                 o2=out2,
+                                                 xmx=self.get_mem(0.98),
+                                                 t=self.get_threads())
         return (command)
 
     def make_command(self, bam):
         if self.by_mapping:
             if self.use_picard:
-                return (self.__picard_dedeup(bam))
+                return (self.__picard_dedupe(bam))
             else:  # Not using Picard, using BBMap
                 return (self.__dedupe_by_mapping(bam))
         else:  # Ignoring picard, deduplicating reads without mapping (FastUniq)

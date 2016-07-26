@@ -10,12 +10,6 @@ class CleanSort(PairedEndCommand):
         self.extension = ".sam"
         self.set_default("picard", "picard.jar")
         self.set_default("tmp_dir", "~/tmp")
-        
-        if self.exclusions:
-            self.exclusions = list(self.exclusions)
-            self.exclusions += ["unmapped"]
-        else:
-            self.exclusions = "unmapped"
 
     def make_command(self, sam):
         # input unsorted, mapped sam file
