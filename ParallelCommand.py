@@ -273,13 +273,16 @@ class ParallelCommand:
 
         if path.isdir(root):
             if self.verbose:
-                print("Removing files form {}".format(root), file=stderr)
+                print("Removing files from {}".format(root), file=stderr)
 
             for root, dir, files in walk(root):
                 for filename in files:
                     base = basename(filename)
                     base_no_ext = path.splitext(base)[0]
                     exclusions += [base_no_ext]
+
+        else:
+            print("Not a directory: {}, skipping...".format(root), file=stderr)
 
         for regex in list(set(exclusions)):
             self.remove_regex_from_input(regex)

@@ -142,9 +142,9 @@ class VelvetAssemble(PairedEndCommand):
     def __command(self):
         command = ("export OMP_NUM_THREADS={omp} && "
                    "velvetoptimiser.pl --hashs={startk} --hashe={endk} -t "
-                   "{threads} --optFuncKmer 'n50*Lcon/tbp+log(Lbp)' "
-                   "--velvetgoptions='-min_contig_lgth {contig_len}' --d "
-                   "{out} -f '{libraries}").format(
+                   '{threads} --optFuncKmer "n50*Lcon/tbp+log(Lbp)" '
+                   '--velvetgoptions="-min_contig_lgth {contig_len}" --d '
+                   '{out} -f "{libraries}').format(
             startk=self.startk,
             endk=self.endk,
             unmerged=self.unmerged,
@@ -157,9 +157,9 @@ class VelvetAssemble(PairedEndCommand):
         )  # Command
 
         if self.reference_guided:
-            command += " -reference={}'".format(self.reference)
+            command += ' -reference={}"'.format(self.reference)
         else:
-            command += "'"
+            command += '"'
 
         return command
 
