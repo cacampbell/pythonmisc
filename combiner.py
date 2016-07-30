@@ -5,6 +5,7 @@ from io import BufferedReader
 from io import TextIOWrapper
 from os import remove
 from os.path import isfile
+from shutil import copyfileobj
 
 from Decompress import decompress
 
@@ -30,12 +31,10 @@ def combine_files(file_list, output="all_reads.fq"):
         with open(output, 'w+') as o_h:
             for filename in fq_files:
                 with open(filename, 'r+') as fh:
-                    for line in fh:
-                        o_h.write(line)
+                    copyfileobj(fh, o_h, 1024 * 1024 * 10)
             for filename in fqz_files:  # java-like boilerplate for iteration
                 with TextIOWrapper(BufferedReader(decompress(filename))) as gh:
-                    for line in gh:
-                        o_h.write(line)
+                    copyfileobj(gh, o_h, 1024 * 1024 * 10)
     except (IOError, OSError) as err:
        remove(output)
        raise(err)
