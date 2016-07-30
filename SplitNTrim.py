@@ -17,7 +17,7 @@ class SplitNTrim(PairedEndCommand):
         output = self.replace_extension_with(".trim.bam", output)
         command = ("java -Xmx{xmx} -Xms{xms} -Djava.io.tmpdir={tmpdir} "
                    "-jar {gatk} -T SplitNCigarReads -R {reference} "
-                   "-I {inf} -O {outf} -U ALLOW_N_CIGAR_READS -rf "
+                   "-I {inf} -o {outf} -U ALLOW_N_CIGAR_READS -rf "
                    "ReassignOneMappingQuality -RMQF 255 -RMQT 60").format(
                        xmx=self.get_mem(fraction=0.95),
                        xms=self.get_mem(fraction=0.90),
