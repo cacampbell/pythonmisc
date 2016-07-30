@@ -163,7 +163,7 @@ class PairedEndCommand(ParallelCommand):
             for root, dir, files in walk(root):  # Walk this directory
                 for filename in files:  # for each filename found
                     base = basename(filename)  # get its basename
-                    base_no_ext = path.splitext(base)[0]  # strip extensions
+                    base_no_ext = base.split(".")[0]  # Get first chunk
                     exclusions += [base_no_ext]  # add basename to exclusions
                     try:
                         # Since this might be the output directory of a
