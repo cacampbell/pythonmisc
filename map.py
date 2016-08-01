@@ -24,6 +24,11 @@ class MapperFactory:
         # if using the bbwrap.sh script
         if 'wrap' in self.kwargs:  # --wrap : use index one time only
             if self.kwargs['wrap']:
+                if 'read_groups' in self.kwargs:
+                    if self.kwargs['read_groups']:
+                        print("Cannot add read groups with wrapper")
+                        return (BBMapperNoStats(*self.args, **self.kwargs))
+
                 return(BBWrapper(*self.args, **self.kwargs))
         else:
             return(BBMapperNoStats(*self.args, **self.kwargs))

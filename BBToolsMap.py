@@ -9,6 +9,7 @@ class BBMapper(PairedEndCommand):
         self.set_default("mode", "DNA")
         self.set_default("max_intron", "100k")
         self.set_default("pigz", False)
+        self.set_default("read_group", False)
         # Set read_regex here if necessary
 
     def make_command(self, read):
@@ -74,5 +75,11 @@ class BBMapper(PairedEndCommand):
 
         if self.reference:
             command += (" ref={} nodisk").format(self.reference)
+
+        if self.read_groups:
+            command += (" rglb={rglb} rgpl={rgpl} "
+                        "rgpu={rgpu} rgsm={rgsm}").format(
+                **self.read_groups(read)
+            )
 
         return (command)

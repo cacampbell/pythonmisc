@@ -12,9 +12,6 @@ class BBMapperNoStats(PairedEndCommand):
         self.set_default("read_groups", False)
         # Set read_regex here if necessary
 
-    def read_group(self, read):
-        pass
-
     def make_command(self, read):
         mate = self.mate(read)
         map_sam = self.replace_read_marker_with("_pe", read)
@@ -47,9 +44,9 @@ class BBMapperNoStats(PairedEndCommand):
             command += (" ref={} nodisk").format(self.reference)
 
         if self.read_groups:
-            command += (" rglb={libname} rgpl={platform} "
-                        "rgpu={unit} rgsm={sample}").format(
-                self.read_groups(read)
+            command += (" rglb={rglb} rgpl={rgpl} "
+                        "rgpu={rgpu} rgsm={rgsm}").format(
+                **self.read_groups(read)
             )
 
         return (command)
