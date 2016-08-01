@@ -7,9 +7,11 @@ from abc import abstractmethod
 from os import path
 from os import walk
 from os.path import basename
+from os.path import sep
 from re import search
 from re import sub
 
+from Bash import bash
 from ParallelCommand import ParallelCommand
 
 __all__ = ["PairedEndCommand"]
@@ -86,6 +88,7 @@ class PairedEndCommand(ParallelCommand):
         """
         super(PairedEndCommand, self).__init__(*args, **kwargs)
         self.set_default('read_regex', "_R1")
+        self.set_default("tmp_dir", "~/tmp")
 
     def mate(self, read):
         """
@@ -186,6 +189,56 @@ class PairedEndCommand(ParallelCommand):
 
         for regex in list(set(exclusions)):  # For each unique basename
             self.remove_regex_from_input(regex)  # remove it from the input
+
+    def read_groups(self, filename):
+        lib = "lib"
+        platform = "illumina"
+        sample = "sample"
+        barcode = "XXXX"
+        lane = 1
+
+        if search("_L[0-9]{3}", filename):
+            sample = filename.split("_L")[0]
+        elif search("_R[1|2]", filename):
+            sample = filename.split("_R")[0]
+        else:
+            sample = filename
+
+        display_filename = "cat {}".format(filename)
+
+        if filename.endswith(".gz"):
+            display_filename = "gunzip -c {}".format(filename)
+
+        command = ("{} | head -n 10000 | grep ^@ | cut -d':' -f10 | tr -d ' ' "
+                   "| sort | uniq -c | sort -nr | head -1 | sed -e "
+                   "'s/^[[:space:]]*//' | cut -d ' ' -f2").format(
+            display_filename)
+
+        try:
+            barcode = bash(command)[0]
+        except:
+            print("Could not determine barcode", file=stderr)
+
+        try:
+            lane = int(search("(?<=_L)[0-9].*?(?=_pe)", filename).group(0))
+        except AttributeError:
+            if self.verbose:
+                print("Could not determine lane number", file=stderr)
+
+        platform_unit = "{}.{}".format(barcode, lane)
+
+        split = filename.split(sep)
+        if len(split) > 2:
+            lib = split[-2]
+
+        return {
+            'rglb': lib,
+            'rgpl': platform,
+            'rgpu': platform_unit,
+            'rgsm': sample
+        }
+
+
 
     def get_files(self):
         """

@@ -7,9 +7,11 @@ from PairedEndCommand import PairedEndCommand
 class BBWrapper(PairedEndCommand):
     def __init__(self, *args, **kwargs):
         super(BBWrapper, self).__init__(*args, **kwargs)
-        self.set_default("reference", "reference.fa")
+        self.set_default("reference", None)
+        self.set_default("build", None)
         self.set_default("mode", "DNA")
-        self.set_default("max_intron", "50000")
+        self.set_default("max_intron", "100k")
+        self.set_default("pigz", False)
 
     def make_command(self, read):
         pass
@@ -27,20 +29,31 @@ class BBWrapper(PairedEndCommand):
         unmapped = [self.replace_read_marker_with("_pe", x) for x in unmapped]
         outm = ",".join(mapped)
         outu = ",".join(unmapped)
-        command = ("bbwrap.sh in1={i1} in2={i2} outm={om} outu={ou} nodisk "
-                   "threads={t} ref={r} slow k=12 -Xmx{xmx} "
+        command = ("bbwrap.sh in1={i1} in2={i2} outm={om} outu={ou} "
+                   "threads={t} slow k=12 -Xmx{xmx} "
                    "usejni=t").format(i1=in1,
                                       i2=in2,
                                       om=outm,
                                       ou=outu,
                                       xmx=self.get_mem(fraction=0.95),
-                                      t=self.get_threads(),
-                                      r=self.reference)
+                                      t=self.get_threads())
 
         if self.mode.upper().strip() == "RNA":
-            command = command + (" intronlen=10 ambig=random "
-                                 "xstag=firststrand maxindel={}").format(
+            command = command + (" intronlen=10 ambig=random"
+                                 " xstag=firststrand maxindel={}").format(
                 self.max_intron)
+        else:
+            command += (" maxindel={}").format(self.max_intron)
+
+        if self.pigz:
+            command += (" pigz=t unpigz=t")
+        else:
+            command += (" pigz=f unpigz=f")
+
+        if self.reference:
+            command += (" ref={} nodisk").format(self.reference)
+        elif self.build:
+            command += (" build={build}")
 
         self.commands[job_name] = command
 
