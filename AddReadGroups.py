@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
+from sys import stderr
+
 from os import walk
 from os.path import basename
 from os.path import normpath
 from re import search
-from sys import stderr
+
 from PairedEndCommand import PairedEndCommand
-from Bash import mkdir_p
 
 
 class ReadGrouper(PairedEndCommand):
@@ -97,8 +98,8 @@ class ReadGrouper(PairedEndCommand):
                         libname=lib,
                         platform=self.platform,
                         unit=self.get_platform_unit(filename),
-                        sample=sample
-                                        )
+                        sample=sample)
+
                     self.commands[j] = command_str
 
                     if self.verbose:
@@ -119,7 +120,7 @@ class ReadGrouper(PairedEndCommand):
 
         if self.verbose:
             print("Making output directories...", file=stderr)
-        mkdir_p(self.output_root)
+        self.make_directories()
 
         if self.exclusions_paths:
             self.exclude_files_below(self.exclusions_paths)

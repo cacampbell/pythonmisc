@@ -5,9 +5,10 @@ from PairedEndCommand import PairedEndCommand
 class BBMapper(PairedEndCommand):
     def __init__(self, *args, **kwargs):
         super(BBMapper, self).__init__(*args, **kwargs)
-        self.set_default("reference", "reference.fa")
+        self.set_default("reference", None)
         self.set_default("mode", "DNA")
-        self.set_default("max_intron", "50000")
+        self.set_default("max_intron", "100k")
+        self.set_default("pigz", False)
         # Set read_regex here if necessary
 
     def make_command(self, read):
@@ -45,10 +46,10 @@ class BBMapper(PairedEndCommand):
         bincov = self.rebase_file(bincov)
 
         # Full Command
-        command = ("bbmap.sh in1={i1} in2={i2} outm={om} outu={ou} nodisk "
-                   "covstats={covstat} covhist={covhist} threads={t} ref={r} "
-                   "slow k=12 -Xmx{xmx} basecov={basecov} usejni=t"
-                   " bincov={bincov}").format(
+        command = ("bbmap.sh in1={i1} in2={i2} outm={om} outu={ou} "
+                   "covstats={covstat} covhist={covhist} threads={t} "
+                   "slow k=12 -Xmx{xmx} basecov={basecov} usejni=t "
+                   "bincov={bincov}").format(
             i1=read,
             i2=mate,
             om=map_sam,
@@ -58,11 +59,20 @@ class BBMapper(PairedEndCommand):
             basecov=basecov,
             bincov=bincov,
             xmx=self.get_mem(),
-            t=self.get_threads(),
-            r=self.reference)
+            t=self.get_threads())
 
         if self.mode.upper().strip() == "RNA":
             command += (" intronlen=10 ambig=random "
                         "xstag=firststrand maxindel={}").format(self.max_intron)
+        else:
+            command += (" maxindel={}").format(self.max_intron)
+
+        if self.pigz:
+            command += (" pigz=t unpigz=t")
+        else:
+            command += (" pigz=f unpigz=f")
+
+        if self.reference:
+            command += (" ref={} nodisk").format(self.reference)
 
         return (command)
