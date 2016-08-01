@@ -51,9 +51,9 @@ class BBWrapper(PairedEndCommand):
             command += (" pigz=f unpigz=f")
 
         if self.reference:
-            command += (" ref={} nodisk").format(self.reference)
+            command += (" ref={ref} nodisk").format(ref=self.reference)
         elif self.build:
-            command += (" build={build}")
+            command += (" build={build}").format(build=self.build)
 
         self.commands[job_name] = command
 

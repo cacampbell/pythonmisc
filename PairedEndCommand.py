@@ -190,7 +190,7 @@ class PairedEndCommand(ParallelCommand):
         for regex in list(set(exclusions)):  # For each unique basename
             self.remove_regex_from_input(regex)  # remove it from the input
 
-    def read_groups(self, filename):
+    def get_read_groups(self, filename):
         lib = "lib"
         platform = "illumina"
         sample = "sample"

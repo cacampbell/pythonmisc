@@ -42,14 +42,14 @@ class BBMapperNoStats(PairedEndCommand):
             command += (" pigz=f unpigz=f")
 
         if self.reference:
-            command += (" ref={} nodisk").format(self.reference)
+            command += (" ref={ref} nodisk").format(ref=self.reference)
         elif self.build:
             command += (" build={build}").format(build=self.build)
 
         if self.read_groups:
             command += (" rglb={rglb} rgpl={rgpl}"
                         " rgpu={rgpu} rgsm={rgsm}").format(
-                **self.read_groups(read)
+                **self.get_read_groups(read)
             )
 
         return (command)
