@@ -217,7 +217,7 @@ class PairedEndCommand(ParallelCommand):
         try:
             barcode = bash(command)[0].strip()
             if self.verbose:
-                print("Barcode: {}").format(barcode)
+                print("Barcode: {bar}", file=stderr).format(bar=barcode)
         except:
             print("Could not determine barcode", file=stderr)
 
