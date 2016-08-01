@@ -6,6 +6,7 @@ class BBMapperNoStats(PairedEndCommand):
     def __init__(self, *args, **kwargs):
         super(BBMapperNoStats, self).__init__(*args, **kwargs)
         self.set_default("reference", None)
+        self.set_default("build", None)
         self.set_default("mode", "DNA")
         self.set_default("max_intron", "100k")
         self.set_default("pigz", False)
