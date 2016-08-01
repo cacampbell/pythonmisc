@@ -57,10 +57,18 @@ class ReadGrouper(PairedEndCommand):
     def format_commands(self):
         # Assume <sample>_[<barcode>_]L<lane number>_R<read_number>_<set>.<ext>
         # So the samples are the first chunk of the basename
+        def __sample(filename):
+            if search("_L[0-9]{3}", filename):
+                return filename.split("_L")[0]
+            elif search("_R[1|2]", filename):
+                return filename.split("_R")[0]
+            else:
+                return filename
+
         libraries = {}
         sample_files = {}
         libnames = [x for x, dirs, files in walk(self.input_root) if not dirs]
-        samples = list(set([basename(x).split("_")[0] for x in self.files]))
+        samples = list(set([__sample(basename(x)) for x in self.files]))
 
         # For each sample, gather files that belong to that sample
         for sample in samples:

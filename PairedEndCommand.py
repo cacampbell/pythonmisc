@@ -193,9 +193,17 @@ class PairedEndCommand(ParallelCommand):
     def read_groups(self, filename):
         lib = "lib"
         platform = "illumina"
-        sample = basename(filename).split("_")[0]
+        sample = "sample"
         barcode = "XXXX"
         lane = 1
+
+        if search("_L[0-9]{3}", filename):
+            sample = filename.split("_L")[0]
+        elif search("_R[1|2]", filename):
+            sample = filename.split("_R")[0]
+        else:
+            sample = filename
+
         display_filename = "cat {}".format(filename)
 
         if filename.endswith(".gz"):
