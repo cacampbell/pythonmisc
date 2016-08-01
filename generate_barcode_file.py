@@ -1,31 +1,37 @@
 #!/usr/bin/env python3
 from sys import argv
-
 from os import walk
 from os.path import basename
 from os.path import join
-
 from Bash import bash
 
 
 def get_barcode(filename):
-    command = ("cat {} | head -n 10000 | grep ^@ | cut -d' ' -f10 | tr -d ' ' "
-               "| sort | uniq -c | sort -nr | head -n 1 | cut -d' ' "
-               "-f7").format(filename)
-    return bash(command)
+    display_filename = "cat {}".format(filename)
+
+    if filename.endswith(".gz"):
+        display_filename = "gunzip -c {}".format(filename)
+
+    command = ("{} | head -n 10000 | grep ^@ | cut -d':' -f10 | tr -d ' ' "
+               "| sort | uniq -c | sort -nr | head -1 | sed -e "
+               "'s/^[[:space:]]*//' | cut -d ' ' -f2").format(display_filename)
+    return bash(command)[0]
 
 
 def main(root, output):
-    for root, directories, files in walk(root):
-        for filename in files:
-            if filename.endswith(".fq") or filename.endswit(".fastq"):
-                abs = join(root, filename)
-                base = basename(abs)
-                name = base.split(".")[0]
-                barcode = get_barcode(filename)
-
-                with open(output, "w") as fh:
-                    fh.write("{} {}\n".format(name, barcode))
+    with open(output, "w") as fh:
+        for root, directories, files in walk(root):
+            for filename in files:
+                if filename.endswith(".fq.gz") \
+                        or filename.endswith(".fastq.gz") \
+                        or filename.endswith(".fq") \
+                        or filename.endswith(".fastq"):
+                    if "_R1" in filename:
+                        abs_path = join(root, filename)
+                        base = basename(abs_path)
+                        name = base.split(".")[0].replace("_R1", "_pe")
+                        barcode = get_barcode(abs_path)
+                        fh.write("{} {}".format(name, barcode))
 
 
 if __name__ == "__main__":
