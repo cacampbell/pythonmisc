@@ -197,7 +197,7 @@ class PairedEndCommand(ParallelCommand):
         barcode = "XXXX"
         lane = 1
 
-        if search("_L[0-9]{3}", filename):
+        if search("_L[0-9]*?", filename):
             sample = filename.split("_L")[0]
         elif search("_R[1|2]", filename):
             sample = filename.split("_R")[0]
@@ -216,6 +216,8 @@ class PairedEndCommand(ParallelCommand):
 
         try:
             barcode = bash(command)[0].strip()
+            if self.verbose:
+                print("Barcode: {}").format(barcode)
         except:
             print("Could not determine barcode", file=stderr)
 
