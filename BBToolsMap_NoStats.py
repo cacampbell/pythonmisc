@@ -41,9 +41,9 @@ class BBMapperNoStats(PairedEndCommand):
         else:
             command += (" pigz=f unpigz=f")
 
-        if self.reference:
-            command += (" ref={} nodisk").format(self.reference)
-        elif self.build:
+        if self.reference is not None:
+            command += (" ref={ref} nodisk").format(ref=self.reference)
+        elif self.build is not None:
             command += (" build={build}").format(build=self.build)
 
         if self.read_groups:
