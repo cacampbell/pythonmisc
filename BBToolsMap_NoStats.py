@@ -42,6 +42,8 @@ class BBMapperNoStats(PairedEndCommand):
 
         if self.reference:
             command += (" ref={} nodisk").format(self.reference)
+        elif self.build:
+            command += (" build={build}")
 
         if self.read_groups:
             command += (" rglb={rglb} rgpl={rgpl}"

@@ -8,6 +8,7 @@ class BBWrapper(PairedEndCommand):
     def __init__(self, *args, **kwargs):
         super(BBWrapper, self).__init__(*args, **kwargs)
         self.set_default("reference", None)
+        self.set_default("build", None)
         self.set_default("mode", "DNA")
         self.set_default("max_intron", "100k")
         self.set_default("pigz", False)
@@ -51,6 +52,8 @@ class BBWrapper(PairedEndCommand):
 
         if self.reference:
             command += (" ref={} nodisk").format(self.reference)
+        elif self.build:
+            command += (" build={build}")
 
         self.commands[job_name] = command
 

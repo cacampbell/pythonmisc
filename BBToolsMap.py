@@ -6,6 +6,7 @@ class BBMapper(PairedEndCommand):
     def __init__(self, *args, **kwargs):
         super(BBMapper, self).__init__(*args, **kwargs)
         self.set_default("reference", None)
+        self.set_default("build", None)
         self.set_default("mode", "DNA")
         self.set_default("max_intron", "100k")
         self.set_default("pigz", False)
@@ -69,6 +70,8 @@ class BBMapper(PairedEndCommand):
 
         if self.reference:
             command += (" ref={} nodisk").format(self.reference)
+        elif self.build:
+            command += (" build={build}")
 
         if self.read_groups:
             command += (" rglb={rglb} rgpl={rgpl}"
