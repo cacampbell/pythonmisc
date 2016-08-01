@@ -215,7 +215,7 @@ class PairedEndCommand(ParallelCommand):
             display_filename)
 
         try:
-            barcode = bash(command)[0]
+            barcode = bash(command)[0].strip()
         except:
             print("Could not determine barcode", file=stderr)
 
