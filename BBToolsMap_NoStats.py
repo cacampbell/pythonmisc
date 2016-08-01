@@ -44,8 +44,8 @@ class BBMapperNoStats(PairedEndCommand):
             command += (" ref={} nodisk").format(self.reference)
 
         if self.read_groups:
-            command += (" rglb={rglb} rgpl={rgpl} "
-                        "rgpu={rgpu} rgsm={rgsm}").format(
+            command += (" rglb={rglb} rgpl={rgpl}"
+                        " rgpu={rgpu} rgsm={rgsm}").format(
                 **self.read_groups(read)
             )
 

@@ -38,8 +38,8 @@ class BBWrapper(PairedEndCommand):
                                       t=self.get_threads())
 
         if self.mode.upper().strip() == "RNA":
-            command = command + (" intronlen=10 ambig=random "
-                                 "xstag=firststrand maxindel={}").format(
+            command = command + (" intronlen=10 ambig=random"
+                                 " xstag=firststrand maxindel={}").format(
                 self.max_intron)
         else:
             command += (" maxindel={}").format(self.max_intron)

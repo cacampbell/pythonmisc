@@ -26,41 +26,35 @@ class BBMapper(PairedEndCommand):
         unmap_sam = self.replace_extension_with(".unmapped.sam", unmap_sam)
         unmap_sam = self.rebase_file(unmap_sam)
 
-        # Coverage Statistics
-        covstat = self.replace_read_marker_with("_covstats", read)
-        covstat = self.replace_extension_with(".txt", covstat)
-        covstat = self.rebase_file(covstat)
+        # Scaffold statistics file
+        scaf = self.replace_read_marker_with("_pe", read)
+        scaf = self.replace_extension_with(".scafstats.txt", scaf)
+        scaf = self.rebase_file(scaf)
 
-        # Coverage Hist
-        covhist = self.replace_read_marker_with("_covhist", read)
-        covhist = self.replace_extension_with(".txt", covhist)
-        covhist = self.rebase_file(covhist)
+        # Statistics file
+        stats = self.replace_read_marker_with("_pe", read)
+        stats = self.replace_extension_with(".stats.txt", stats)
+        stats = self.rebase_file(stats)
 
-        # Base Coverage
-        basecov = self.replace_read_marker_with("_basecov", read)
-        basecov = self.replace_extension_with(".txt", basecov)
-        basecov = self.rebase_file(basecov)
-
-        # Bin Coverage
-        bincov = self.replace_read_marker_with("_bincov", read)
-        bincov = self.replace_extension_with(".txt", bincov)
-        bincov = self.rebase_file(bincov)
+        # Coverage Statistics file
+        cov = self.replace_read_marker_with("_pe", read)
+        cov = self.replace_extension_with(".covstats.txt", cov)
+        cov = self.rebase_file(cov)
 
         # Full Command
         command = ("bbmap.sh in1={i1} in2={i2} outm={om} outu={ou} "
-                   "covstats={covstat} covhist={covhist} threads={t} "
-                   "slow k=12 -Xmx{xmx} basecov={basecov} usejni=t "
-                   "bincov={bincov}").format(
+                   "threads={t} slow k=12 -Xmx{xmx} usejni=t "
+                   "scafstats={scaf} statsfile={stats} covstats={cov}").format(
             i1=read,
             i2=mate,
             om=map_sam,
             ou=unmap_sam,
-            covstat=covstat,
-            covhist=covhist,
-            basecov=basecov,
-            bincov=bincov,
             xmx=self.get_mem(),
-            t=self.get_threads())
+            t=self.get_threads(),
+            scaf=scaf,
+            stats=stats,
+            covstats=cov
+        )
 
         if self.mode.upper().strip() == "RNA":
             command += (" intronlen=10 ambig=random "
@@ -77,8 +71,8 @@ class BBMapper(PairedEndCommand):
             command += (" ref={} nodisk").format(self.reference)
 
         if self.read_groups:
-            command += (" rglb={rglb} rgpl={rgpl} "
-                        "rgpu={rgpu} rgsm={rgsm}").format(
+            command += (" rglb={rglb} rgpl={rgpl}"
+                        " rgpu={rgpu} rgsm={rgsm}").format(
                 **self.read_groups(read)
             )
 
