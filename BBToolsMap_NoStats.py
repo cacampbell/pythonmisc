@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+from os.path import basename
+
 from PairedEndCommand import PairedEndCommand
 
 
@@ -49,7 +51,7 @@ class BBMapperNoStats(PairedEndCommand):
         if self.read_groups:
             command += (" rglb={rglb} rgpl={rgpl}"
                         " rgpu={rgpu} rgsm={rgsm}").format(
-                **self.get_read_groups(read)
+                **self.get_read_groups(basename(read))
             )
 
         return (command)
