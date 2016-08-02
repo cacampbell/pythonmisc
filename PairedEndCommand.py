@@ -190,57 +190,58 @@ class PairedEndCommand(ParallelCommand):
         for regex in list(set(exclusions)):  # For each unique basename
             self.remove_regex_from_input(regex)  # remove it from the input
 
-    def get_read_groups(self, filename):
-        lib = "lib"
-        platform = "illumina"
-        sample = "sample"
-        barcode = "XXXX"
-        lane = 1
+    def rglb(self, filename):
+        split = filename.split(sep)
+        if len(split) > 2:
+            return(split[-2])
+        return filename
 
-        if search("_L[0-9]*?", filename):
-            sample = filename.split("_L")[0]
-        elif search("_R[1|2]", filename):
-            sample = filename.split("_R")[0]
-        else:
-            sample = filename
+    def rgpl(self, filename):
+        # For now, assuming that the reads are illumina
+        return "illumina"
 
-        display_filename = "cat {}".format(filename)
+    def rgpu(self, filename):
+        lane = "1"
+        d_filename = "cat {}".format(filename)
 
         if filename.endswith(".gz"):
-            display_filename = "gunzip -c {}".format(filename)
+            d_filename = "gunzip -c {}".format(filename)
 
         command = ("{} | head -n 10000 | grep ^@ | cut -d':' -f10 | tr -d ' ' "
                    "| sort | uniq -c | sort -nr | head -1 | sed -e "
-                   "'s/^[[:space:]]*//' | cut -d ' ' -f2").format(
-            display_filename)
+                   "'s/^[[:space:]]*//' | cut -d ' ' -f2").format(d_filename)
 
         try:
             barcode = bash(command)[0].strip()
             if self.verbose:
-                print("Barcode: {bar}", file=stderr).format(bar=barcode)
+                print("Barcode: {bar}".format(bar=barcode), file=stderr)
         except:
             print("Could not determine barcode", file=stderr)
 
         try:
-            lane = int(search("(?<=_L)[0-9].*?(?=_pe)", filename).group(0))
+            lane = int(search("(?<=_L)[0-9]{1,3}(?=.*_R[1|2])", filename).group(0))
         except AttributeError:
             if self.verbose:
                 print("Could not determine lane number", file=stderr)
 
-        platform_unit = "{}.{}".format(barcode, lane)
+        return("{}.{}".format(barcode, lane))
 
-        split = filename.split(sep)
-        if len(split) > 2:
-            lib = split[-2]
+    def rgsm(self, filename):
+        filename = basename(filename)
+        if search("_L[0-9]*?", filename):
+            return(filename.split("_L")[0])
+        elif search("_R[1|2]", filename):
+            return(filename.split("_R")[0])
+        else:
+            return(basename(filename))
 
+    def get_read_groups(self, filename):
         return {
-            'rglb': lib,
-            'rgpl': platform,
-            'rgpu': platform_unit,
-            'rgsm': sample
+            'rglb': self.rglb(filename),
+            'rgpl': self.rgpl(filename),
+            'rgpu': self.rgpu(filename),
+            'rgsm': self.rgsm(filename)
         }
-
-
 
     def get_files(self):
         """

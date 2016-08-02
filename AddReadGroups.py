@@ -43,7 +43,7 @@ class ReadGrouper(PairedEndCommand):
         barcode = ""
 
         try:
-            lane = int(search("(?<=_L)[0-9].*?(?=_pe)", filename).group(0))
+            lane = int(search("(?<=_L)[0-9]{1,3}(?=.*_pe)", filename).group(0))
         except AttributeError:
             if self.verbose:
                 print("Could not determine lane number", file=stderr)
