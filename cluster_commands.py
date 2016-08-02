@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import sys
 from pwd import getpwuid
 
 from os import environ
@@ -205,7 +206,7 @@ def __submit_torque(**kwargs):
     return (submit_cmd)
 
 
-def submit_job(command_str, **kwargs):
+def submit_job(command_str, verbose=False, **kwargs):
     """
     Anticipated positional args:
         command_str - The command to be wrapped for submission to scheduler
@@ -239,6 +240,9 @@ def submit_job(command_str, **kwargs):
         sub_script = sub_command.format(script, __submit_slurm(**kwargs))
     elif get_backend() == "torque":  # Format with torque options
         sub_script = sub_command.format(script, __submit_torque(**kwargs))
+
+    if verbose:
+        print(sub_script, file=sys.stderr)
 
     (stdout, stderr) = bash(sub_script)  # Actaully call the script using bash
 

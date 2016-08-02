@@ -197,7 +197,7 @@ class ParallelCommand:
                 opts["error"] = "{}_error".format(job_name)
 
                 # Capture the job number for the submitted job
-                job_number = submit_job(command, **opts)
+                job_number = submit_job(command, self.verbose, **opts)
                 job_numbers.append(job_number)
 
                 if self.verbose:
