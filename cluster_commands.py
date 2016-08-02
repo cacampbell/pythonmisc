@@ -12,6 +12,7 @@ from slurm_commands import scontrol
 from slurm_commands import squeue
 from torque_commands import qdel, qstat
 
+
 def get_username():
     return getpwuid(getuid())[0]
 
@@ -206,7 +207,7 @@ def __submit_torque(**kwargs):
     return (submit_cmd)
 
 
-def submit_job(command_str, verbose=False, **kwargs):
+def submit_job(command_str, verbose=False, dry_run=False, **kwargs):
     """
     Anticipated positional args:
         command_str - The command to be wrapped for submission to scheduler
@@ -244,27 +245,34 @@ def submit_job(command_str, verbose=False, **kwargs):
     if verbose:
         print(sub_script, file=sys.stderr)
 
-    (stdout, stderr) = bash(sub_script)  # Actaully call the script using bash
+    stdout = ""
+    stderr = ""
+    if not dry_run:
+        (stdout, stderr) = bash(
+            sub_script)  # Actaully call the script using bash
 
-    try:  # To parse the output based on expected successful submission result
-        chunks = stdout.split(" ")
-        for chunk in chunks:
-            if any([x.isdigit() for x in chunk.strip()]):
-                return(chunk.strip())  # First try to grab IDs from sentences
+        try:  # To parse the output based on expected successful submission result
+            chunks = stdout.split(" ")
+            for chunk in chunks:
+                if any([x.isdigit() for x in chunk.strip()]):
+                    return (
+                    chunk.strip())  # First try to grab IDs from sentences
 
-        if get_backend() == "slurm":  # If still here, try common output formats
-            # Successfully submitted job <Job ID>
-            return (stdout.split(" ")[-1].strip("\n"))
-        if get_backend() == "torque":
-            # <Job ID>.hostname.etc.etc
-            return (stdout.split(".")[0])
+            if get_backend() == "slurm":  # If still here, try common output formats
+                # Successfully submitted job <Job ID>
+                return (stdout.split(" ")[-1].strip("\n"))
+            if get_backend() == "torque":
+                # <Job ID>.hostname.etc.etc
+                return (stdout.split(".")[0])
 
-        if stderr:
-            print(stderr, file=stderr)
+            if stderr:
+                print(stderr, file=stderr)
 
-    except (ValueError, IndexError) as err:
-        print("Could not capture Job ID! Dependency checks may fail!")
-        print("Err: {}".format(err))
+        except (ValueError, IndexError) as err:
+            print("Could not capture Job ID! Dependency checks may fail!")
+            print("Err: {}".format(err))
+            return ("")
+    else:
         return ("")
 
 

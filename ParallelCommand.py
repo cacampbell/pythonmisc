@@ -189,7 +189,7 @@ class ParallelCommand:
 
         for job_name, command in self.commands.items():
             # If the job is not already running and actually submitting the job
-            if job_name not in existing_jobs() and not self.dry_run:
+            if job_name not in existing_jobs():
                 # Replace the job name for the cluster options copy (per job)
                 opts = dict(self.cluster_options)
                 opts["job_name"] = job_name
@@ -197,13 +197,16 @@ class ParallelCommand:
                 opts["error"] = "{}_error".format(job_name)
 
                 # Capture the job number for the submitted job
-                job_number = submit_job(command, self.verbose, **opts)
+                job_number = submit_job(command,
+                                        verbose=self.verbose,
+                                        dry_run=self.dry_run,
+                                        **opts)
                 job_numbers.append(job_number)
 
                 if self.verbose:
-                    print("Submitted job: {}".format(job_number), file=stderr)
+                    print("Job: {}".format(job_number), file=stderr)
             else:
-                print("Job {} already running or dry_run set to True".format(
+                print("Job {} already running".format(
                     job_name
                 ), file=stderr)
 
