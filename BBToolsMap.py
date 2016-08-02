@@ -12,7 +12,7 @@ class BBMapper(PairedEndCommand):
         self.set_default("max_intron", "100k")
         self.set_default("pigz", False)
         self.set_default("read_groups", False)
-        # Set read_regex here if necessary
+        self.set_default("use_modulo", False)
 
     def make_command(self, read):
         mate = self.mate(read)
@@ -46,6 +46,9 @@ class BBMapper(PairedEndCommand):
             command += (" ref={ref} nodisk").format(ref=self.reference)
         elif self.build:
             command += (" build={build}").format(build=self.build)
+
+        if self.use_modulo:
+            command += (" usemodulo=t")
 
         if self.stats:
             # Scaffold statistics file
