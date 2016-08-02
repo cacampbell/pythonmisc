@@ -12,7 +12,9 @@ class BBMapper(PairedEndCommand):
         self.set_default("max_intron", "100k")
         self.set_default("pigz", False)
         self.set_default("read_groups", False)
-        # Set read_regex here if necessary
+        self.set_default("use_modulo", False)
+        self.set_default("stats", False)
+        self.set_default("speed", "normal")
 
     def make_command(self, read):
         mate = self.mate(read)
@@ -23,7 +25,7 @@ class BBMapper(PairedEndCommand):
         unmap_sam = self.replace_extension_with(".unmapped.sam", unmap_sam)
         unmap_sam = self.rebase_file(unmap_sam)
         command = ("bbmap.sh in1={i1} in2={i2} outm={om} outu={ou} "
-                   "threads={t} slow k=12 -Xmx{xmx} "
+                   "threads={t} -Xmx{xmx} "
                    "usejni=t").format(i1=read,
                                       i2=mate,
                                       om=map_sam,
@@ -37,6 +39,14 @@ class BBMapper(PairedEndCommand):
         else:
             command += (" maxindel={}").format(self.max_intron)
 
+        speeds = {'fast':' fast k=14',
+                  'normal':' k=13',
+                  'slow': ' slow k=12'}
+        if self.speed in speeds.keys():
+            command += speeds[self.speed]
+        else:
+            command += speeds['normal']
+
         if self.pigz:
             command += (" pigz=t unpigz=t")
         else:
@@ -46,6 +56,9 @@ class BBMapper(PairedEndCommand):
             command += (" ref={ref} nodisk").format(ref=self.reference)
         elif self.build:
             command += (" build={build}").format(build=self.build)
+
+        if self.use_modulo:
+            command += (" usemodulo=t")
 
         if self.stats:
             # Scaffold statistics file
