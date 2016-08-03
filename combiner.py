@@ -12,20 +12,23 @@ from Decompress import decompress
 
 def combine_files(file_list, output="all_reads.fq"):
     """
-    Add either fastq (.fq) or fastq gzip (.fq.gz) files to a file using gzip
-    and cat in subprocess. By default,
+    Add either fastq (.fq) or zipped fastq (.fq.xx) files to a file using gzip
+    and cat in subprocess.
     """
     if not output.endswith(".fq"):
         output += ".fq"
 
+    # Don't overwrite output files
     if isfile(output):
         return
 
+    # Checks for three common zip extensions
     def zipped(f):
         return (f.endswith(".gz") or f.endswith(".bz2") or f.endswith(".zip"))
 
+    # All files that are unzipped fq files, and all files that are zipped
     fq_files = [f for f in file_list if f.endswith(".fq")]
-    fqz_files = [f for f in file_list if not zipped(f)]
+    fqz_files = [f for f in file_list if zipped(f)]
 
     try:
         with open(output, 'w+') as o_h:
@@ -36,7 +39,7 @@ def combine_files(file_list, output="all_reads.fq"):
                 with TextIOWrapper(BufferedReader(decompress(filename))) as gh:
                     copyfileobj(gh, o_h, 1024 * 1024 * 10)
     except (IOError, OSError) as err:
-       remove(output)
+        remove(output)  # If something goes wrong, remove the output file
        raise(err)
 
 

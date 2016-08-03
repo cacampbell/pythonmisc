@@ -356,7 +356,7 @@ def __requeue_suspended_jobs_slurm():
 
 
 def __requeue_suspended_jobs_torque():
-    raise ("Requeue not supported by Torque")
+    raise RuntimeError("Requeue not supported by Torque")
 
 
 def requeue_suspended_jobs():
