@@ -15,6 +15,7 @@ class BBMapper(PairedEndCommand):
         self.set_default("use_modulo", False)
         self.set_default("stats", False)
         self.set_default("speed", "normal")
+        self.set_default("num_reads", "-1")
 
     def make_command(self, read):
         mate = self.mate(read)
@@ -39,9 +40,13 @@ class BBMapper(PairedEndCommand):
         else:
             command += (" maxindel={}").format(self.max_intron)
 
-        speeds = {'fast':' fast k=14',
-                  'normal':' k=13',
-                  'slow': ' slow k=12'}
+        speeds = {
+            'vfast': ' fast k=15 minhits=3',
+            'fast': ' fast k=14 minhits=2',
+            'normal': ' k=13 minhits=1',
+            'slow': ' slow k=12 minhits=1',
+            'vslow': ' vslow k=11 minhits=1'
+        }
         if self.speed in speeds.keys():
             command += speeds[self.speed]
         else:
@@ -59,6 +64,9 @@ class BBMapper(PairedEndCommand):
 
         if self.use_modulo:
             command += (" usemodulo=t")
+
+        if self.num_reads:
+            command += (" reads={}").format(self.num_reads)
 
         if self.stats:
             # Scaffold statistics file
