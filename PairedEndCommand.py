@@ -231,7 +231,7 @@ class PairedEndCommand(ParallelCommand):
             try:
                 lane = bash(command2)[0].strip()
                 if self.verbose:
-                    print("Lane: {lane}").format(lane)
+                    print("Lane: {lane}").format(lane=lane)
             except:
                 print("Could not determine lane number", file=stderr)
 
