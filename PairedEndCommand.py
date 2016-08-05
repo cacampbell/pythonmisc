@@ -207,21 +207,32 @@ class PairedEndCommand(ParallelCommand):
         if filename.endswith(".gz"):
             d_filename = "gunzip -c {}".format(filename)
 
-        command = ("{} | head -n 10000 | grep ^@ | cut -d':' -f10 | tr -d ' ' "
+        command1 = ("{} | head -n 10000 | grep ^@ | cut -d':' -f10 | tr -d ' ' "
                    "| sort | uniq -c | sort -nr | head -1 | sed -e "
                    "'s/^[[:space:]]*//' | cut -d ' ' -f2").format(d_filename)
 
         try:
-            barcode = bash(command)[0].strip()
+            barcode = bash(command1)[0].strip()
             if self.verbose:
                 print("Barcode: {bar}".format(bar=barcode), file=stderr)
         except:
             print("Could not determine barcode", file=stderr)
 
         try:
-            lane = int(search("(?<=_L)[0-9]{1,3}(?=.*_R[1|2])", filename).group(0))
+            lane = int(search("(?<=_L)[0-9]{1,3}(?=.*_R[1|2])",
+                              filename).group(0))
         except AttributeError:
-            if self.verbose:
+            command2 = ("{} | head -n 10000 | grep ^@ | cut -d':' -f4 | tr -d "
+                        "' ' | sort | uniq -c | sort -nr | head -1 | sed -e "
+                        "'s/^[[:space:]]*//' | cut -d ' ' -f2").format(
+                d_filename
+            )  # strip lane number
+
+            try:
+                lane = bash(command2)[0].strip()
+                if self.verbose:
+                    print("Lane: {lane}").format(lane)
+            except:
                 print("Could not determine lane number", file=stderr)
 
         return("{}.{}".format(barcode, lane))
