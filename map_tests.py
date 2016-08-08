@@ -22,8 +22,6 @@ def main():
             for k, stat in enumerate(stats):
                 for l, read in enumerate(reads):
                     mem = "300G"
-                    if j == 0:
-                        mem = "200G"
 
                     def __opts():
                         s = speed
