@@ -40,7 +40,8 @@ class QualityControl(PairedEndCommand):
                    "ftm=5 ktrim=r k=27 mink=11 hdist=2 tpe tbo | "
                    "bbduk.sh -Xmx{xmx} threads={t} usejni=t "
                    "in=stdin.fq out1={o1} out2={o2} int=t stats={s2} ref={a} "
-                   "ktrim=r k=23 mink=11 hdist=0 tpe tbo").format(
+                   "ktrim=r k=23 mink=11 hdist=0 tpe tbo qtrim=t "
+                   "trimq=5").format(
             xmx=self.get_mem(fraction=0.95),
             t=self.get_threads(),
             i1=read,

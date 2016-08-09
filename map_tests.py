@@ -8,11 +8,11 @@ def main():
     speeds = ["vfast", "fast", "normal", "slow", "vslow"]
     modulos = ["--usemodulo"]
     stats = ["--stats", ""]
-    reads = ["100", "10"]
+    reads = ["100"]
 
     command = ("map.py --verbose --partition=bigmemm --memory={mem} --cpus=14 "
                "--email_address=cacampbell@ucdavis.edu --extension=.fastq.gz$ "
-               "--email_options=BEGIN,FAIL,END --input_root=ErrCorrect.1 "
+               "--email_options=FAIL,END --input_root=ErrCorrect_Repair.1 "
                "--output_root={outroot} --job_name={jobname} {modulo} --pigz "
                "--speed={speed} {stats} --read_groups --num_reads={reads} "
                "ref=pila.v1.0.scafSeq.fa nodisk")
