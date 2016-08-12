@@ -4,11 +4,10 @@ from PairedEndCommand import PairedEndCommand
 
 class VariantCaller(PairedEndCommand):
     def __init__(self, *args, **kwargs):
-        super(self, VariantCaller).__init__(*args, **kwargs)
-        self.set_default("mode", "DNA")
+        super(VariantCaller, self).__init__(*args, **kwargs)
         self.set_default("dbsnp", None)
         self.set_default("intervals", None)
-        self.set_deafult("GATK",
+        self.set_default("GATK",
                          "~/.prog/GenomeAnalysisTK/GenomeAnalysisTK.jar")
         self.set_default("reference", "reference.fa")
         self.set_default("tmp_dir", "~/tmp")

@@ -40,7 +40,7 @@ def combine_files(file_list, output="all_reads.fq"):
                     copyfileobj(gh, o_h, 1024 * 1024 * 10)
     except (IOError, OSError) as err:
         remove(output)  # If something goes wrong, remove the output file
-       raise(err)
+        raise(err)
 
 
 if __name__ == "__main__":

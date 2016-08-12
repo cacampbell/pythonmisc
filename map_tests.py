@@ -9,19 +9,20 @@ def main():
     modulos = ["--usemodulo"]
     stats = ["--stats", ""]
     reads = ["100"]
+    ref = "/group/nealedata/databases/Pila/genome/v1.0/pila.v1.0.scafSeq.fa"
 
     command = ("map.py --verbose --partition=bigmemm --memory={mem} --cpus=14 "
                "--email_address=cacampbell@ucdavis.edu --extension=.fastq.gz$ "
                "--email_options=FAIL,END --input_root=ErrCorrect_Repair.1 "
                "--output_root={outroot} --job_name={jobname} {modulo} --pigz "
                "--speed={speed} {stats} --read_groups --num_reads={reads} "
-               "ref=pila.v1.0.scafSeq.fa nodisk")
+               "--reference={reference} --read_groups")
 
     for i, speed in enumerate(speeds):
         for j, modulo in enumerate(modulos):
             for k, stat in enumerate(stats):
                 for l, read in enumerate(reads):
-                    mem = "300G"
+                    mem = "200G"
 
                     def __opts():
                         s = speed
@@ -52,7 +53,8 @@ def main():
                         reads=read,
                         mem=mem,
                         jobname=jobname,
-                        outroot=outroot
+                        outroot=outroot,
+                        reference=ref
                     ))
 
                     (out, err) = bash(*args)

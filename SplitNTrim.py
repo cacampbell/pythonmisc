@@ -4,11 +4,13 @@ from PairedEndCommand import PairedEndCommand
 
 class SplitNTrim(PairedEndCommand):
     def __init__(self, *args, **kwargs):
+        self.modules = ['java']
         super(SplitNTrim, self).__init__(*args, **kwargs)
         self.input_regex = ".*"
         self.read_regex = ".*"
         self.extension = ".bam"
-        self.set_default("gatk", "GenomeAnalysisTK.jar")
+        self.set_default("gatk",
+                         "/home/cacampbe/.prog/GenomeAnalysisTK/GenomeAnalysisTK.jar")
         self.set_default("tmp_dir", "~/tmp")
         self.set_default("reference", "reference.fa")
 
