@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from os.path import splitext
+
 from ParallelCommand import ParallelCommand
 
 
@@ -12,7 +13,9 @@ class Splitter(ParallelCommand):
         output = self.rebase_file(filename)
         self.prefix = splitext(output)[0] + ".split."
         assert (int(self.lines) % 4 == 0)
-        command = ("split -l {lines} {i} {o_pre}").format(
-            lines=self.lines, i=filename, o_pre=self.prefix
+        command = ("split -l {lines} {i} {o_pre} && rename ").format(
+            lines=self.lines,
+            i=filename,
+            o_pre=self.prefix
         )  # Command
         return (command)

@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
+from os.path import basename
+
 from PairedEndCommand import PairedEndCommand
+from combiner import combine_files
 
 
 class FileMerger(PairedEndCommand):
@@ -23,7 +26,27 @@ class FileMerger(PairedEndCommand):
         pass
 
     def format_commands(self):
-        pass
+        samples = []
+
+        if self.by_sample:
+            samples = list(set([basename(x).split("_")[0] for x in self.files]))
+
+        for sample in samples:
+            merge = []
+            for filename in self.files:
+                if "{}_".format(sample) in filename:
+                    merge += [filename]
+
+            output = self.rebase_file(merge[0])
+            regex = ".split.[a-z]*"
+
+            try:
+                match = search(regex, output).group(0)
+                return (sub(match, "", output))
+            except AttributeError as err:  # Nonetype object has no attribute group
+                raise (err)
+
+            combine_files(merge, output)
 
     def run(self):
         pass
