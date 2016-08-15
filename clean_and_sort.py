@@ -4,8 +4,9 @@ from parallel_command_parse import run_parallel_command_with_args
 
 
 def main(*args, **kwargs):
-    merger = CleanSort(*args, **kwargs)
-    return (merger.run())
+    cleaner = CleanSort(*args, **kwargs)
+    cleaner.modules = ['java', 'samtools']
+    return (cleaner.run())
 
 
 if __name__ == "__main__":

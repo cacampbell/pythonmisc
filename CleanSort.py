@@ -8,7 +8,7 @@ class CleanSort(PairedEndCommand):
         self.input_regex = ".*"
         self.read_regex = ".*"
         self.extension = ".sam"
-        self.set_default("picard", "picard.jar")
+        self.set_default("picard", "~/.prog/picard-tools-2.5.0/picard.jar")
         self.set_default("tmp_dir", "~/tmp")
 
     def make_command(self, sam):

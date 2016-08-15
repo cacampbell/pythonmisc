@@ -35,14 +35,14 @@ class QualityControl(PairedEndCommand):
         # Trim adapters from the right (3' adapters)
         # trim quality from both ends, using quality score 5 to filter
         command = ("bbduk.sh "
-                   "-Xmx{xmx} threads={t} usejni=t rkskip=4 "
+                   "-Xmx{xmx} threads={t} usejni=t "
                    "in1={i1} in2={i2} out=stdout.fq stats={s1} ref={a} "
-                   "ftm=5 ktrim=r k=27 mink=11 hdist=2 tpe tbo prealloc=t | "
+                   "ftm=5 ktrim=r k=27 mink=11 hdist=2 tpe tbo | "
                    "bbduk.sh -Xmx{xmx} threads={t} usejni=t "
                    "in=stdin.fq out1={o1} out2={o2} int=t stats={s2} ref={a} "
-                   "ktrim=r k=23 mink=11 hdist=0 tpe tbo qtrim=t prealloc=t "
+                   "ktrim=r k=23 mink=11 hdist=0 tpe tbo qtrim=t "
                    "trimq=5 rskip=4").format(
-            xmx=self.get_mem(fraction=0.95),
+            xmx=self.get_mem(fraction=0.999),
             t=self.get_threads(),
             i1=read,
             i2=mate,

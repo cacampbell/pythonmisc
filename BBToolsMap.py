@@ -16,6 +16,17 @@ class BBMapper(PairedEndCommand):
         self.set_default("stats", False)
         self.set_default("speed", "normal")
         self.set_default("num_reads", "-1")
+        # According to the BBMap documentation, increasing k and minhits
+        # increases speed. There is also a built in speed flag that can be
+        # passed directly to the program, which 'slightly reduces sentitivity'
+        # with increasing speed.
+        self.__speeds = {
+            'vfast': ' fast k=15 minhits=3',
+            'fast': ' fast k=14 minhits=2',
+            'normal': ' k=13 minhits=1',
+            'slow': ' slow k=12 minhits=1',
+            'vslow': ' vslow k=11 minhits=1'
+        }
 
     def make_command(self, read):
         mate = self.mate(read)
@@ -40,17 +51,10 @@ class BBMapper(PairedEndCommand):
         else:
             command += (" maxindel={}").format(self.max_intron)
 
-        speeds = {
-            'vfast': ' fast k=15 minhits=3',
-            'fast': ' fast k=14 minhits=2',
-            'normal': ' k=13 minhits=1',
-            'slow': ' slow k=12 minhits=1',
-            'vslow': ' vslow k=11 minhits=1'
-        }
-        if self.speed in speeds.keys():
-            command += speeds[self.speed]
+        if self.speed in self.__speeds.keys():
+            command += self.__speeds[self.speed]
         else:
-            command += speeds['normal']
+            command += self.__speeds['normal']
 
         if self.pigz:
             command += (" pigz=t unpigz=t")

@@ -296,7 +296,7 @@ class ParallelCommand:
         directory
         :return:
         """
-        for root, _, files in walk(self.input_root):
+        for root, _, files in walk(self.input_root, followlinks=True):
             for filename in files:  # for all files
                 if search(self.input_regex, filename):
                     if self.extension is not None:

@@ -260,7 +260,7 @@ class PairedEndCommand(ParallelCommand):
         directory
         :return:
         """
-        for root, _, files in walk(self.input_root):
+        for root, _, files in walk(self.input_root, followlinks=True):
             for filename in files:  # for all files
                 # Match input_regex and read_regex in the files found
                 if (search(self.input_regex, filename) and

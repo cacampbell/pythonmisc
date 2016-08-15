@@ -2,27 +2,27 @@
 from Bash import bash
 from shlex import split
 from sys import stderr
+from sys import argv
 
 
-def main():
+def main(reference="reference.fa", job_prefix="Map_Tests"):
     speeds = ["vfast", "fast", "normal", "slow", "vslow"]
     modulos = ["--usemodulo"]
     stats = ["--stats", ""]
     reads = ["100"]
-    ref = "/group/nealedata/databases/Pila/genome/v1.0/pila.v1.0.scafSeq.fa"
 
     command = ("map.py --verbose --partition=bigmemm --memory={mem} --cpus=14 "
                "--email_address=cacampbell@ucdavis.edu --extension=.fastq.gz$ "
                "--email_options=FAIL,END --input_root=ErrCorrect_Repair.1 "
                "--output_root={outroot} --job_name={jobname} {modulo} --pigz "
-               "--speed={speed} {stats} --read_groups --num_reads={reads} "
+               "--speed={speed} {stats} --num_reads={reads} "
                "--reference={reference} --read_groups")
 
     for i, speed in enumerate(speeds):
         for j, modulo in enumerate(modulos):
             for k, stat in enumerate(stats):
                 for l, read in enumerate(reads):
-                    mem = "200G"
+                    mem = "300G"
 
                     def __opts():
                         s = speed
@@ -38,7 +38,7 @@ def main():
 
                         return {'s':s, 'm':m, 'st':st, 'r':r}
 
-                    jobname = "Map_Test.{s}.{m}.{st}.{r}.".format(
+                    jobname = job_prefix + ".{s}.{m}.{st}.{r}.".format(
                         **__opts()
                     )
 
@@ -62,4 +62,4 @@ def main():
                     print(err, file=stderr)
 
 if __name__ == "__main__":
-    main()
+    main(argv[1], argv[2])
