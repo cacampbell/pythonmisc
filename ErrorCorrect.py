@@ -14,6 +14,7 @@ class ErrorCorrect(PairedEndCommand):
         mate = self.mate(read)
         out1 = self.rebase_file(read)
         out2 = self.rebase_file(mate)
+        command = ""
 
         if self.normalize:
             command = ("bbnorm.sh -Xmx{xmx} threads={t} in1={i1} in2={i2} "
@@ -28,17 +29,9 @@ class ErrorCorrect(PairedEndCommand):
                 md=self.min_depth,
                 d=self.target_depth
             )
-
-            if self.stats:
-                hist = self.replace_extension_with(".txt", read)
-                hist = self.replace_read_marker_with("_pe", hist)
-                hist = self.rebase_file(hist)
-                command = ("{cmd} hist={h}").format(cmd=command, h=hist)
-
-            return (command)
         else:
             command = ("ecc.sh -Xmx{xmx} threads={t} in1={i1} in2={i2} "
-                       "out1={o1} out2={o2} mue=t").format(
+                       "out1={o1} out2={o2} mue=t ").format(
                 xmx=self.get_mem(fraction=0.95),
                 t=self.get_threads(),
                 i1=read,
@@ -47,10 +40,10 @@ class ErrorCorrect(PairedEndCommand):
                 o2=out2
             )
 
-            if self.stats:
-                hist = self.replace_extension_with(".txt", read)
-                hist = self.replace_read_marker_with("_pe", hist)
-                hist = self.rebase_file(hist)
-                command = ("{cmd} hist={h}").format(cmd=command, h=hist)
+        if self.stats:
+            hist = self.replace_extension_with(".txt", read)
+            hist = self.replace_read_marker_with("_pe", hist)
+            hist = self.rebase_file(hist)
+            command = ("{cmd} hist={h}").format(cmd=command, h=hist)
 
-            return (command)
+        return (command)
