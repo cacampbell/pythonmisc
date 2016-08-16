@@ -74,12 +74,12 @@ class Deduplicate(PairedEndCommand):
         out2 = self.rebase_file(mate)
         command = ("dedupe.sh in={i} in2={m} out=STDOUT.fq -Xmx{xmx} "
                    "threads={t} usejni=t | reformat.sh -Xmx{xmx} in=STDIN.fq "
-                   "out1={o1} out2={o2}").format(i=read,
-                                                 m=mate,
-                                                 o1=out,
-                                                 o2=out2,
-                                                 xmx=self.get_mem(0.98),
-                                                 t=self.get_threads())
+                   "int out1={o1} out2={o2}").format(i=read,
+                                                     m=mate,
+                                                     o1=out,
+                                                     o2=out2,
+                                                     xmx=self.get_mem(0.98),
+                                                     t=self.get_threads())
         return (command)
 
     def make_command(self, bam):
