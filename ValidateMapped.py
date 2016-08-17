@@ -14,7 +14,7 @@ class ValidateMapped(PairedEndCommand):
         self.extension=".[s|b]am"
         self.set_default("picard", "~/.prog/picard-tools-2.5.0/picard.jar")
         self.set_default("~/tmp")
-        
+
     def make_command(self, filename):
         output = self.rebase_file(filename)
         output = self.replace_extension_with(".txt", output)
