@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+from itertools import product
 from sys import argv
 
 from io import BufferedReader
@@ -10,20 +11,30 @@ from shutil import copyfileobj
 from Decompress import decompress
 
 
-def __is_sam_or_bam(f):
-    sb_exts = [".sam", ".bam", ".sam.gz", ".bam.gz", ".sam.bz2", ".bam.bz2",
-               ".sam.zip", ".bam.zip"]
+def __is_ext_or_zip(f, ext):
+    sb = [ext]
+    zip = [".zip", ".bz2", ".gz", ""]
+    sb_exts = ["".join(x) for x in product(sb, zip)]
+    return any([f in x for x in sb_exts])
+
+
+def __is_mapped(f):
+    sb = [".sam", ".bam"]
+    zip = [".zip", ".bz2", ".gz", ""]
+    sb_exts = ["".join(x) for x in product(sb, zip)]
     return any([f in x for x in sb_exts])
 
 
 def __is_fq(f):
-    fq_extensions = [".fq", ".fq.gz", ".fq.bz2", ".fq.zip"]
+    fq = [".fq", ".fastq"]
+    zip = [".zip", ".bz2", ".gz", ""]
+    fq_extensions = ["".join(x) for x in product(fq, zip)]
     return any([f in x for x in fq_extensions])
 
 
-# Checks for three common zip extensions
 def __zipped(f):
-    return (f.endswith(".gz") or f.endswith(".bz2") or f.endswith(".zip"))
+    zip = [".zip", ".bz2", ".gz"]
+    return any([f.endswith(x) for x in zip])
 
 
 def combine_fq(file_list, output):
@@ -52,8 +63,7 @@ def combine_fq(file_list, output):
 
 
 def combine_alignments(file_list, output):
-    assert (all(".bam" in x for x in file_list) or
-            all(".sam" in x for x in file_list))  # All SAM-ish or all BAM-ish
+    assert all([__is_mapped(x) for x in file_list])
     pass
 
 
@@ -64,7 +74,7 @@ def combine_files(file_list, output="all_reads.fq"):
     """
     if all([__is_fq(x) for x in file_list]):
         combine_fq(file_list, output)
-    elif all([__is_sam_or_bam(x) for x in file_list]):
+    elif all([__is_mapped(x) for x in file_list]):
         combine_alignments(file_list, output)
 
 

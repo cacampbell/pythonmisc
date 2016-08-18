@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 from os.path import basename
+from re import search
+from re import sub
 
 from PairedEndCommand import PairedEndCommand
 from combiner import combine_files
@@ -42,7 +44,7 @@ class FileMerger(PairedEndCommand):
 
             try:
                 match = search(regex, output).group(0)
-                return (sub(match, "", output))
+                output = sub(match, "", output)
             except AttributeError as err:  # Nonetype object has no attribute group
                 raise (err)
 
