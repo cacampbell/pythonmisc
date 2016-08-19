@@ -1,40 +1,36 @@
 #!/usr/bin/env python3
 from itertools import product
 from sys import argv
-
+from Bash import bash
 from io import BufferedReader
 from io import TextIOWrapper
 from os import remove
 from os.path import isfile
 from shutil import copyfileobj
-
 from Decompress import decompress
 
 
-def __is_ext_or_zip(f, ext):
-    sb = [ext]
-    zip = [".zip", ".bz2", ".gz", ""]
-    sb_exts = ["".join(x) for x in product(sb, zip)]
-    return any([f in x for x in sb_exts])
+def __is_ext(f, ext):
+    return f.endswith(ext)
 
 
 def __is_mapped(f):
     sb = [".sam", ".bam"]
-    zip = [".zip", ".bz2", ".gz", ""]
-    sb_exts = ["".join(x) for x in product(sb, zip)]
-    return any([f in x for x in sb_exts])
+    zip_ext = [""]  # Can add zip extensions if handling those filetypes
+    sb_exts = ["".join(x) for x in product(sb, zip_ext)]
+    return any([f.endswith(x) for x in sb_exts])
 
 
 def __is_fq(f):
     fq = [".fq", ".fastq"]
-    zip = [".zip", ".bz2", ".gz", ""]
-    fq_extensions = ["".join(x) for x in product(fq, zip)]
-    return any([f in x for x in fq_extensions])
+    zip_ext = [".zip", ".bz2", ".gz", ""]
+    fq_extensions = ["".join(x) for x in product(fq, zip_ext)]
+    return any([f.endswith(x) for x in fq_extensions])
 
 
 def __zipped(f):
-    zip = [".zip", ".bz2", ".gz"]
-    return any([f.endswith(x) for x in zip])
+    zip_ext = [".zip", ".bz2", ".gz"]
+    return any([f.endswith(x) for x in zip_ext])
 
 
 def combine_fq(file_list, output):
@@ -63,8 +59,15 @@ def combine_fq(file_list, output):
 
 
 def combine_alignments(file_list, output):
-    assert all([__is_mapped(x) for x in file_list])
-    pass
+    assert(all([__is_mapped(x) for x in file_list]))
+    command = ("java -Xmx{xmx} -Xms{xms} -Djava.io.tmpdir={tmp} -jar {picard} "
+               "-T MergeSAMFiles {input_files} O={output_files}").format(
+               xms="10G", xmx="12G", tmp="~/tmp",
+               picard="~/.prog/picard-tools-2.5.0/picard.jar",
+               input_files="".join(["I={} ".format(x) for x in file_list]),
+               output_files=output
+    )  # Use picard merge SAM to merge the files
+    bash(command)
 
 
 def combine_files(file_list, output="all_reads.fq"):
@@ -82,6 +85,6 @@ if __name__ == "__main__":
     if len(argv) == 3:
         combine_files(argv[1], argv[2])
     elif len(argv) == 2:
-        combine_files(argv[1], "all_reads.fq.gz")
+        combine_files(argv[1], "all_reads")
     else:
         raise (RuntimeError("Unexpected Argument Count"))

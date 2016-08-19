@@ -5,6 +5,7 @@ from parallel_command_parse import run_parallel_command_with_args
 
 def main(*args, **kwargs):
     s = Splitter(*args, **kwargs)
+    s.modules = ['samtools']
     return (s.run())
 
 

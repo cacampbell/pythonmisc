@@ -2,7 +2,6 @@
 from os.path import basename
 from re import search
 from re import sub
-
 from PairedEndCommand import PairedEndCommand
 from combiner import combine_files
 
@@ -45,10 +44,40 @@ class FileMerger(PairedEndCommand):
             try:
                 match = search(regex, output).group(0)
                 output = sub(match, "", output)
-            except AttributeError as err:  # Nonetype object has no attribute group
+            except AttributeError as err:  # no attribute 'group'
                 raise (err)
 
             combine_files(merge, output)
 
     def run(self):
-        pass
+        if self.verbose:
+            print('Loading environment modules...', file=stderr)
+            if self.modules is not None:
+                self.module_cmd(['load'])
+
+        if self.verbose:
+            print('Gathering input files...', file=stderr)
+        self.get_files()
+
+        if self.verbose:
+            print('Removing exclusions...', file=stderr)
+
+        if self.verbose:
+            print("Making output directories...", file=stderr)
+        mkdir_p(self.output_root)
+
+        if self.exclusions_paths:
+            self.exclude_files_below(self.exclusions_paths)
+
+        self.exclude_files_below(self.output_root)
+
+        if self.exclusions:
+            self.remove_regex_from_input(self.exclusions)
+
+        self.remove_regex_from_input(self.all_reads_name)
+
+        if self.verbose:
+            print('Formatting commands...', file=stderr)
+        self.format_commands()
+
+
