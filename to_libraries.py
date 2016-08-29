@@ -13,7 +13,7 @@ from os.path import isfile
 exclusions = []
 
 def main(directory):
-    filenames = [x for x in listdir(directory) if isfile(x)]
+    filenames = [x for x in listdir(directory) if isfile(join(directory, x))]
 
     for exclusion in exclusions:
         for filename in list(filenames):

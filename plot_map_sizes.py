@@ -5,8 +5,13 @@ from os.path import basename
 
 
 def main(fastq, mapped):
-    (fastq_sizes, err1) = bash("du -sb {}/*.fq.gz".format(fastq.rstrip('/')))
-    (map_sizes, err2) = bash("du -sb {}/*001.sam".format(mapped.rstrip('/')))
+    (fastq_sizes, err) = bash("find -L {f}/ -iname *q.gz | "
+                              "parallel --gnu -j4  \"du -sb --apparent-size "
+                              "{{}}\"".format(f=fastq.rstrip('/')))
+
+    (map_sizes, err2) = bash("find -L {f}/ -iname *001.sam | parallel "
+                             "--gnu -j4 \"du -sb --apparent-size {{}}\"".format(
+                                 f=mapped.rstrip('/')))
     read1 = {}
     read2 = {}
     mapped = {}
@@ -35,6 +40,7 @@ def main(fastq, mapped):
             fh.write("{}\t{}\t{}\t{}\n".format(key, *val))
 
     (out, err) = bash("plot_map_sizes.R")
+    print(out)
 
 if __name__ == "__main__":
     run_with_args(main)
