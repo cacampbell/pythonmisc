@@ -2,9 +2,9 @@
 from PairedEndCommand import PairedEndCommand
 
 
-class Repair(PairedEndCommand):
+class RepairReads(PairedEndCommand):
     def __init__(self, *args, **kwargs):
-        super(Repair, self).__init__(*args, **kwargs)
+        super(RepairReads, self).__init__(*args, **kwargs)
 
     def make_command(self, read):
         mate = self.mate(read)
