@@ -384,7 +384,10 @@ class ParallelCommand:
         self.exclude_files_below(self.output_root)
 
         if self.exclusions:
-            self.remove_regex_from_input(self.exclusions)
+            if not isdir(self.exclusions):
+                self.remove_regex_from_input(self.exclusions)
+            else:
+                print('Use --exclusions_paths= for directories!', file=stderr)
 
         if self.verbose:
             print('Formatting commands...', file=stderr)
