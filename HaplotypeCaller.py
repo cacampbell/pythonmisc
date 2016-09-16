@@ -29,7 +29,7 @@ class HaplotypeCaller(PairedEndCommand):
         nct = threads if int(threads) < 9 else "8"
         command = ("java -Xms{xms} -Xmx{xmx} -Djava.io.tmpdir={tmp} -jar "
                    "{gatk} -T HaplotypeCaller -I {bam} -o {gvcf}"
-                   " -R {ref} --emitRefConfidance GVCF -nct {nct}").format(
+                   " -R {ref} --emitRefConfidence GVCF -nct {nct}").format(
             xms=self.get_mem(0.98),
             xmx=self.get_mem(0.99),
             tmp=self.tmp_dir,
