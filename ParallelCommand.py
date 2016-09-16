@@ -12,6 +12,7 @@ from os.path import basename
 from re import search
 
 from Bash import mkdir_p
+from os.path import isdir
 from cluster_commands import existing_jobs
 from cluster_commands import submit_job
 from module_loader import module
