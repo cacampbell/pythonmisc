@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 from os.path import basename
+from os import getcwd
+from os.path import join
 from re import search
 from re import sub
 from PairedEndCommand import PairedEndCommand
 from combiner import combine_files
+from sys import stderr
+from Bash import mkdir_p
 
 
 class FileMerger(PairedEndCommand):
@@ -32,14 +36,20 @@ class FileMerger(PairedEndCommand):
         if self.by_sample:
             samples = list(set([basename(x).split("_")[0] for x in self.files]))
 
+        else:
+            samples = list(set(
+                [basename(x).split(".split")[0] for x in self.files]
+            ))
+
         for sample in samples:
             merge = []
             for filename in self.files:
                 if "{}_".format(sample) in filename:
                     merge += [filename]
 
-            output = self.rebase_file(merge[0])
-            regex = ".split.[a-z]*"
+            pwd = getcwd()
+            output = self.rebase_file(join(pwd, sample + self.extension))
+            regex = "\.split\.[a-z]{1,10}?"
 
             try:
                 match = search(regex, output).group(0)
@@ -48,6 +58,7 @@ class FileMerger(PairedEndCommand):
                 raise (err)
 
             combine_files(merge, output)
+
 
     def run(self):
         if self.verbose:
@@ -73,8 +84,6 @@ class FileMerger(PairedEndCommand):
 
         if self.exclusions:
             self.remove_regex_from_input(self.exclusions)
-
-        self.remove_regex_from_input(self.all_reads_name)
 
         if self.verbose:
             print('Formatting commands...', file=stderr)
