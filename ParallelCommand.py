@@ -111,7 +111,7 @@ class ParallelCommand:
         self.output_root = getcwd()
         self.input_regex = '.*'
         self.modules = None
-        self.extension = r'.fq.gz'
+        self.extension = None
         self.exclusions = None
         self.exclusions_paths = None
         self.dry_run = False
