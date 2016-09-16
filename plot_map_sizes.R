@@ -23,3 +23,13 @@ scatterplot3d(filesizes$read1, filesizes$read2, filesizes$mapped, main="Filesize
 filesizes$pe <- filesizes$read1 + filesizes$read2
 png("2D_Filesizes.png", width=1000, height=1000)
 plot(filesizes$pe, filesizes$mapped)
+
+A = log2(filesizes$pe)
+B = log2(filesizes$pe)
+model <- lm(A ~ B)
+filesizes$residuals <- residuals(model)
+outliers.threshold.regression <- 0.4
+outliers.regression <- filesizes$name[filesizes$residuals > outliers.threshold.regression]
+png("2D_log2_filesizes.png", width=1000, height=1000)
+plot(A ~ B)
+abline(model)
