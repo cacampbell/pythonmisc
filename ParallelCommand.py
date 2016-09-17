@@ -321,7 +321,11 @@ class ParallelCommand:
         """
         try:
             # first argument is always 'load'
-            args.extend(self.modules)  # add specified modules to arguments
+            if type(self.modules) is list:
+                args.extend(self.modules)  # add specified modules to arguments
+            else:
+                args.append(self.modules)
+
             module(args)  # call module system, using arguments ['load', '...']
 
             if self.verbose:
