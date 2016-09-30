@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-from PairedEndCommand import PairedEndCommand
 import re
+
+from PairedEndCommand import PairedEndCommand
 
 
 class Splitter(PairedEndCommand):
@@ -31,13 +32,33 @@ class Splitter(PairedEndCommand):
             pass
 
         if filename.endswith(".fq") or filename.endswith(".fastq"):
-            command = ("split -l {lines} {i} {o_pre} &&"
-                       " rename \"s/\$/{ext}/\" {o_pre}*").format(
-                lines=self.lines,
-                i=filename,
-                o_pre=self.prefix,
-                ext=extension
-            )  # Command
+            # MONSTROUS COMMAND TO SPLIT FQ FILES
+            # use combination of paste and subprocesses to interleave
+            # (10x faster than python)
+            # Then, split the files into a multiple of 8 lines, and rename them
+            mate = self.replace_read_marker_with("_R2", filename)
+            interleaved = self.replace_read_marker_with("_pe", filename)
+            o_interleaved = self.rebase_file(interleaved)
+            self.prefix = self.replace_extension_with(".split.", o_interleaved)
+            interleave_command = ("paste <(paste - - - - < {read}) "
+                                  "<(paste - - - - < {mate}) "
+                                  "| tr '\t' '\n' > {interleave}").format(
+                read=filename, mate=mate, interleave=interleaved)
+            split_command = ("split -l {l} {interleave} {o_pre}").format(
+                l=self.lines, interleave=interleaved, o_pre=self.prefix)
+            deinterleave_command = ("ls | grep {o_pre} |"
+                                    " parallel --gnu -j{cpus} "
+                                    "\"paste - - - - - - - - < {{}} |"
+                                    " tee >(cut -f 1-4 |"
+                                    " tr '\t' '\n' > {{}}.R1) |"
+                                    " cut -f 5-8 |"
+                                    " tr '\t' '\n' > {{}}.R2\"").format(
+                o_pre=self.prefix, cpus=self.get_threads())
+            rename_command = ("rename \"s/$/.fq/\" {}").format(self.prefix)
+            command = ("{} && {} && {} && {}").format(interleave_command,
+                                                      split_command,
+                                                      deinterleave_command,
+                                                      rename_command)
             return(command)
 
         elif filename.endswith(".bam"):
