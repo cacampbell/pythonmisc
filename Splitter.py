@@ -8,6 +8,7 @@ class Splitter(PairedEndCommand):
         super(Splitter, self).__init__(*args, **kwargs)
         self.set_default("lines", "8000000")
         self.read_regex = ".*"
+        self.set_default("extension", ".fq$")
         self.changed_ext = False
 
     def make_command(self, filename):
@@ -31,7 +32,7 @@ class Splitter(PairedEndCommand):
 
         if filename.endswith(".fq") or filename.endswith(".fastq"):
             command = ("split -l {lines} {i} {o_pre} &&"
-                       " rename \"s/(.*)/$1{ext}/\" {o_pre}*").format(
+                       " rename \"s/\$/{ext}/\" {o_pre}*").format(
                 lines=self.lines,
                 i=filename,
                 o_pre=self.prefix,

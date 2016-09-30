@@ -20,21 +20,23 @@ class CleanSort(PairedEndCommand):
         output_f = self.replace_extension_with(".clean.sort.sam", output_f)
         bam = self.rebase_file(sam)
         bam = self.replace_extension_with(".clean.sort.bam", bam)
-        command = ("java -Xms{xms} -Xmx{xmx} -Djava.io.tmpdir={tmpdir} -jar {picard} "
+        command = ("java -Xms{xms} -Xmx{xmx} -Djava.io.tmpdir={tmpdir} "
+                   "-XX:ParallelGCThreads={gc} -jar {picard} "
                    "CleanSam INPUT={i} TMP_DIR={tmpdir} OUTPUT={o} && java "
                    "-Djava.io.tmpdir={tmpdir} -Xms{xms} -Xmx{xmx} "
-                   "-jar {picard} FixMateInformation I={o} O={o_f} TMP_DIR={tmpdir} "
-                   "SO=coordinate && samtools view -@ {stt} -m {stm} -bS {o_f} "
-                   "> {bam}").format(
+                   "-jar {picard} FixMateInformation I={o} O={o_f} "
+                   "TMP_DIR={tmpdir} SO=coordinate && samtools view -@ {stt} "
+                   "-m {stm} -bS {o_f} > {bam}").format(
             xms=self.get_mem(fraction=0.90),
             xmx=self.get_mem(fraction=0.95),
+            gc=self.get_threads() if int(self.get_threads()) <= 8 else "8",
+            tmpdir=self.tmp_dir,
             picard=self.picard,
             i=sam,
             o=output,
             o_f=output_f,
-            stt=self.get_threads(),
+            stt=self.get_threads() if int(self.get_threads()) <= 8 else "8",
             stm=self.get_mem(fraction=(1 / int(self.get_threads()))),
-            bam=bam,
-            tmpdir=self.tmp_dir
+            bam=bam
         )
         return (command)

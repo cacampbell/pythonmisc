@@ -17,7 +17,7 @@ class ReduceReads(PairedEndCommand):
         :return: command string
         """
         outfile = self.rebase_file(filename)
-        command = ("java -xms{xms} -xmx{xmx} -Djava.io.tmpdir={tmp} -jar "
+        command = ("java -Xms{xms} -Xmx{xmx} -Djava.io.tmpdir={tmp} -jar "
                    "{gatk} -T ReduceReads -R {ref} -I {i} -O {o}").format(
             xms=self.get_mem(0.98),
             xmx=self.get_mem(0.99),

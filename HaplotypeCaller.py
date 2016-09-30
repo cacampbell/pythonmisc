@@ -24,12 +24,13 @@ class HaplotypeCaller(PairedEndCommand):
         :return: string
         """
         gvcf = self.rebase_file(filename)
-        gvcf = self.replace_extension_with(".gvcf", gvcf)
+        gvcf = self.replace_extension_with(".g.vcf", gvcf)
         threads = self.get_threads()
         nct = threads if int(threads) < 9 else "8"
         command = ("java -Xms{xms} -Xmx{xmx} -Djava.io.tmpdir={tmp} -jar "
                    "{gatk} -T HaplotypeCaller -I {bam} -o {gvcf}"
-                   " -R {ref} --emitRefConfidence GVCF -nct {nct}").format(
+                   " -R {ref} --emitRefConfidence GVCF "
+                   " -nct {nct}").format(
             xms=self.get_mem(0.98),
             xmx=self.get_mem(0.99),
             tmp=self.tmp_dir,
@@ -42,6 +43,6 @@ class HaplotypeCaller(PairedEndCommand):
 
         if self.mode.upper().strip() == "RNA":
             command += (" -dontUseSoftClippedBases -stand_call_conf 20.0 "
-                        "-stand_emit_conf 20.0")
+                        "-stand_emit_conf 20.0 -U ALLOW_N_CIGAR_READS")
 
         return (command)
