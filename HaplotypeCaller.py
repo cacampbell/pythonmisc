@@ -16,6 +16,8 @@ class HaplotypeCaller(PairedEndCommand):
         self.set_default("input_regex", ".*")
         self.set_default("read_regex", ".*")
         self.set_default("extension", ".bam$")
+        self.set_default("dbsnp", None)
+        self.set_default("intervals", None)
 
     def make_command(self, filename):
         """
@@ -44,5 +46,11 @@ class HaplotypeCaller(PairedEndCommand):
         if self.mode.upper().strip() == "RNA":
             command += (" -dontUseSoftClippedBases -stand_call_conf 20.0 "
                         "-stand_emit_conf 20.0 -U ALLOW_N_CIGAR_READS")
+
+        if self.dbsnp:
+            command += " --dbsnp {}".format(self.dbsnp)
+
+        if self.intervals:
+            command += " -L {}".format(self.intervals)
 
         return (command)
