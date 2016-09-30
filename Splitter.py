@@ -8,7 +8,7 @@ class Splitter(PairedEndCommand):
     def __init__(self, *args, **kwargs):
         super(Splitter, self).__init__(*args, **kwargs)
         self.set_default("lines", "8000000")
-        self.read_regex = ".*"
+        self.set_default("read_regex", "_R1")
         self.set_default("extension", ".fq$")
         self.changed_ext = False
 
@@ -35,26 +35,29 @@ class Splitter(PairedEndCommand):
             # MONSTROUS COMMAND TO SPLIT FQ FILES
             # use combination of paste and subprocesses to interleave
             # (10x faster than python)
-            # Then, split the files into a multiple of 8 lines, and rename them
+            # Then, split the files into a multiple of 8 lines
+            # Then, deinterleave and rename these files
             mate = self.replace_read_marker_with("_R2", filename)
-            interleaved = self.replace_read_marker_with("_pe", filename)
+            interleaved = self.replace_read_marker_with("", filename)
             o_interleaved = self.rebase_file(interleaved)
             self.prefix = self.replace_extension_with(".split.", o_interleaved)
             interleave_command = ("paste <(paste - - - - < {read}) "
                                   "<(paste - - - - < {mate}) "
-                                  "| tr '\t' '\n' > {interleave}").format(
+                                  "| tr '\\t' '\\n' > {interleave}").format(
                 read=filename, mate=mate, interleave=interleaved)
             split_command = ("split -l {l} {interleave} {o_pre}").format(
                 l=self.lines, interleave=interleaved, o_pre=self.prefix)
-            deinterleave_command = ("ls | grep {o_pre} |"
+            deinterleave_command = ("find {output_dir} -type f | grep {o_pre} |"
                                     " parallel --gnu -j{cpus} "
                                     "\"paste - - - - - - - - < {{}} |"
                                     " tee >(cut -f 1-4 |"
-                                    " tr '\t' '\n' > {{}}.R1) |"
+                                    " tr '\\t' '\\n' > {{}}.R1) |"
                                     " cut -f 5-8 |"
-                                    " tr '\t' '\n' > {{}}.R2\"").format(
-                o_pre=self.prefix, cpus=self.get_threads())
-            rename_command = ("rename \"s/$/.fq/\" {}").format(self.prefix)
+                                    " tr '\\t' '\\n' > {{}}.R2\"").format(
+                                        output_dir=self.output_root,
+                                        o_pre=self.prefix,
+                                        cpus=self.get_threads())
+            rename_command = ("rename \"s/$/.fq/\" {}*").format(self.prefix)
             command = ("{} && {} && {} && {}").format(interleave_command,
                                                       split_command,
                                                       deinterleave_command,
