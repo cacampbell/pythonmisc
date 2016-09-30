@@ -16,6 +16,8 @@ class HaplotypeCaller(PairedEndCommand):
         self.set_default("input_regex", ".*")
         self.set_default("read_regex", ".*")
         self.set_default("extension", ".bam$")
+        self.set_default("dbsnp", None)
+        self.set_default("intervals", None)
 
     def make_command(self, filename):
         """
@@ -24,7 +26,7 @@ class HaplotypeCaller(PairedEndCommand):
         :return: string
         """
         gvcf = self.rebase_file(filename)
-        gvcf = self.replace_extension_with(".gvcf", gvcf)
+        gvcf = self.replace_extension_with(".g.vcf", gvcf)
         threads = self.get_threads()
         nct = threads if int(threads) < 9 else "8"
         command = ("java -Xms{xms} -Xmx{xmx} -Djava.io.tmpdir={tmp} -jar "
@@ -43,5 +45,11 @@ class HaplotypeCaller(PairedEndCommand):
         if self.mode.upper().strip() == "RNA":
             command += (" -dontUseSoftClippedBases -stand_call_conf 20.0 "
                         "-stand_emit_conf 20.0")
+
+        if self.dbsnp:
+            command += " --dbsnp {}".format(self.dbsnp)
+
+        if self.intervals:
+            command += " -L {}".format(self.intervals)
 
         return (command)
