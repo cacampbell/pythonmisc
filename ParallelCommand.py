@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import unittest
 from sys import stderr
-
 from abc import ABCMeta
 from abc import abstractmethod
 from copy import deepcopy
@@ -10,7 +9,6 @@ from os import path
 from os import walk
 from os.path import basename
 from re import search
-
 from Bash import mkdir_p
 from os.path import isdir
 from cluster_commands import existing_jobs
