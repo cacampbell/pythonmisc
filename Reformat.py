@@ -25,7 +25,8 @@ class Reformat(PairedEndCommand):
             inqual = "64"
             if qual == "64":
                 inqual = "33"
-            command = ("reformat.sh -Xmx{xmx} in={in1} in2={in2} out1={out1} "
+            command = ("reformat.sh -Xmx{xmx} in={in1} "
+                       "in2={in2} out1={out1} "
                        "out2={out2} qin={qin} qout={qout}").format(
                            xmx=self.get_mem(0.99),
                            in1=read,
@@ -33,12 +34,13 @@ class Reformat(PairedEndCommand):
                            out1=out_read,
                            out2=out_mate,
                            qin=inqual,
-                           qout=qual)
+                           qout=qual
+                       )
             return(command)
         elif self.operation in ["sam1.3"]:
             outf = self.rebase_file(read)
-            command = ("reformat.sh -Xmx{xmx} in={i} out={o} "
-                       "sam=sam1.3").format(xmx=self.get_mem(0.99),
-                                            i=read,
-                                            o=outf)
+            command = ("reformat.sh -Xmx{xmx} in={i} "
+                       "out={o} sam=1.3").format(xmx=self.get_mem(0.99),
+                                                 i=read,
+                                                 o=outf)
             return(command)
