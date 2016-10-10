@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-import unittest
 from sys import stderr
+
+import unittest
 from abc import ABCMeta
 from abc import abstractmethod
 from copy import deepcopy
@@ -8,9 +9,10 @@ from os import getcwd
 from os import path
 from os import walk
 from os.path import basename
-from re import search
-from Bash import mkdir_p
 from os.path import isdir
+from re import search
+
+from Bash import mkdir_p
 from cluster_commands import existing_jobs
 from cluster_commands import submit_job
 from module_loader import module
@@ -123,7 +125,7 @@ class ParallelCommand:
                                     depends_on=None,
                                     email_address=None,
                                     email_options=None,
-                                    time=None,
+                                    time="72:00:00",
                                     bash="#!/usr/bin/env bash"
                                     )  # End dict
 
