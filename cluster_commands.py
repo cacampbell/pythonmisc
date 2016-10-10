@@ -118,6 +118,8 @@ def __submit_slurm(**kwargs):
     if __check("email_options", kwargs):
         submit_cmd += (" --mail-type={}").format(
             __slurm_e_opts(kwargs["email_options"]))
+    if __check("time", kwargs):
+        submit_cmd += ("--time={}").format(kwargs["time"])
     if __check("input", kwargs):
         submit_cmd += (" --input={}").format(kwargs["input"])
     if __check("output", kwargs):
@@ -143,6 +145,31 @@ def __torque_e_opts(string):
     return (options)
 
 
+def __torque_resources(kwargs):
+    # Check the kwargs for memory, nodes, cpus, and time, then format
+    # those flags for command line submission
+    nodes = "1"
+    cpus = "1"
+    memory = "10G"
+    time = "72:00:00"
+
+    if __check("nodes", kwargs):
+        nodes = kwargs["nodes"]
+    if __check("cpus", kwargs):
+        cpus = kwargs["cpus"]
+    if __check("memory", kwargs):
+        memory = kwargs["memory"]
+    if __check("time", kwargs):
+        time = kwargs["time"]
+
+    str = (" -l mem={m},nodes={n}:ppn={c},walltime={t}").format(m=memory,
+                                                                n=nodes,
+                                                                c=cpus,
+                                                                t=time)
+
+    return (str)
+
+
 def __submit_torque(**kwargs):
     """
     Anticipated Keyword Arguments:
@@ -162,31 +189,7 @@ def __submit_torque(**kwargs):
     """
 
     submit_cmd = ("qsub -V")  # Inherit environment modules
-    if __check("memory", kwargs) and __check("cpus", kwargs) and __check(
-            "nodes", kwargs):
-        submit_cmd += " -l mem={m},nodes={n}:ppn={c}".format(
-            m=kwargs["memory"], n=kwargs["nodes"], c=kwargs["cpus"]
-        )
-    elif __check("memory", kwargs) and __check("cpus", kwargs):
-        submit_cmd += " -l mem={m},nodes=1:ppn={c}".format(
-            m=kwargs["memory"], c=kwargs["cpus"]
-        )
-    elif __check("memory", kwargs) and __check("nodes", kwargs):
-        submit_cmd += " -l mem={m},nodes={n}".format(
-            m=kwargs["memory"], n=kwargs["nodes"]
-        )
-    elif __check("cpus", kwargs) and __check("nodes", kwargs):
-        submit_cmd += " -l nodes={n}:ppn={c}".format(
-            n=kwargs["nodes"], c=kwargs["cpus"]
-        )
-    else:
-        if __check("memory", kwargs):
-            submit_cmd += " -l {}".format(kwargs["memory"])
-        if __check("cpus", kwargs):
-            submit_cmd += " -l nodes=1:ppn={}".format(kwargs["cpus"])
-        if __check("nodes", kwargs):
-            submit_cmd += " -l nodes={}".format(kwargs["nodes"])
-
+    submit_cmd += __torque_resources(kwargs)
     if __check("partition", kwargs):
         submit_cmd += " -q {}".format(kwargs["partition"])
     if __check("job_name", kwargs):
