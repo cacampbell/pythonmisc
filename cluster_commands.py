@@ -119,7 +119,7 @@ def __submit_slurm(**kwargs):
         submit_cmd += (" --mail-type={}").format(
             __slurm_e_opts(kwargs["email_options"]))
     if __check("time", kwargs):
-        submit_cmd += ("--time={}").format(kwargs["time"])
+        submit_cmd += (" --time={}").format(kwargs["time"])
     if __check("input", kwargs):
         submit_cmd += (" --input={}").format(kwargs["input"])
     if __check("output", kwargs):
