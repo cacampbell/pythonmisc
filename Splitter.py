@@ -43,7 +43,7 @@ class Splitter(PairedEndCommand):
             self.prefix = self.replace_extension_with(".split.", o_interleaved)
             interleave_command = ("paste <(paste - - - - < {read}) "
                                   "<(paste - - - - < {mate}) "
-                                  "| tr '\\t' '\\n' > {interleave}").format(
+                                  "| tr '\t' '\n' > {interleave}").format(
                 read=filename, mate=mate, interleave=interleaved)
             split_command = ("split -l {l} {interleave} {o_pre}").format(
                 l=self.lines, interleave=interleaved, o_pre=self.prefix)
@@ -51,9 +51,9 @@ class Splitter(PairedEndCommand):
                                     " parallel --gnu -j{cpus} "
                                     "\"paste - - - - - - - - < {{}} |"
                                     " tee >(cut -f 1-4 |"
-                                    " tr '\\t' '\\n' > {{}}.R1) |"
+                                    " tr '\t' '\n' > {{}}.R1) |"
                                     " cut -f 5-8 |"
-                                    " tr '\\t' '\\n' > {{}}.R2\"").format(
+                                    " tr '\t' '\n' > {{}}.R2\"").format(
                                         output_dir=self.output_root,
                                         o_pre=self.prefix,
                                         cpus=self.get_threads())

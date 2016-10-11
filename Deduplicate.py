@@ -9,7 +9,7 @@ class Deduplicate(PairedEndCommand):
         super(Deduplicate, self).__init__(*args, **kwargs)
         self.set_default("picard", "~/.prog/picard-tools-2.5.0/picard.jar")
         self.set_default("use_picard", False)
-        self.set_defualt("use_samtools", False)
+        self.set_default("use_samtools", False)
         self.set_default("by_mapping", False)
         self.set_default("fastuniq", False)
         self.set_default("tmp_dir", "~/tmp")
