@@ -9,6 +9,7 @@ class Deduplicate(PairedEndCommand):
         super(Deduplicate, self).__init__(*args, **kwargs)
         self.set_default("picard", "~/.prog/picard-tools-2.5.0/picard.jar")
         self.set_default("use_picard", False)
+        self.set_defualt("use_samtools", False)
         self.set_default("by_mapping", False)
         self.set_default("fastuniq", False)
         self.set_default("tmp_dir", "~/tmp")
@@ -20,7 +21,7 @@ class Deduplicate(PairedEndCommand):
         command = (
             "java -Djava.io.tmpdir={tmp} -Xms{xms} -Xmx{xmx} -jar {picard} "
             "MarkDuplicates INPUT={i} OUTPUT={o} REMOVE_DUPLICATES=true "
-            "CREATE_INDEX=true MAX_RECORDS_IN_RAM=50000 "
+            "MAX_RECORDS_IN_RAM=50000 "
             "ASSUME_SORTED=true METRICS_FILE={stats}").format(
             xms=self.get_mem(0.94),
             xmx=self.get_mem(0.95),
@@ -42,6 +43,12 @@ class Deduplicate(PairedEndCommand):
             i=bam,
             o=output
         )
+        return (command)
+
+    def __samtools_dedupe(self, bam):
+        output = self.replace_extension_with(".dedupe.bam", bam)
+        output = self.rebase_file(output)
+        command = ("samtools rmdup {i} {o}").format(i=bam, o=output)
         return (command)
 
     def __dedupe_fastuniq(self, read):
@@ -86,6 +93,8 @@ class Deduplicate(PairedEndCommand):
         if self.by_mapping:
             if self.use_picard:
                 return (self.__picard_dedupe(bam))
+            elif self.use_samtools:
+                return (self.__samtools_dedupe(bam))
             else:  # Not using Picard, using BBMap
                 return (self.__dedupe_by_mapping(bam))
         else:  # Ignoring picard, deduplicating reads without mapping (FastUniq)
