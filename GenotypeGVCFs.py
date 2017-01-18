@@ -19,7 +19,7 @@ class GenotypeGVCFs(PairedEndCommand):
 
     def format_commands(self):
         job_name = "Genotype_GVCFs_{}".format(self.cluster_options['job_name'])
-        command = ("java -xms{xms} -xmx{xmx} -Djava.io.tmpdir={tmp} -jar "
+        command = ("java -Xms{xms} -Xmx{xmx} -Djava.io.tmpdir={tmp} -jar "
                    "{gatk} -T GenotypeGVCFs -R {ref} -o {vcf}").format(
             xms=self.get_mem(0.98),
             xmx=self.get_mem(0.99),
@@ -29,7 +29,7 @@ class GenotypeGVCFs(PairedEndCommand):
             vcf=join(self.output_root, "snps.indels.svs.raw.vcf")
         )
         for filename in self.files:
-            command += (" --variant {gvcf}".format(filename))
+            command += (" --variant {}".format(filename))
 
         if self.verbose:
             print(command, file=stderr)

@@ -187,6 +187,9 @@ class PairedEndCommand(ParallelCommand):
                     except AttributeError:  # No match
                         pass
 
+        if self.verbose:
+            print("Exclusions: {}".format(exclusions), file=stderr)
+
         for regex in list(set(exclusions)):  # For each unique basename
             self.remove_regex_from_input(regex)  # remove it from the input
 

@@ -285,6 +285,9 @@ class ParallelCommand:
                     base_no_ext = path.splitext(base)[0]
                     exclusions += [base_no_ext]
 
+            if self.verbose:
+                print("Exclusions: {}".format(exclusions), file=stderr)
+
         else:
             print("Not a directory: {}, skipping...".format(root), file=stderr)
 

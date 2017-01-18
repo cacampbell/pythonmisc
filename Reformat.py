@@ -9,6 +9,8 @@ class Reformat(PairedEndCommand):
         self.set_default("read_regex", "_R1")
         self.set_default("extension", ".fq.gz$")
         self.set_default("operation", "")
+        self.set_default("qin", "64")
+        self.set_default("ignorebadquality", False)
 
     def make_command(self, read):
         if self.operation == "":
@@ -22,9 +24,7 @@ class Reformat(PairedEndCommand):
             out_read = self.rebase_file(read)
             out_mate = self.rebase_file(mate)
             qual = self.operation[-2:]
-            inqual = "64"
-            if qual == "64":
-                inqual = "33"
+            inqual = self.qin
             command = ("reformat.sh -Xmx{xmx} in={in1} "
                        "in2={in2} out1={out1} "
                        "out2={out2} qin={qin} qout={qout}").format(
@@ -36,6 +36,9 @@ class Reformat(PairedEndCommand):
                            qin=inqual,
                            qout=qual
                        )
+            if self.ignorebadquality:
+                command += " ignorebadquality"
+
             return(command)
         elif self.operation in ["sam1.3"]:
             outf = self.rebase_file(read)

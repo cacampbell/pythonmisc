@@ -12,9 +12,11 @@ def get_barcode(filename):
     if filename.endswith(".gz"):
         display_filename = "gunzip -c {}".format(filename)
 
+    # Potentially, the barcode can be at -f3 rather than -f10
     command = ("{} | head -n 10000 | grep ^@ | cut -d':' -f10 | tr -d ' ' "
                "| sort | uniq -c | sort -nr | head -1 | sed -e "
                "'s/^[[:space:]]*//' | cut -d ' ' -f2").format(display_filename)
+    print("Running: {}".format(command))
     return bash(command)[0]
 
 

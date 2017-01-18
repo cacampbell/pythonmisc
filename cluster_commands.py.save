@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import sys
 from pwd import getpwuid
+
 from os import environ
 from os import getuid
+
 from Bash import bash
 from Bash import which
 from slurm_commands import scancel
@@ -235,20 +237,27 @@ def submit_job(command_str, verbose=False, dry_run=False, **kwargs):
 
     script = ("{shebang_line}\n{command}").format(shebang_line=shebang_line,
                                                   command=command_str)
-    sub_script = ""
+    sub_command = ("echo '{}' | {}")
+    sub_script = ""  # Will hold entire string that will be send to bash shell
+
     if get_backend() == "slurm":  # Format with slurm options
-        sub_script = "{}".format(__submit_slurm(**kwargs))
+        sub_script = sub_command.format(script, __submit_slurm(**kwargs))
     elif get_backend() == "torque":  # Format with torque options
-        sub_script = "{}".format(__submit_torque(**kwargs))
+        sub_script = sub_command.format(script, __submit_torque(**kwargs))
+
+
+
+    if verbose:
+
+
+
+        print(s, file=sys.stderr)
 
     stdout = ""
     stderr = ""
     if not dry_run:
-        sub_script = "echo '{}' | {}".format(script, sub_script)
-        (stdout, stderr) = bash(sub_script)
-
-        if verbose:
-            print("{}".format(sub_script), file=sys.stderr)
+        (stdout, stderr) = bash(
+            sub_script)  # Actaully call the script using bash
 
         try:  # To parse the output based on expected successful submission result
             chunks = stdout.split(" ")
@@ -265,7 +274,7 @@ def submit_job(command_str, verbose=False, dry_run=False, **kwargs):
                 return (stdout.split(".")[0])
 
             if stderr:
-                print(stderr, file=sys.stderr)
+                print(stderr, file=stderr)
 
         except (ValueError, IndexError) as err:
             print("Could not capture Job ID! Dependency checks may fail!")

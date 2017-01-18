@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from GenotypeCVCFs import GenotypeGVCFs
+from GenotypeGVCFs import GenotypeGVCFs
 from parallel_command_parse import run_parallel_command_with_args
 
 

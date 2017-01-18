@@ -15,7 +15,7 @@ class Splitter(PairedEndCommand):
     def make_command(self, filename):
         output = self.rebase_file(filename)
         header = self.replace_extension_with(".header.sam", filename)
-        self.prefix = self.replace_extension_with(".split.", output)
+        prefix = self.replace_extension_with(".split.", output)
         assert (int(self.lines) % 8 == 0)  # Assume paired end to be safe
         extension = self.extension
 
@@ -40,28 +40,30 @@ class Splitter(PairedEndCommand):
             mate = self.replace_read_marker_with("_R2", filename)
             interleaved = self.replace_read_marker_with("", filename)
             o_interleaved = self.rebase_file(interleaved)
-            self.prefix = self.replace_extension_with(".split.", o_interleaved)
-            interleave_command = ("paste <(paste - - - - < {read}) "
-                                  "<(paste - - - - < {mate}) "
-                                  "| tr '\t' '\n' > {interleave}").format(
-                read=filename, mate=mate, interleave=interleaved)
+            prefix = self.replace_extension_with(".split.", o_interleaved)
+            interleave_command = ("reformat.sh -Xmx{xmx} in1={r} in2={m} "
+                                  "out={o}").format(r=filename,
+                                                    m=mate,
+                                                    o=o_interleaved,
+                                                    xmx=self.get_mem())
             split_command = ("split -l {l} {interleave} {o_pre}").format(
-                l=self.lines, interleave=interleaved, o_pre=self.prefix)
-            deinterleave_command = ("find {output_dir} -type f | grep {o_pre} |"
-                                    " parallel --gnu -j{cpus} "
-                                    "\"paste - - - - - - - - < {{}} |"
-                                    " tee >(cut -f 1-4 |"
-                                    " tr '\t' '\n' > {{}}.R1) |"
-                                    " cut -f 5-8 |"
-                                    " tr '\t' '\n' > {{}}.R2\"").format(
-                                        output_dir=self.output_root,
-                                        o_pre=self.prefix,
-                                        cpus=self.get_threads())
-            rename_command = ("rename \"s/$/.fq/\" {}*").format(self.prefix)
-            command = ("{} && {} && {} && {}").format(interleave_command,
-                                                      split_command,
-                                                      deinterleave_command,
-                                                      rename_command)
+                l=self.lines, interleave=o_interleaved, o_pre=prefix)
+            fraction = (1.00 / float(self.get_threads()))
+            deinterleave_command = ("find {out} -type f | grep {o_pre} | "
+                                    "parallel --gnu -j{cpus} \"reformat.sh "
+                                    "in={{}} out1={{}}.R1.fq -Xmx{xmx} "
+                                    "out2={{}}.R2.fq\"").format(
+                                        out=self.output_root,
+                                        o_pre=prefix,
+                                        cpus=self.get_threads(),
+                                        xmx=self.get_mem(fraction),
+                                    )
+            rename_command = ("rename \"s/$/.fq/\" {}*").format(prefix)
+            command = ("{} && {} && {} && {}").format(
+                interleave_command,
+                split_command,
+                rename_command,
+                deinterleave_command)
             return(command)
 
         elif filename.endswith(".bam"):
@@ -72,7 +74,7 @@ class Splitter(PairedEndCommand):
                            i=filename,
                            h=header,
                            lines=self.lines,
-                           o_pre=self.prefix,
+                           o_pre=prefix,
                            ext=extension
                        )
             return (command)
@@ -85,7 +87,7 @@ class Splitter(PairedEndCommand):
                            i=filename,
                            h=header,
                            lines=self.lines,
-                           o_pre=self.prefix,
+                           o_pre=prefix,
                            ext=extension
                        )
             return(command)

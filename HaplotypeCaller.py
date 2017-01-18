@@ -53,4 +53,7 @@ class HaplotypeCaller(PairedEndCommand):
         if self.intervals:
             command += " -L {}".format(self.intervals)
 
+        if self.min_pruning:
+            command += " -minPruning {}".format(self.min_pruning)
+
         return (command)

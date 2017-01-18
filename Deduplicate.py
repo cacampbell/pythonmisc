@@ -7,9 +7,11 @@ from PairedEndCommand import PairedEndCommand
 class Deduplicate(PairedEndCommand):
     def __init__(self, *args, **kwargs):
         super(Deduplicate, self).__init__(*args, **kwargs)
+        # This is sheer insanity, but it works.
         self.set_default("picard", "~/.prog/picard-tools-2.5.0/picard.jar")
         self.set_default("use_picard", False)
         self.set_default("use_samtools", False)
+        self.set_default("use_bamutil", False)
         self.set_default("by_mapping", False)
         self.set_default("fastuniq", False)
         self.set_default("tmp_dir", "~/tmp")
@@ -20,7 +22,7 @@ class Deduplicate(PairedEndCommand):
         metrics = self.replace_extension_with(".txt", output)
         command = (
             "java -Djava.io.tmpdir={tmp} -Xms{xms} -Xmx{xmx} -jar {picard} "
-            "MarkDuplicates INPUT={i} OUTPUT={o} REMOVE_DUPLICATES=true "
+            "MarkDuplicates INPUT={i} OUTPUT={o} "
             "MAX_RECORDS_IN_RAM=50000 "
             "ASSUME_SORTED=true METRICS_FILE={stats}").format(
             xms=self.get_mem(0.94),
@@ -51,6 +53,13 @@ class Deduplicate(PairedEndCommand):
         command = ("samtools rmdup {i} {o}").format(i=bam, o=output)
         return (command)
 
+    def __bamutil_dedupe(self, bam):
+        output = self.replace_extension_with(".dedupe.bam", bam)
+        output = self.rebase_file(output)
+        command = ("bam dedup --in {i} --out {o} --force").format(i=bam,
+                                                                  o=output)
+        return(command)
+
     def __dedupe_fastuniq(self, read):
         mate = self.mate(read)
         file_list = self.replace_read_marker_with("_filelist", read)
@@ -77,16 +86,11 @@ class Deduplicate(PairedEndCommand):
 
     def __dedupe(self, read):
         out = self.rebase_file(read)
-        mate = self.mate(read)
-        out2 = self.rebase_file(mate)
-        command = ("dedupe.sh in={i} in2={m} out=STDOUT.fq -Xmx{xmx} "
-                   "threads={t} usejni=t | reformat.sh -Xmx{xmx} in=STDIN.fq "
-                   "int out1={o1} out2={o2}").format(i=read,
-                                                     m=mate,
-                                                     o1=out,
-                                                     o2=out2,
-                                                     xmx=self.get_mem(0.98),
-                                                     t=self.get_threads())
+        command = ("dedupe.sh in={i} out={o} -Xmx{xmx} "
+                   "threads={t} usejni=t ").format(i=read,
+                                                   o=out,
+                                                   xmx=self.get_mem(0.98),
+                                                   t=self.get_threads())
         return (command)
 
     def make_command(self, bam):
@@ -95,6 +99,8 @@ class Deduplicate(PairedEndCommand):
                 return (self.__picard_dedupe(bam))
             elif self.use_samtools:
                 return (self.__samtools_dedupe(bam))
+            elif self.use_bamutil:
+                return(self.__bamutil_dedupe(bam))
             else:  # Not using Picard, using BBMap
                 return (self.__dedupe_by_mapping(bam))
         else:  # Ignoring picard, deduplicating reads without mapping (FastUniq)
