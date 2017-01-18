@@ -12,6 +12,9 @@ from parallel_command_parse import run_parallel_command_with_args
 # guided assemblies? Or do I need to use tr2aacds to combine ref guided and
 # de novo assemblies? Different software for transcriptome vs genome assemblies?
 
+# TODO: why do I set parameters in the assembly classes using set default,
+# but then also set the parameters for the assembler object after creation,
+# both during the factory method and during main? what?
 
 class AssemblyFactory:
     def __init__(self, *args, **kwargs):
@@ -28,8 +31,6 @@ class AssemblyFactory:
 
     def tadpole_assemble(self):
         assembler = TadpoleAssemble(*self.args, **self.kwargs)
-        assembler.input_regex = ".*"
-        assembler.read_regex = ".*"
         assembler.modules = ['java', 'slurm']
         return (assembler)
 
@@ -44,6 +45,7 @@ class AssemblyFactory:
 
     def velvet_assemble(self):
         assembler = VelvetAssemble(*self.args, **self.kwargs)
+        assembler.modules = ['boost', 'openmpi', 'sparsehash', 'abyss']
         return (assembler)
 
     def oases_assemble(self):
@@ -84,8 +86,6 @@ def check_arguments(*args, **kwargs):
 def main(*args, **kwargs):
     check_arguments(*args, **kwargs)
     assembler = AssemblyFactory(*args, **kwargs).get_assembler()
-    assembler.input_regex = ".*"
-    assembler.read_regex = ".*"
     return (assembler.run())
 
 
